@@ -4,23 +4,21 @@
 # =============================================
 
 cmd_init() {
-    log_step "Inicializando orquestrador v3.1..."
+    log_step "Inicializando orquestrador v3.3..."
 
     # Validar repositório git
     validate_git_repo || return 1
 
     # Criar estrutura de diretórios
-    ensure_dir "$ORCHESTRATION_DIR"/{tasks,status,logs,pids,archive,checkpoints,.recovery}
+    ensure_dir "$ORCHESTRATION_DIR"/{tasks,status,logs,pids,archive,checkpoints,.recovery,.backups}
     ensure_dir "$AGENTS_DIR"
     ensure_dir "$CLAUDE_DIR/scripts"
 
     # Criar AGENT_CLAUDE.md base
     create_agent_claude_base
 
-    # Criar PROJECT_MEMORY.md se não existir
-    if ! file_exists "$MEMORY_FILE"; then
-        create_initial_memory
-    fi
+    # Criar ou resetar PROJECT_MEMORY.md
+    _init_project_memory
 
     # Criar exemplos se não existirem
     ensure_dir "$ORCHESTRATION_DIR/examples"
@@ -166,6 +164,38 @@ cmd_init_sample() {
 }
 
 # =============================================
+# HELPERS
+# =============================================
+
+_init_project_memory() {
+    # Se não existe, criar novo
+    if ! file_exists "$MEMORY_FILE"; then
+        log_step "Criando PROJECT_MEMORY.md..."
+        create_initial_memory
+        return 0
+    fi
+
+    # Verificar se é a memória do orquestrador (template do repo)
+    if grep -q "Nome.*claude-orchestrator" "$MEMORY_FILE" 2>/dev/null; then
+        log_warn "Detectado PROJECT_MEMORY.md do repositório do orquestrador"
+        log_info "Criando memória limpa para seu projeto..."
+
+        # Backup do original (para referência)
+        cp "$MEMORY_FILE" "$MEMORY_FILE.orchestrator-backup"
+
+        # Criar memória limpa
+        create_initial_memory
+
+        log_success "Nova memória criada!"
+        log_info "Backup salvo em: PROJECT_MEMORY.md.orchestrator-backup"
+        return 0
+    fi
+
+    # Memória já existe e é de outro projeto
+    log_info "PROJECT_MEMORY.md já existe (mantendo)"
+}
+
+# =============================================
 # TEMPLATES
 # =============================================
 
@@ -238,45 +268,77 @@ EOF
 
 create_initial_memory() {
     local current_date=$(date '+%Y-%m-%d %H:%M')
+    local repo_url=$(git remote get-url origin 2>/dev/null || echo "[local]")
+
     cat > "$MEMORY_FILE" << EOF
-# Project Memory v3
+# Project Memory
 
 > **Última atualização**: $current_date
-> **Versão do Orquestrador**: 3.1
+> **Versão**: 0.1
 
 ## Visão Geral
 
 ### Projeto
+
 - **Nome**: $PROJECT_NAME
+- **Descrição**: [Descreva seu projeto aqui]
 - **Início**: $(date '+%Y-%m-%d')
-- **Repo**: $(git remote get-url origin 2>/dev/null || echo "[local]")
+- **Repo**: $repo_url
 
 ### Stack
+
 | Camada | Tecnologia |
 |--------|------------|
 | Linguagem | [DEFINIR] |
 | Framework | [DEFINIR] |
 | Database | [DEFINIR] |
 
+## Arquitetura
+
+[Descreva a arquitetura do seu projeto]
+
 ## Roadmap
 
-### Concluído
-- [x] Inicialização do projeto
+### v0.1 - MVP
+
+- [ ] Feature 1
+- [ ] Feature 2
+
+### v0.2 - Melhorias
+
+- [ ] Feature 3
+- [ ] Feature 4
+
+## Decisões de Arquitetura
+
+### ADR-001: [Título da decisão]
+
+- **Decisão**: [O que foi decidido]
+- **Motivo**: [Por que foi decidido]
+- **Trade-off**: [Prós e contras]
+
+## Problemas Resolvidos
+
+| Problema | Versão | Solução |
+|----------|--------|---------|
+| - | - | - |
+
+## Lições Aprendidas
+
+1. [Adicione lições aprendidas durante o desenvolvimento]
+
+## Próxima Sessão
 
 ### Em Progresso
-_Nenhum_
 
-### Planejado
-_A definir_
+- [ ] [Tarefas em andamento]
 
-## Agentes Utilizados
+### Ideias Futuras
 
-| Orquestração | Data | Agentes |
-|--------------|------|---------|
-| #0 | $current_date | init |
+- [Ideias para implementar depois]
 
 ---
-> Atualize com: \`.claude/scripts/orchestrate.sh update-memory\`
+> Atualize com: \`orch update-memory\` ou \`.claude/scripts/orchestrate.sh update-memory\`
 EOF
 }
 

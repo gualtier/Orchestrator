@@ -112,3 +112,4 @@ _orchestrate() {
 complete -F _orchestrate orchestrate.sh
 complete -F _orchestrate ./orchestrate.sh
 complete -F _orchestrate .claude/scripts/orchestrate.sh
+complete -F _orchestrate orch
