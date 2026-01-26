@@ -169,6 +169,7 @@
 4. **Escape em testes**: Usar aspas simples para strings literais
 5. **Modularização**: Facilita muito testes e manutenção
 6. **Memória após commits**: Sempre atualizar conteúdo da memória, não só timestamp!
+7. **README sempre**: Atualizar README.md ao adicionar/modificar features
 
 ## Próxima Sessão
 
