@@ -4,12 +4,14 @@ Sistema de orquestração de agentes Claude com **arquitetura modular** e **agen
 
 ## Novidades
 
-### v3.3 - Auto-Update
+### v3.3 - Auto-Update & CLI
+
 - **Comando `update`** - Atualiza orquestrador do remote
 - **Comando `update-check`** - Verifica atualizações disponíveis
 - **Comando `install-cli`** - Instala atalho global (`orch`)
 - **Backup automático** - Cria backup antes de atualizar
 - **Rollback** - Restaura automaticamente se falhar
+- **Init inteligente** - Detecta e reseta memória do orquestrador
 
 ### v3.2 - Gestão de Memória
 - **`update-memory --bump`** - Incrementa versão automaticamente
@@ -34,7 +36,7 @@ cp orchestrator-v3/CLAUDE.md ~/seu-projeto/
 # Tornar executável
 chmod +x ~/seu-projeto/.claude/scripts/*.sh
 
-# Inicializar
+# Inicializar (cria PROJECT_MEMORY.md limpo para seu projeto)
 cd ~/seu-projeto
 .claude/scripts/orchestrate.sh init
 .claude/scripts/orchestrate.sh doctor
