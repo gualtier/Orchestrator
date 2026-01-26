@@ -83,7 +83,7 @@ main() {
 
         # Memória
         show-memory) cmd_show_memory ;;
-        update-memory) cmd_update_memory ;;
+        update-memory) cmd_update_memory "$@" ;;
 
         # Help
         help|--help|-h) cmd_help ;;

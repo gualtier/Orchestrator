@@ -1,7 +1,7 @@
 # Project Memory - Claude Orchestrator
 
-> **Última atualização**: 2026-01-25 12:40
-> **Versão**: 3.1
+> **Última atualização**: 2026-01-26 10:00
+> **Versão**: 3.2
 
 ## Visão Geral
 

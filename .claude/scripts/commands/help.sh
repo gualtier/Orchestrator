@@ -55,7 +55,11 @@ FINALIZAÇÃO:
 
 MEMÓRIA:
   show-memory               Ver memória do projeto
-  update-memory             Atualizar timestamp da memória
+  update-memory [opções]    Atualizar memória do projeto
+    --bump                  Incrementar versão (X.Y → X.Y+1)
+    --changelog             Gerar changelog dos commits recentes
+    --commits <n>           Número de commits no changelog (default: 5)
+    --full                  Equivalente a --bump --changelog
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -100,6 +104,7 @@ EXEMPLO COMPLETO:
 
   # 7. Finalizar
   ./orchestrate.sh merge
+  ./orchestrate.sh update-memory --full
   ./orchestrate.sh cleanup
 
 EOF

@@ -138,6 +138,21 @@ cmd_show_memory() {
 }
 
 cmd_update_memory() {
+    local bump_version=false
+    local generate_changelog=false
+    local commits_count=5
+
+    # Parse argumentos
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --bump|--version) bump_version=true; shift ;;
+            --changelog) generate_changelog=true; shift ;;
+            --commits) commits_count="$2"; shift 2 ;;
+            --full) bump_version=true; generate_changelog=true; shift ;;
+            *) shift ;;
+        esac
+    done
+
     log_step "Atualizando memória..."
 
     if ! file_exists "$MEMORY_FILE"; then
@@ -146,16 +161,99 @@ cmd_update_memory() {
     fi
 
     local current_date=$(date '+%Y-%m-%d %H:%M')
-
-    # Usar escape seguro para sed
     local escaped_date=$(escape_sed "$current_date")
 
-    # Atualizar timestamp
+    # 1. Atualizar timestamp
     if [[ "$(uname)" == "Darwin" ]]; then
         sed -i '' "s|> \*\*Última atualização\*\*:.*|> **Última atualização**: $escaped_date|" "$MEMORY_FILE"
     else
         sed -i "s|> \*\*Última atualização\*\*:.*|> **Última atualização**: $escaped_date|" "$MEMORY_FILE"
     fi
+    log_info "Timestamp atualizado"
+
+    # 2. Incrementar versão (se solicitado)
+    if [[ "$bump_version" == "true" ]]; then
+        _bump_memory_version
+    fi
+
+    # 3. Gerar changelog (se solicitado)
+    if [[ "$generate_changelog" == "true" ]]; then
+        _generate_changelog "$commits_count"
+    fi
 
     log_success "Memória atualizada"
+}
+
+# Incrementar versão no formato X.Y
+_bump_memory_version() {
+    local current_version=$(grep -o '> \*\*Versão\*\*: [0-9.]*' "$MEMORY_FILE" | grep -o '[0-9.]*$')
+
+    if [[ -z "$current_version" ]]; then
+        log_warn "Versão não encontrada na memória"
+        return 0
+    fi
+
+    # Parse major.minor
+    local major=$(echo "$current_version" | cut -d. -f1)
+    local minor=$(echo "$current_version" | cut -d. -f2)
+
+    # Incrementar minor
+    minor=$((minor + 1))
+    local new_version="${major}.${minor}"
+
+    # Atualizar no arquivo
+    if [[ "$(uname)" == "Darwin" ]]; then
+        sed -i '' "s|> \*\*Versão\*\*: $current_version|> **Versão**: $new_version|" "$MEMORY_FILE"
+    else
+        sed -i "s|> \*\*Versão\*\*: $current_version|> **Versão**: $new_version|" "$MEMORY_FILE"
+    fi
+
+    log_info "Versão: $current_version → $new_version"
+}
+
+# Gerar changelog baseado nos commits recentes
+_generate_changelog() {
+    local count=${1:-5}
+    local changelog_file="$ORCHESTRATION_DIR/CHANGELOG.md"
+    local today=$(date '+%Y-%m-%d')
+
+    log_info "Gerando changelog (últimos $count commits)..."
+
+    # Obter commits recentes
+    local commits=$(git log --oneline -n "$count" --pretty=format:"- %s (%h)" 2>/dev/null)
+
+    if [[ -z "$commits" ]]; then
+        log_warn "Nenhum commit encontrado"
+        return 0
+    fi
+
+    # Criar ou atualizar changelog
+    local entry="
+## [$today]
+
+$commits
+"
+
+    if file_exists "$changelog_file"; then
+        # Inserir após o título
+        local temp_file=$(mktemp)
+        {
+            head -n 2 "$changelog_file"
+            echo "$entry"
+            tail -n +3 "$changelog_file"
+        } > "$temp_file"
+        mv "$temp_file" "$changelog_file"
+    else
+        # Criar novo
+        cat > "$changelog_file" << EOF
+# Changelog
+
+$entry
+EOF
+    fi
+
+    log_info "Changelog atualizado: $changelog_file"
+
+    # Registrar evento
+    echo "[$(timestamp)] CHANGELOG: $count commits adicionados" >> "$EVENTS_FILE"
 }

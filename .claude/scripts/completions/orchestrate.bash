@@ -96,6 +96,16 @@ _orchestrate() {
                 ;;
         esac
     fi
+
+    # Opções para update-memory
+    if [[ "${COMP_WORDS[1]}" == "update-memory" ]]; then
+        case "$cur" in
+            -*)
+                COMPREPLY=( $(compgen -W "--bump --changelog --commits --full" -- "$cur") )
+                return 0
+                ;;
+        esac
+    fi
 }
 
 # Registrar completion
