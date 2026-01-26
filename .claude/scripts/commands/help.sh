@@ -61,6 +61,10 @@ MEMÓRIA:
     --commits <n>           Número de commits no changelog (default: 5)
     --full                  Equivalente a --bump --changelog
 
+ATUALIZAÇÃO:
+  update                    Atualizar orquestrador do remote
+  update-check              Verificar se há atualizações disponíveis
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 PRESETS DE AGENTES:

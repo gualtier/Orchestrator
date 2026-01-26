@@ -10,7 +10,7 @@ _orchestrate() {
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
     # Comandos principais
-    local commands="init init-sample doctor agents setup start stop restart status wait logs follow verify verify-all review pre-merge report merge cleanup show-memory update-memory help"
+    local commands="init init-sample doctor agents setup start stop restart status wait logs follow verify verify-all review pre-merge report merge cleanup show-memory update-memory update update-check help"
 
     # Presets
     local presets="auth api frontend fullstack mobile devops data ml security review backend database"

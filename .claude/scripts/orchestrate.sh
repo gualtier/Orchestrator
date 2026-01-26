@@ -27,6 +27,7 @@ source "$SCRIPT_DIR/commands/start.sh"
 source "$SCRIPT_DIR/commands/status.sh"
 source "$SCRIPT_DIR/commands/verify.sh"
 source "$SCRIPT_DIR/commands/merge.sh"
+source "$SCRIPT_DIR/commands/update.sh"
 source "$SCRIPT_DIR/commands/help.sh"
 
 # =============================================
@@ -84,6 +85,10 @@ main() {
         # Memória
         show-memory) cmd_show_memory ;;
         update-memory) cmd_update_memory "$@" ;;
+
+        # Atualização
+        update) cmd_update ;;
+        update-check) cmd_update_check ;;
 
         # Help
         help|--help|-h) cmd_help ;;
