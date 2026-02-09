@@ -1,190 +1,190 @@
 # Claude Orchestrator v3.3
 
-Sistema de orquestração de agentes Claude com **arquitetura modular** e **agentes especializados**.
+Claude agent orchestration system with **modular architecture** and **specialized agents**.
 
-## Novidades
+## What's New
 
 ### v3.3 - Auto-Update & CLI
 
-- **Comando `update`** - Atualiza orquestrador do remote
-- **Comando `update-check`** - Verifica atualizações disponíveis
-- **Comando `install-cli`** - Instala atalho global (`orch`)
-- **Backup automático** - Cria backup antes de atualizar
-- **Rollback** - Restaura automaticamente se falhar
-- **Init inteligente** - Detecta e reseta memória do orquestrador
+- **`update` command** - Update orchestrator from remote
+- **`update-check` command** - Check for available updates
+- **`install-cli` command** - Install global shortcut (`orch`)
+- **Automatic backup** - Creates backup before updating
+- **Rollback** - Automatically restores if update fails
+- **Smart init** - Detects and resets orchestrator memory
 
-### v3.2 - Gestão de Memória
-- **`update-memory --bump`** - Incrementa versão automaticamente
-- **`update-memory --changelog`** - Gera changelog dos commits
+### v3.2 - Memory Management
+- **`update-memory --bump`** - Auto-increment version
+- **`update-memory --changelog`** - Generate changelog from commits
 - **`update-memory --full`** - Bump + changelog
 
-### v3.1 - Modularização
-- Arquitetura modular (lib/ e commands/)
-- Comando `doctor` para diagnóstico
-- Validação de entrada
-- Output JSON (`status --json`)
-- Testes automatizados
+### v3.1 - Modularization
+- Modular architecture (lib/ and commands/)
+- `doctor` command for diagnostics
+- Input validation
+- JSON output (`status --json`)
+- Automated tests
 - Shell completions
 
-## Instalação
+## Installation
 
 ```bash
-# Copiar para seu projeto
-cp -r orchestrator-v3/.claude ~/seu-projeto/
-cp orchestrator-v3/CLAUDE.md ~/seu-projeto/
+# Copy to your project
+cp -r orchestrator-v3/.claude ~/your-project/
+cp orchestrator-v3/CLAUDE.md ~/your-project/
 
-# Tornar executável
-chmod +x ~/seu-projeto/.claude/scripts/*.sh
+# Make executable
+chmod +x ~/your-project/.claude/scripts/*.sh
 
-# Inicializar (cria PROJECT_MEMORY.md limpo para seu projeto)
-cd ~/seu-projeto
+# Initialize (creates clean PROJECT_MEMORY.md for your project)
+cd ~/your-project
 .claude/scripts/orchestrate.sh init
 .claude/scripts/orchestrate.sh doctor
 
-# (Opcional) Instalar CLI global
+# (Optional) Install global CLI
 .claude/scripts/orchestrate.sh install-cli
-# Agora você pode usar: orch status, orch help, etc.
+# Now you can use: orch status, orch help, etc.
 ```
 
 ## Quick Start
 
 ```bash
-# 1. Inicializar
+# 1. Initialize
 orch init
 orch doctor
 
-# 2. Criar worktrees com agentes
+# 2. Create worktrees with agents
 orch setup auth --preset auth
 orch setup api --preset api
 
-# 3. Criar tarefas (ou copiar exemplos)
+# 3. Create tasks (or copy examples)
 orch init-sample
 
-# 4. Executar
+# 4. Execute
 orch start
 orch status
 orch wait
 
-# 5. Verificar qualidade
+# 5. Verify quality
 orch verify-all
 orch pre-merge
 
-# 6. Finalizar
+# 6. Finalize
 orch merge
 orch update-memory --full
 orch cleanup
 ```
 
-## Presets de Agentes
+## Agent Presets
 
-| Preset | Agentes | Uso |
-|--------|---------|-----|
-| `auth` | backend-developer, security-auditor, typescript-pro | Autenticação |
-| `api` | api-designer, backend-developer, test-automator | APIs REST |
-| `frontend` | frontend-developer, react-specialist, ui-designer | Frontend |
-| `fullstack` | fullstack-developer, typescript-pro, test-automator | Full-stack |
-| `mobile` | mobile-developer, flutter-expert, ui-designer | Apps mobile |
-| `devops` | devops-engineer, kubernetes-specialist, terraform-engineer | DevOps |
-| `data` | data-engineer, data-scientist, postgres-pro | Data |
-| `ml` | ml-engineer, ai-engineer, mlops-engineer | ML |
-| `security` | security-auditor, penetration-tester, security-engineer | Segurança |
-| `review` | code-reviewer, architect-reviewer, security-auditor | Review |
+| Preset     | Agents                                                      | Use Case       |
+|------------|-------------------------------------------------------------|----------------|
+| `auth`     | backend-developer, security-auditor, typescript-pro         | Authentication |
+| `api`      | api-designer, backend-developer, test-automator             | REST APIs      |
+| `frontend` | frontend-developer, react-specialist, ui-designer           | Frontend       |
+| `fullstack`| fullstack-developer, typescript-pro, test-automator         | Full-stack     |
+| `mobile`   | mobile-developer, flutter-expert, ui-designer               | Mobile apps    |
+| `devops`   | devops-engineer, kubernetes-specialist, terraform-engineer  | DevOps         |
+| `data`     | data-engineer, data-scientist, postgres-pro                 | Data           |
+| `ml`       | ml-engineer, ai-engineer, mlops-engineer                    | ML             |
+| `security` | security-auditor, penetration-tester, security-engineer     | Security       |
+| `review`   | code-reviewer, architect-reviewer, security-auditor         | Code review    |
 
-## Comandos
+## Commands
 
-### Inicialização
+### Initialization
 
 ```bash
-orch init                    # Criar estrutura
-orch init-sample             # Copiar exemplos de tarefas
-orch install-cli [nome]      # Instalar CLI global (default: orch)
-orch uninstall-cli [nome]    # Remover CLI global
-orch doctor                  # Diagnosticar problemas
-orch doctor --fix            # Corrigir automaticamente
+orch init                    # Create structure
+orch init-sample             # Copy task examples
+orch install-cli [name]      # Install global CLI (default: orch)
+orch uninstall-cli [name]    # Remove global CLI
+orch doctor                  # Diagnose issues
+orch doctor --fix            # Auto-fix issues
 ```
 
-### Agentes
+### Agents
 
 ```bash
-orch agents list               # Listar disponíveis
-orch agents installed          # Listar instalados
-orch agents install <agente>   # Instalar específico
-orch agents install-preset <p> # Instalar preset
+orch agents list               # List available
+orch agents installed          # List installed
+orch agents install <agent>    # Install specific agent
+orch agents install-preset <p> # Install preset
 ```
 
-### Execução
+### Execution
 
 ```bash
-orch setup <nome> --preset <p>     # Criar worktree
-orch setup <nome> --agents a1,a2   # Com agentes específicos
-orch start                         # Iniciar todos
-orch start <agente>                # Iniciar específico
-orch stop <agente>                 # Parar
-orch restart <agente>              # Reiniciar
+orch setup <name> --preset <p>     # Create worktree
+orch setup <name> --agents a1,a2   # With specific agents
+orch start                         # Start all
+orch start <agent>                 # Start specific
+orch stop <agent>                  # Stop
+orch restart <agent>               # Restart
 ```
 
-### Monitoramento
+### Monitoring
 
 ```bash
-orch status            # Ver status (texto)
-orch status --json     # Ver status (JSON)
-orch wait              # Aguardar conclusão
-orch logs <agente>     # Ver logs
-orch follow <agente>   # Seguir logs
+orch status            # View status (text)
+orch status --json     # View status (JSON)
+orch wait              # Wait for completion
+orch logs <agent>      # View logs
+orch follow <agent>    # Follow logs
 ```
 
-### Verificação
+### Verification
 
 ```bash
-orch verify <worktree>   # Verificar worktree
-orch verify-all          # Verificar todas
-orch review <worktree>   # Criar review
-orch pre-merge           # Verificar antes do merge
-orch report              # Gerar relatório
+orch verify <worktree>   # Verify worktree
+orch verify-all          # Verify all
+orch review <worktree>   # Create review
+orch pre-merge           # Verify before merge
+orch report              # Generate report
 ```
 
-### Finalização
+### Finalization
 
 ```bash
-orch merge               # Fazer merge
-orch cleanup             # Limpar (com confirmação)
+orch merge               # Merge changes
+orch cleanup             # Clean up (with confirmation)
 ```
 
-### Memória
+### Memory
 
 ```bash
-orch show-memory                  # Ver memória
-orch update-memory                # Atualizar timestamp
-orch update-memory --bump         # Incrementar versão
-orch update-memory --changelog    # Gerar changelog
+orch show-memory                  # Show memory
+orch update-memory                # Update timestamp
+orch update-memory --bump         # Increment version
+orch update-memory --changelog    # Generate changelog
 orch update-memory --full         # Bump + changelog
 ```
 
-### Atualização
+### Updates
 
 ```bash
-orch update-check    # Verificar se há atualizações
-orch update          # Atualizar do remote (com backup)
+orch update-check    # Check for updates
+orch update          # Update from remote (with backup)
 ```
 
-## Estrutura
+## Structure
 
-```
-projeto/
-├── CLAUDE.md                          # Arquiteto
+```text
+project/
+├── CLAUDE.md                          # Architect
 ├── .claude/
-│   ├── PROJECT_MEMORY.md              # Memória
-│   ├── agents/                        # Agentes instalados
+│   ├── PROJECT_MEMORY.md              # Memory
+│   ├── agents/                        # Installed agents
 │   ├── scripts/
 │   │   ├── orchestrate.sh             # Entry point
-│   │   ├── lib/                       # Bibliotecas
+│   │   ├── lib/                       # Libraries
 │   │   │   ├── logging.sh
 │   │   │   ├── core.sh
 │   │   │   ├── validation.sh
 │   │   │   ├── git.sh
 │   │   │   ├── process.sh
 │   │   │   └── agents.sh
-│   │   ├── commands/                  # Comandos
+│   │   ├── commands/                  # Commands
 │   │   │   ├── init.sh
 │   │   │   ├── doctor.sh
 │   │   │   ├── setup.sh
@@ -200,26 +200,26 @@ projeto/
 │       ├── tasks/
 │       ├── examples/
 │       ├── logs/
-│       └── .backups/                  # Backups do update
+│       └── .backups/                  # Update backups
 ```
 
 ## Shell Completions
 
 ```bash
-# Adicionar ao ~/.bashrc ou ~/.zshrc
+# Add to ~/.bashrc or ~/.zshrc
 source /path/to/.claude/scripts/completions/orchestrate.bash
 ```
 
-## Testes
+## Tests
 
 ```bash
 .claude/scripts/tests/test_runner.sh
 ```
 
-## Fonte dos Agentes
+## Agent Source
 
 - [VoltAgent/awesome-claude-code-subagents](https://github.com/VoltAgent/awesome-claude-code-subagents)
 
-## Licença
+## License
 
 MIT
