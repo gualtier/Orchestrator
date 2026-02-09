@@ -67,7 +67,7 @@ cmd_status() {
                 ;;
         esac
 
-        # Último commit
+        # Last commit
         if dir_exists "$worktree_path"; then
             local commit=$(cd "$worktree_path" && last_commit)
             echo -e "│ Commit: ${GRAY}$commit${NC}"

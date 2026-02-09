@@ -1,38 +1,38 @@
 #!/bin/bash
 # =============================================
-# COMMAND: init - Inicialização do orquestrador
+# COMMAND: init - Orchestrator initialization
 # =============================================
 
 cmd_init() {
     log_step "Inicializando orquestrador v3.3..."
 
-    # Validar repositório git
+    # Validate git repository
     validate_git_repo || return 1
 
-    # Criar estrutura de diretórios
+    # Create directory structure
     ensure_dir "$ORCHESTRATION_DIR"/{tasks,status,logs,pids,archive,checkpoints,.recovery,.backups}
     ensure_dir "$AGENTS_DIR"
     ensure_dir "$CLAUDE_DIR/scripts"
 
-    # Criar AGENT_CLAUDE.md base
+    # Create base AGENT_CLAUDE.md
     create_agent_claude_base
 
-    # Criar ou resetar PROJECT_MEMORY.md
+    # Create or reset PROJECT_MEMORY.md
     _init_project_memory
 
     # Configurar .gitignore
     _init_gitignore
 
-    # Criar exemplos se não existirem
+    # Create examples if they do not exist
     ensure_dir "$ORCHESTRATION_DIR/examples"
     create_example_tasks
 
-    # Inicializar arquivos
+    # Initialize files
     touch "$EVENTS_FILE"
 
     log_success "Estrutura criada!"
 
-    # Mostrar próximos passos
+    # Show next steps
     echo ""
     echo -e "${CYAN}Próximos passos:${NC}"
     echo ""
@@ -60,13 +60,13 @@ cmd_install_cli() {
 
     log_header "INSTALAR CLI"
 
-    # Verificar se o script existe
+    # Check if script exists
     if [[ ! -f "$script_path" ]]; then
         log_error "Script não encontrado: $script_path"
         return 1
     fi
 
-    # Verificar se já existe
+    # Check if already exists
     if [[ -L "$link_path" ]]; then
         local existing_target=$(readlink "$link_path")
         if [[ "$existing_target" == "$script_path" ]]; then
@@ -86,10 +86,10 @@ cmd_install_cli() {
         return 1
     fi
 
-    # Garantir que o script é executável
+    # Ensure the script is executable
     chmod +x "$script_path"
 
-    # Criar symlink
+    # Create symlink
     log_step "Criando symlink em $install_dir..."
 
     if sudo ln -sf "$script_path" "$link_path"; then
@@ -188,7 +188,7 @@ _init_gitignore() {
         ".claude/PROJECT_MEMORY.md.orchestrator-backup"
     )
 
-    # Se já tem o marcador, não adiciona novamente
+    # If marker already exists, do not add again
     if [[ -f "$gitignore" ]] && grep -q "$marker" "$gitignore" 2>/dev/null; then
         log_info ".gitignore já configurado (mantendo)"
         return 0
@@ -205,22 +205,22 @@ _init_gitignore() {
 }
 
 _init_project_memory() {
-    # Se não existe, criar novo
+    # If does not exist, create new
     if ! file_exists "$MEMORY_FILE"; then
         log_step "Criando PROJECT_MEMORY.md..."
         create_initial_memory
         return 0
     fi
 
-    # Verificar se é a memória do orquestrador (template do repo)
+    # Check if it is the orchestrator memory (repo template)
     if grep -q "Nome.*claude-orchestrator" "$MEMORY_FILE" 2>/dev/null; then
         log_warn "Detectado PROJECT_MEMORY.md do repositório do orquestrador"
         log_info "Criando memória limpa para seu projeto..."
 
-        # Backup do original (para referência)
+        # Backup of original (for reference)
         cp "$MEMORY_FILE" "$MEMORY_FILE.orchestrator-backup"
 
-        # Criar memória limpa
+        # Create clean memory
         create_initial_memory
 
         log_success "Nova memória criada!"
@@ -228,7 +228,7 @@ _init_project_memory() {
         return 0
     fi
 
-    # Memória já existe e é de outro projeto
+    # Memory already exists and is from another project
     log_info "PROJECT_MEMORY.md já existe (mantendo)"
 }
 
@@ -265,17 +265,17 @@ Você possui expertise especializada conforme os agentes carregados.
 ```markdown
 # Progresso: [tarefa]
 ## Status: EM ANDAMENTO
-## Concluído
+## Completed
 - [x] Item
 ## Pendente
 - [ ] Item
-## Última Atualização
+## Last Update
 [DATA]: [descrição]
 ```
 
 ### DONE.md (ao finalizar)
 ```markdown
-# Concluído: [tarefa]
+# Completed: [task]
 ## Resumo
 [O que foi feito]
 ## Arquivos
@@ -284,7 +284,7 @@ Você possui expertise especializada conforme os agentes carregados.
 [Instruções de teste]
 ```
 
-### BLOCKED.md (se necessário)
+### BLOCKED.md (if necessary)
 ```markdown
 # Bloqueado: [tarefa]
 ## Problema
@@ -313,7 +313,7 @@ create_initial_memory() {
 > **Última atualização**: $current_date
 > **Versão**: 0.1
 
-## Visão Geral
+## Overview
 
 ### Projeto
 
@@ -346,9 +346,9 @@ create_initial_memory() {
 - [ ] Feature 3
 - [ ] Feature 4
 
-## Decisões de Arquitetura
+## Architecture Decisions
 
-### ADR-001: [Título da decisão]
+### ADR-001: [Decision Title]
 
 - **Decisão**: [O que foi decidido]
 - **Motivo**: [Por que foi decidido]
@@ -360,11 +360,11 @@ create_initial_memory() {
 |----------|--------|---------|
 | - | - | - |
 
-## Lições Aprendidas
+## Lessons Learned
 
 1. [Adicione lições aprendidas durante o desenvolvimento]
 
-## Próxima Sessão
+## Next Session
 
 ### Em Progresso
 
@@ -385,7 +385,7 @@ create_example_tasks() {
 
     # Exemplo: Auth
     cat > "$examples_dir/auth.md" << 'EOF'
-# Tarefa: Sistema de Autenticação
+# Task: Authentication System
 
 ## Objetivo
 Implementar sistema de autenticação com JWT.
@@ -404,7 +404,7 @@ Implementar sistema de autenticação com JWT.
 - [ ] Middleware de autenticação
 - [ ] Testes
 
-### NÃO FAZER
+### DO NOT DO
 - OAuth/Social login (próxima fase)
 - 2FA (próxima fase)
 
@@ -415,7 +415,7 @@ Criar:
 - src/auth/middleware.ts
 - src/auth/models/user.ts
 
-## Critérios de Conclusão
+## Completion Criteria
 - [ ] Testes passando
 - [ ] Documentação da API
 - [ ] DONE.md criado
@@ -442,7 +442,7 @@ Criar API REST para gerenciamento de recursos.
 - [ ] Controllers
 - [ ] Testes
 
-### NÃO FAZER
+### DO NOT DO
 - Autenticação (outro worktree)
 - Frontend
 
@@ -453,7 +453,7 @@ Criar:
 - src/api/controllers/
 - src/api/validators/
 
-## Critérios de Conclusão
+## Completion Criteria
 - [ ] Endpoints funcionando
 - [ ] Testes passando
 - [ ] DONE.md criado
@@ -480,7 +480,7 @@ Criar interface de usuário responsiva.
 - [ ] Integração com API
 - [ ] Estilos
 
-### NÃO FAZER
+### DO NOT DO
 - Testes E2E (próxima fase)
 - Animações complexas
 
@@ -491,7 +491,7 @@ Criar:
 - src/hooks/
 - src/styles/
 
-## Critérios de Conclusão
+## Completion Criteria
 - [ ] UI funcionando
 - [ ] Responsivo
 - [ ] DONE.md criado

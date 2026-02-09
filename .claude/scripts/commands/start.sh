@@ -32,7 +32,7 @@ start_single_agent() {
     local worktree_path="../${PROJECT_NAME}-$name"
     local task_file="$ORCHESTRATION_DIR/tasks/$name.md"
 
-    # Validações
+    # Validations
     validate_name "$name" "agente" || return 1
 
     if ! dir_exists "$worktree_path"; then
@@ -68,13 +68,13 @@ start_single_agent() {
 
 Você é um agente executor com expertise em: $specialized_agents
 
-## Instruções Base
+## Base Instructions
 $(cat "$worktree_path/.claude/CLAUDE.md" 2>/dev/null || cat "$CLAUDE_DIR/AGENT_CLAUDE.md" 2>/dev/null || echo "")
 
 ## Expertise Especializada
 "
 
-    # Adicionar conteúdo dos agentes
+    # Add agent content
     for agent in $specialized_agents; do
         local agent_file="$worktree_path/.claude/agents/$agent.md"
         if file_exists "$agent_file"; then
@@ -105,7 +105,7 @@ COMECE AGORA!"
     # Registrar evento
     echo "[$(timestamp)] STARTING: $name [agents: $specialized_agents]" >> "$EVENTS_FILE"
 
-    # Iniciar processo
+    # Start process
     start_agent_process "$name" "$worktree_path" "$full_prompt"
 }
 

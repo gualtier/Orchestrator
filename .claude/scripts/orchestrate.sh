@@ -7,7 +7,7 @@
 set -eo pipefail
 
 # =============================================
-# CARREGAR MÓDULOS
+# LOAD MODULES
 # =============================================
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -31,7 +31,7 @@ source "$SCRIPT_DIR/commands/update.sh"
 source "$SCRIPT_DIR/commands/help.sh"
 
 # =============================================
-# CONFIGURAÇÃO DE TRAPS
+# TRAP CONFIGURATION
 # =============================================
 
 setup_traps
@@ -48,7 +48,7 @@ main() {
         # Agentes
         agents) cmd_agents "$@" ;;
 
-        # Inicialização
+        # Initialization
         init) cmd_init ;;
         init-sample) cmd_init_sample ;;
         install-cli) cmd_install_cli "$@" ;;
@@ -61,7 +61,7 @@ main() {
             fi
             ;;
 
-        # Execução
+        # Execution
         setup) cmd_setup "$@" ;;
         start) cmd_start "$@" ;;
         stop) cmd_stop "$@" ;;
@@ -73,22 +73,22 @@ main() {
         logs) cmd_logs "$@" ;;
         follow) cmd_follow "$@" ;;
 
-        # Verificação
+        # Verification
         verify) cmd_verify "$@" ;;
         verify-all) cmd_verify_all ;;
         review) cmd_review "$@" ;;
         pre-merge) cmd_pre_merge ;;
         report) cmd_report ;;
 
-        # Finalização
+        # Finalization
         merge) cmd_merge "$@" ;;
         cleanup) cmd_cleanup ;;
 
-        # Memória
+        # Memory
         show-memory) cmd_show_memory ;;
         update-memory) cmd_update_memory "$@" ;;
 
-        # Atualização
+        # Update
         update) cmd_update ;;
         update-check) cmd_update_check ;;
 

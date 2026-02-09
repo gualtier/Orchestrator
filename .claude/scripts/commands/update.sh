@@ -1,15 +1,15 @@
 #!/bin/bash
 # =============================================
-# COMMAND: update - Atualização do orquestrador
+# COMMAND: update - Orchestrator update
 # =============================================
 
-# Configuração
+# Configuration
 ORCHESTRATOR_BACKUP_DIR="$ORCHESTRATION_DIR/.backups"
 ORCHESTRATOR_SCRIPTS_PATH=".claude/scripts"
 MAX_BACKUPS=5
 
 # =============================================
-# FUNÇÕES AUXILIARES PRIVADAS
+# PRIVATE HELPER FUNCTIONS
 # =============================================
 
 _has_remote() {
@@ -17,7 +17,7 @@ _has_remote() {
 }
 
 _get_remote_default_branch() {
-    # Tenta descobrir o branch padrão do remote
+    # Try to discover the default remote branch
     local branch=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@')
     if [[ -z "$branch" ]]; then
         # Fallback: tenta main, depois master
@@ -93,7 +93,7 @@ _restore_backup() {
 
 _cleanup_old_backups() {
     if [[ -d "$ORCHESTRATOR_BACKUP_DIR" ]]; then
-        # Listar diretórios por data, manter apenas os últimos MAX_BACKUPS
+        # List directories by date, keep only the last MAX_BACKUPS
         local count=0
         for dir in $(ls -1dt "$ORCHESTRATOR_BACKUP_DIR"/*/ 2>/dev/null); do
             ((count++))
@@ -105,19 +105,19 @@ _cleanup_old_backups() {
 }
 
 _verify_scripts() {
-    # Verificar se orchestrate.sh existe
+    # Check if orchestrate.sh exists
     if [[ ! -f "$SCRIPT_DIR/orchestrate.sh" ]]; then
         log_error "orchestrate.sh não encontrado"
         return 1
     fi
 
-    # Verificar sintaxe bash do arquivo principal
+    # Check bash syntax of main file
     if ! bash -n "$SCRIPT_DIR/orchestrate.sh" 2>/dev/null; then
         log_error "Erro de sintaxe em orchestrate.sh"
         return 1
     fi
 
-    # Verificar se libs essenciais existem
+    # Check if essential libs exist
     local required_libs=(core.sh git.sh logging.sh validation.sh process.sh agents.sh)
     for lib in "${required_libs[@]}"; do
         if [[ ! -f "$SCRIPT_DIR/lib/$lib" ]]; then
@@ -126,7 +126,7 @@ _verify_scripts() {
         fi
     done
 
-    # Verificar se commands essenciais existem
+    # Check if essential commands exist
     local required_cmds=(init.sh help.sh)
     for cmd in "${required_cmds[@]}"; do
         if [[ ! -f "$SCRIPT_DIR/commands/$cmd" ]]; then
@@ -141,18 +141,18 @@ _verify_scripts() {
 _apply_update() {
     local branch=$(_get_remote_default_branch)
 
-    # Checkout seletivo apenas dos scripts
+    # Selective checkout of scripts only
     git checkout "origin/$branch" -- "$ORCHESTRATOR_SCRIPTS_PATH" 2>/dev/null
 }
 
 # =============================================
-# COMANDOS PÚBLICOS
+# PUBLIC COMMANDS
 # =============================================
 
 cmd_update_check() {
     log_header "VERIFICAR ATUALIZAÇÕES"
 
-    # Validações
+    # Validations
     validate_git_repo || return 1
 
     if ! _has_remote; then
@@ -210,7 +210,7 @@ cmd_update_check() {
 cmd_update() {
     log_header "ATUALIZAR ORQUESTRADOR"
 
-    # Validações iniciais
+    # Initial validations
     validate_git_repo || return 1
 
     if ! _has_remote; then
@@ -221,7 +221,7 @@ cmd_update() {
 
     local branch=$(_get_remote_default_branch)
 
-    # Verificar se há mudanças locais nos scripts
+    # Check for local changes in scripts
     if _has_local_changes; then
         log_warn "Há modificações locais nos scripts do orquestrador"
         echo ""
@@ -243,7 +243,7 @@ cmd_update() {
         return 1
     fi
 
-    # Verificar se há updates
+    # Check for updates
     local commits_behind=$(_get_commits_behind)
 
     if [[ "$commits_behind" == "0" ]]; then
@@ -251,7 +251,7 @@ cmd_update() {
         return 0
     fi
 
-    # Mostrar informações
+    # Show information
     local local_version=$(_get_local_version)
     local remote_version=$(_get_remote_version)
 
@@ -269,13 +269,13 @@ cmd_update() {
     log_separator
     echo ""
 
-    # Confirmar atualização
+    # Confirm update
     if ! confirm "Deseja atualizar o orquestrador?"; then
         log_info "Atualização cancelada"
         return 0
     fi
 
-    # Criar backup
+    # Create backup
     log_step "Criando backup..."
     local backup_path=$(_create_backup)
 
@@ -286,7 +286,7 @@ cmd_update() {
 
     log_info "Backup criado: $backup_path"
 
-    # Aplicar atualização
+    # Apply update
     log_step "Aplicando atualização..."
 
     if ! _apply_update; then
@@ -302,7 +302,7 @@ cmd_update() {
         return 1
     fi
 
-    # Verificar integridade
+    # Check integrity
     log_step "Verificando integridade..."
 
     if ! _verify_scripts; then

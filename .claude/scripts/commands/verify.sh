@@ -17,13 +17,13 @@ cmd_verify() {
 
     log_header "VERIFICAÇÃO: $name"
 
-    # 1. Verificar se worktree existe
+    # 1. Check if worktree exists
     if ! dir_exists "$worktree_path"; then
         log_error "Worktree não encontrada: $worktree_path"
         return 1
     fi
 
-    # 2. Verificar DONE.md
+    # 2. Check DONE.md
     echo -e "${YELLOW}[1/5] Verificando DONE.md...${NC}"
     if file_exists "$worktree_path/DONE.md"; then
         log_success "DONE.md existe"
@@ -40,7 +40,7 @@ cmd_verify() {
         ((errors++))
     fi
 
-    # 3. Verificar arquivos pendentes
+    # 3. Check pending files
     echo -e "${YELLOW}[2/5] Verificando arquivos pendentes...${NC}"
     local uncommitted=$(cd "$worktree_path" && git status --porcelain 2>/dev/null | wc -l | tr -d ' ')
     if [[ $uncommitted -gt 0 ]]; then
@@ -51,7 +51,7 @@ cmd_verify() {
         log_success "Todos os arquivos commitados"
     fi
 
-    # 4. Verificar se há BLOCKED.md
+    # 4. Check if there is BLOCKED.md
     echo -e "${YELLOW}[3/5] Verificando bloqueios...${NC}"
     if file_exists "$worktree_path/BLOCKED.md"; then
         log_error "Tarefa está BLOQUEADA"
@@ -61,7 +61,7 @@ cmd_verify() {
         log_success "Sem bloqueios"
     fi
 
-    # 5. Verificar testes
+    # 5. Check tests
     echo -e "${YELLOW}[4/5] Verificando testes...${NC}"
     local has_tests=false
 
@@ -84,7 +84,7 @@ cmd_verify() {
         log_info "Nenhum script de teste detectado"
     fi
 
-    # 6. Verificar commits
+    # 6. Check commits
     echo -e "${YELLOW}[5/5] Verificando commits...${NC}"
     local commit_count=$(cd "$worktree_path" && count_commits_since main)
     log_info "$commit_count commit(s) desde main"
@@ -150,13 +150,13 @@ cmd_review() {
 
     log_step "Criando review para: $name"
 
-    # Obter branch
+    # Get branch
     local source_branch=$(cd "$worktree_path" && current_branch)
 
-    # Criar worktree de review
+    # Create worktree de review
     cmd_setup "$review_name" --preset review --from "$source_branch" || return 1
 
-    # Criar tarefa de review
+    # Create review task
     local review_task="$ORCHESTRATION_DIR/tasks/$review_name.md"
 
     cat > "$review_task" << EOF
@@ -170,12 +170,12 @@ Revisar o código desenvolvido na worktree \`$name\`.
 
 ## Checklist
 
-### Qualidade de Código
+### Code Quality
 - [ ] Código segue boas práticas
 - [ ] Nomes claros
 - [ ] Funções pequenas
 
-### Segurança
+### Security
 - [ ] Sem vulnerabilidades
 - [ ] Inputs validados
 - [ ] Sem secrets hardcoded
@@ -191,7 +191,7 @@ Revisar o código desenvolvido na worktree \`$name\`.
 ## Arquivos para Revisar
 $(cd "$worktree_path" && files_changed_since main | sed 's/^/- /')
 
-## Entregável
+## Deliverable
 Criar REVIEW.md com problemas e sugestões.
 EOF
 
@@ -205,7 +205,7 @@ cmd_pre_merge() {
     local all_passed=true
     local worktrees=()
 
-    # Listar worktrees (ignorar reviews)
+    # List worktrees (ignore reviews)
     for task_file in "$ORCHESTRATION_DIR/tasks"/*.md; do
         [[ -f "$task_file" ]] || continue
         local name=$(basename "$task_file" .md)
@@ -220,7 +220,7 @@ cmd_pre_merge() {
 
     log_header "PRÉ-MERGE CHECK"
 
-    # 1. Verificar todas
+    # 1. Check all
     echo -e "${YELLOW}[1/3] Verificando worktrees...${NC}"
     for name in "${worktrees[@]}"; do
         if cmd_verify "$name" > /dev/null 2>&1; then
@@ -231,7 +231,7 @@ cmd_pre_merge() {
         fi
     done
 
-    # 2. Verificar conflitos
+    # 2. Check conflicts
     echo ""
     echo -e "${YELLOW}[2/3] Verificando conflitos potenciais...${NC}"
 
@@ -285,7 +285,7 @@ cmd_report() {
     local report_file="$ORCHESTRATION_DIR/REPORT_$(date '+%Y%m%d_%H%M%S').md"
 
     cat > "$report_file" << EOF
-# Relatório de Desenvolvimento
+# Development Report
 
 > **Gerado em**: $(date '+%Y-%m-%d %H:%M:%S')
 > **Projeto**: $PROJECT_NAME

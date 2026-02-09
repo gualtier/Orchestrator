@@ -89,21 +89,21 @@ EXEMPLO COMPLETO:
   ./orchestrate.sh init
   ./orchestrate.sh doctor
 
-  # 2. Criar worktrees
+  # 2. Create worktrees
   ./orchestrate.sh setup auth --preset auth
   ./orchestrate.sh setup api --preset api
 
-  # 3. Criar tarefas
+  # 3. Create tasks
   ./orchestrate.sh init-sample
 
-  # 4. Iniciar
+  # 4. Start
   ./orchestrate.sh start
 
   # 5. Monitorar
   ./orchestrate.sh status
   ./orchestrate.sh wait
 
-  # 6. Verificar qualidade
+  # 6. Check quality
   ./orchestrate.sh verify-all
   ./orchestrate.sh pre-merge
   ./orchestrate.sh report

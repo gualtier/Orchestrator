@@ -1,13 +1,13 @@
 #!/bin/bash
 # =============================================
-# COMMAND: setup - Criar worktree com agentes
+# COMMAND: setup - Create worktree with agents
 # =============================================
 
 cmd_setup() {
     local name=$1
     shift || true
 
-    # Validar nome
+    # Validate name
     if [[ -z "$name" ]]; then
         log_error "Uso: $0 setup <nome> [--preset <preset>] [--agents <a1,a2>] [--from <branch>]"
         return 1
@@ -65,7 +65,7 @@ cmd_setup() {
         }
     fi
 
-    # Criar worktree
+    # Create worktree
     create_git_worktree "$name" "$from_branch" || return 1
 
     local worktree_path="../${PROJECT_NAME}-$name"
@@ -76,7 +76,7 @@ cmd_setup() {
         log_success "Agentes copiados para worktree"
     fi
 
-    # Criar estrutura básica
+    # Create basic structure
     ensure_dir "$worktree_path/.claude"
 
     log_success "Worktree '$name' criada com sucesso!"

@@ -1,6 +1,6 @@
 #!/bin/bash
 # =============================================
-# LOGGING - Funções de log e cores
+# LOGGING - Log functions and colors
 # =============================================
 
 # Cores
@@ -17,7 +17,7 @@ BOLD='\033[1m'
 # Timestamp
 timestamp() { date '+%Y-%m-%d %H:%M:%S'; }
 
-# Funções de log
+# Log functions
 log_info() { echo -e "${BLUE}[$(timestamp)]${NC} $1"; }
 log_success() { echo -e "${GREEN}[$(timestamp)] ✓${NC} $1"; }
 log_warn() { echo -e "${YELLOW}[$(timestamp)] ⚠${NC} $1"; }
@@ -40,7 +40,7 @@ log_separator() {
     echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 }
 
-# JSON output (para automação)
+# JSON output (for automation)
 log_json() {
     local level=$1
     local message=$2

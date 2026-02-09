@@ -1,10 +1,10 @@
 #!/bin/bash
 # =============================================
-# GIT - Operações Git e Worktree
+# GIT - Git and Worktree Operations
 # =============================================
 
 # =============================================
-# INFORMAÇÕES DO REPOSITÓRIO
+# REPOSITORY INFORMATION
 # =============================================
 
 is_git_clean() {
@@ -25,10 +25,10 @@ branch_exists() {
 }
 
 # =============================================
-# OPERAÇÕES DE WORKTREE
+# WORKTREE OPERATIONS
 # =============================================
 
-# Lista worktrees do orquestrador
+# List orchestrator worktrees
 list_worktrees() {
     local prefix="${PROJECT_NAME}-"
 
@@ -36,37 +36,37 @@ list_worktrees() {
         local path=$(echo "$line" | awk '{print $1}')
         local name=$(basename "$path")
 
-        # Filtrar apenas worktrees do orquestrador
+        # Filter only orchestrator worktrees
         if [[ "$name" == "$prefix"* ]]; then
             echo "${name#$prefix}"
         fi
     done
 }
 
-# Verifica se worktree existe
+# Check if worktree exists
 worktree_exists() {
     local name=$1
     local worktree_path="../${PROJECT_NAME}-$name"
     dir_exists "$worktree_path"
 }
 
-# Cria worktree
+# Create worktree
 create_git_worktree() {
     local name=$1
     local from_branch=${2:-$(current_branch)}
     local worktree_path="../${PROJECT_NAME}-$name"
     local branch="feature/$name"
 
-    # Validar nome
+    # Validate name
     validate_name "$name" "worktree" || return 1
 
-    # Verificar se já existe
+    # Check if already exists
     if worktree_exists "$name"; then
         log_warn "Worktree já existe: $name"
         return 0
     fi
 
-    # Verificar branch de origem
+    # Check source branch
     if ! branch_exists "$from_branch"; then
         log_error "Branch de origem não existe: $from_branch"
         return 1
@@ -74,11 +74,11 @@ create_git_worktree() {
 
     log_info "Criando worktree: $name (de $from_branch)"
 
-    # Marcar para cleanup em caso de erro
+    # Mark for cleanup in case of error
     CLEANUP_NEEDED=true
     CLEANUP_WORKTREE="$worktree_path"
 
-    # Criar branch e worktree
+    # Create branch and worktree
     if branch_exists "$branch"; then
         log_info "Branch $branch já existe, usando existente"
         git worktree add "$worktree_path" "$branch" || {
@@ -111,7 +111,7 @@ remove_git_worktree() {
         return 0
     fi
 
-    # Verificar mudanças não commitadas
+    # Check for uncommitted changes
     if [[ "$force" != "true" ]]; then
         local uncommitted=$(cd "$worktree_path" && git status --porcelain 2>/dev/null | wc -l | tr -d ' ')
         if [[ $uncommitted -gt 0 ]]; then
@@ -134,7 +134,7 @@ remove_git_worktree() {
 }
 
 # =============================================
-# OPERAÇÕES DE MERGE
+# MERGE OPERATIONS
 # =============================================
 
 # Simula merge para verificar conflitos
@@ -147,11 +147,11 @@ simulate_merge() {
         return 1
     fi
 
-    # Criar branch temporária
+    # Create temporary branch
     local temp_branch="merge-test-$(date +%s)"
     git checkout -b "$temp_branch" "$target" 2>/dev/null || return 1
 
-    # Tentar merge
+    # Try merge
     if git merge --no-commit --no-ff "$branch" 2>/dev/null; then
         git merge --abort 2>/dev/null || true
         git checkout - 2>/dev/null
@@ -193,7 +193,7 @@ merge_branch() {
 }
 
 # =============================================
-# INFORMAÇÕES DE COMMIT
+# COMMIT INFORMATION
 # =============================================
 
 # Conta commits desde branch
@@ -202,13 +202,13 @@ count_commits_since() {
     git rev-list --count HEAD ^"$branch" 2>/dev/null || echo 0
 }
 
-# Lista arquivos modificados desde branch
+# List modified files since branch
 files_changed_since() {
     local branch=${1:-main}
     git diff --name-only "$branch" 2>/dev/null
 }
 
-# Último commit
+# Last commit
 last_commit() {
     git log --oneline -1 2>/dev/null || echo "nenhum"
 }

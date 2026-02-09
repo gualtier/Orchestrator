@@ -1,9 +1,9 @@
 #!/bin/bash
 # =============================================
-# CORE - Configuração e utilitários básicos
+# CORE - Configuration and basic utilities
 # =============================================
 
-# Diretório base dos scripts
+# Scripts base directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 LIB_DIR="$SCRIPT_DIR/lib"
 
@@ -11,7 +11,7 @@ LIB_DIR="$SCRIPT_DIR/lib"
 source "$LIB_DIR/logging.sh"
 
 # =============================================
-# CONFIGURAÇÃO
+# CONFIGURATION
 # =============================================
 
 init_config() {
@@ -30,11 +30,11 @@ init_config() {
     export AGENTS_DIR MEMORY_FILE STATE_FILE EVENTS_FILE AGENTS_SCRIPT
 }
 
-# Inicializar configuração automaticamente
+# Initialize configuration automatically
 init_config
 
 # =============================================
-# UTILITÁRIOS BÁSICOS
+# BASIC UTILITIES
 # =============================================
 
 ensure_dir() { mkdir -p "$1"; }
@@ -42,7 +42,7 @@ file_exists() { [[ -f "$1" ]]; }
 dir_exists() { [[ -d "$1" ]]; }
 
 # =============================================
-# CONFIRMAÇÃO INTERATIVA
+# INTERACTIVE CONFIRMATION
 # =============================================
 
 confirm() {
@@ -52,7 +52,7 @@ confirm() {
     # Se --force, retorna true
     [[ "${FORCE:-}" == "true" ]] && return 0
 
-    # Se não é interativo, usa default
+    # If not interactive, use default
     if [[ ! -t 0 ]]; then
         [[ "$default" == "y" ]] && return 0 || return 1
     fi
@@ -78,11 +78,11 @@ confirm() {
 # TRATAMENTO DE ERROS
 # =============================================
 
-# Variável para rastrear cleanup necessário
+# Variable to track necessary cleanup
 CLEANUP_NEEDED=false
 CLEANUP_WORKTREE=""
 
-# Trap para cleanup em caso de erro/interrupção
+# Trap for cleanup in case of error/interruption
 cleanup_on_exit() {
     local exit_code=$?
 

@@ -1,26 +1,26 @@
 #!/bin/bash
 # =============================================
-# TEST RUNNER - Framework de testes
+# TEST RUNNER - Test framework
 # =============================================
 
-# Não usar set -e para que testes que falham não parem a execução
+# Don't use set -e so that failing tests don't stop execution
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TEST_DIR="$SCRIPT_DIR/tests"
 
-# Cores
+# Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
-# Contadores
+# Counters
 TESTS_RUN=0
 TESTS_PASSED=0
 TESTS_FAILED=0
 
 # =============================================
-# FUNÇÕES DE TESTE
+# TEST FUNCTIONS
 # =============================================
 
 assert_equals() {
@@ -109,7 +109,7 @@ assert_command_fails() {
 }
 
 # =============================================
-# EXECUÇÃO DE TESTES
+# TEST EXECUTION
 # =============================================
 
 run_test() {
@@ -138,7 +138,7 @@ run_test_file() {
 
     source "$test_file"
 
-    # Executar todas as funções que começam com "test_"
+    # Execute all functions starting with "test_"
     for func in $(declare -F | awk '{print $3}' | grep "^test_"); do
         run_test "$func" "$func"
     done
@@ -156,18 +156,18 @@ main() {
     echo -e "${YELLOW}║     ORCHESTRATOR TEST SUITE          ║${NC}"
     echo -e "${YELLOW}╚══════════════════════════════════════╝${NC}"
 
-    # Carregar bibliotecas
+    # Load libraries
     source "$SCRIPT_DIR/lib/core.sh" 2>/dev/null || true
     source "$SCRIPT_DIR/lib/validation.sh" 2>/dev/null || true
 
-    # Executar testes
+    # Execute tests
     for test_file in "$TEST_DIR"/test_*.sh; do
         [[ -f "$test_file" ]] || continue
         [[ "$test_file" == *"test_runner.sh" ]] && continue
 
         local test_name=$(basename "$test_file" .sh)
 
-        # Filtrar se especificado
+        # Filter if specified
         if [[ -n "$filter" ]] && [[ "$test_name" != *"$filter"* ]]; then
             continue
         fi
@@ -175,7 +175,7 @@ main() {
         run_test_file "$test_file"
     done
 
-    # Resumo
+    # Summary
     echo ""
     echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo -e "Total: $TESTS_RUN | ${GREEN}Passed: $TESTS_PASSED${NC} | ${RED}Failed: $TESTS_FAILED${NC}"

@@ -1,6 +1,6 @@
 #!/bin/bash
 # =============================================
-# COMMAND: doctor - Diagnóstico do sistema
+# COMMAND: doctor - System diagnostics
 # =============================================
 
 cmd_doctor() {
@@ -30,7 +30,7 @@ cmd_doctor() {
         ((errors++))
     fi
 
-    # 3. Repositório Git
+    # 3. Git Repository
     echo -e "${YELLOW}[3/8] Verificando repositório...${NC}"
     if git rev-parse --is-inside-work-tree &>/dev/null; then
         log_success "Repositório Git válido"
@@ -41,7 +41,7 @@ cmd_doctor() {
         ((errors++))
     fi
 
-    # 4. Estrutura de diretórios
+    # 4. Directory structure
     echo -e "${YELLOW}[4/8] Verificando estrutura...${NC}"
     local dirs_ok=true
     for dir in "$CLAUDE_DIR" "$ORCHESTRATION_DIR" "$AGENTS_DIR"; do
@@ -63,7 +63,7 @@ cmd_doctor() {
     local worktree_count=$(git worktree list 2>/dev/null | wc -l | tr -d ' ')
     log_info "Total de worktrees: $worktree_count"
 
-    # Verificar órfãs
+    # Check for orphans
     local orphans=0
     while IFS= read -r line; do
         local path=$(echo "$line" | awk '{print $1}')
@@ -108,7 +108,7 @@ cmd_doctor() {
 
     log_info "$running agente(s) rodando"
 
-    # 7. Espaço em disco
+    # 7. Disk space
     echo -e "${YELLOW}[7/8] Verificando espaço em disco...${NC}"
     local disk_free=$(df -h . 2>/dev/null | tail -1 | awk '{print $4}')
     local disk_pct=$(df -h . 2>/dev/null | tail -1 | awk '{print $5}' | tr -d '%')
@@ -130,7 +130,7 @@ cmd_doctor() {
 
     log_info "$log_count arquivo(s) de log ($log_size)"
 
-    # Verificar logs grandes
+    # Check large logs
     for logfile in "$ORCHESTRATION_DIR/logs"/*.log; do
         [[ -f "$logfile" ]] || continue
         local size=$(stat -f%z "$logfile" 2>/dev/null || stat -c%s "$logfile" 2>/dev/null || echo 0)
@@ -162,7 +162,7 @@ cmd_doctor() {
 cmd_doctor_fix() {
     log_step "Corrigindo problemas automaticamente..."
 
-    # Limpar PIDs órfãos
+    # Clean orphaned PIDs
     for pidfile in "$ORCHESTRATION_DIR/pids"/*.pid; do
         [[ -f "$pidfile" ]] || continue
         local pid=$(cat "$pidfile")
@@ -173,7 +173,7 @@ cmd_doctor_fix() {
         fi
     done
 
-    # Limpar worktrees órfãs
+    # Clean orphaned worktrees
     git worktree prune 2>/dev/null
     log_info "Worktrees órfãs removidas"
 

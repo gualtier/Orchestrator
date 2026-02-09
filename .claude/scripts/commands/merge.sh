@@ -1,6 +1,6 @@
 #!/bin/bash
 # =============================================
-# COMMAND: merge/cleanup - Finalização
+# COMMAND: merge/cleanup - Finalization
 # =============================================
 
 cmd_merge() {
@@ -8,7 +8,7 @@ cmd_merge() {
 
     log_step "Iniciando merge para: $target"
 
-    # Verificar conclusão de todas as tarefas
+    # Check completion of all tasks
     for task_file in "$ORCHESTRATION_DIR/tasks"/*.md; do
         [[ -f "$task_file" ]] || continue
         local name=$(basename "$task_file" .md)
@@ -76,7 +76,7 @@ cmd_merge() {
 cmd_cleanup() {
     log_step "Limpando worktrees..."
 
-    # Confirmar operação destrutiva
+    # Confirm destructive operation
     if ! confirm "Remover todas as worktrees? Dados não commitados serão perdidos."; then
         log_info "Operação cancelada"
         return 0
@@ -93,7 +93,7 @@ cmd_cleanup() {
         local name=$(basename "$task_file" .md)
         local worktree_path="../${PROJECT_NAME}-$name"
 
-        # Parar agente se rodando
+        # Stop agent if running
         stop_agent_process "$name" true 2>/dev/null || true
 
         # Arquivar artefatos
@@ -110,7 +110,7 @@ cmd_cleanup() {
             log_warn "Falha ao remover: $name"
         fi
 
-        # Mover tarefa para arquivo
+        # Move task to file
         mv "$task_file" "$archive_dir/"
     done
 
@@ -118,7 +118,7 @@ cmd_cleanup() {
     rm -f "$ORCHESTRATION_DIR/logs"/*.log
     rm -f "$ORCHESTRATION_DIR/pids"/*
 
-    # Limpar worktrees órfãs
+    # Clean orphaned worktrees
     git worktree prune 2>/dev/null
 
     log_success "Cleanup completo! ($removed worktrees removidas)"
@@ -163,7 +163,7 @@ cmd_update_memory() {
     local current_date=$(date '+%Y-%m-%d %H:%M')
     local escaped_date=$(escape_sed "$current_date")
 
-    # 1. Atualizar timestamp
+    # 1. Update timestamp
     if [[ "$(uname)" == "Darwin" ]]; then
         sed -i '' "s|> \*\*Última atualização\*\*:.*|> **Última atualização**: $escaped_date|" "$MEMORY_FILE"
     else
@@ -171,12 +171,12 @@ cmd_update_memory() {
     fi
     log_info "Timestamp atualizado"
 
-    # 2. Incrementar versão (se solicitado)
+    # 2. Increment version (if requested)
     if [[ "$bump_version" == "true" ]]; then
         _bump_memory_version
     fi
 
-    # 3. Gerar changelog (se solicitado)
+    # 3. Generate changelog (if requested)
     if [[ "$generate_changelog" == "true" ]]; then
         _generate_changelog "$commits_count"
     fi
@@ -184,7 +184,7 @@ cmd_update_memory() {
     log_success "Memória atualizada"
 }
 
-# Incrementar versão no formato X.Y
+# Increment version in X.Y format
 _bump_memory_version() {
     local current_version=$(grep -o '> \*\*Versão\*\*: [0-9.]*' "$MEMORY_FILE" | grep -o '[0-9.]*$')
 
@@ -201,7 +201,7 @@ _bump_memory_version() {
     minor=$((minor + 1))
     local new_version="${major}.${minor}"
 
-    # Atualizar no arquivo
+    # Update in file
     if [[ "$(uname)" == "Darwin" ]]; then
         sed -i '' "s|> \*\*Versão\*\*: $current_version|> **Versão**: $new_version|" "$MEMORY_FILE"
     else
@@ -211,7 +211,7 @@ _bump_memory_version() {
     log_info "Versão: $current_version → $new_version"
 }
 
-# Gerar changelog baseado nos commits recentes
+# Generate changelog based on recent commits
 _generate_changelog() {
     local count=${1:-5}
     local changelog_file="$ORCHESTRATION_DIR/CHANGELOG.md"
@@ -219,7 +219,7 @@ _generate_changelog() {
 
     log_info "Gerando changelog (últimos $count commits)..."
 
-    # Obter commits recentes
+    # Get recent commits
     local commits=$(git log --oneline -n "$count" --pretty=format:"- %s (%h)" 2>/dev/null)
 
     if [[ -z "$commits" ]]; then
@@ -227,7 +227,7 @@ _generate_changelog() {
         return 0
     fi
 
-    # Criar ou atualizar changelog
+    # Create or update changelog
     local entry="
 ## [$today]
 
@@ -235,7 +235,7 @@ $commits
 "
 
     if file_exists "$changelog_file"; then
-        # Inserir após o título
+        # Insert after title
         local temp_file=$(mktemp)
         {
             head -n 2 "$changelog_file"
@@ -244,7 +244,7 @@ $commits
         } > "$temp_file"
         mv "$temp_file" "$changelog_file"
     else
-        # Criar novo
+        # Create new
         cat > "$changelog_file" << EOF
 # Changelog
 

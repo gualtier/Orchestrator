@@ -2,7 +2,7 @@
 
 # ===========================================
 # 🤖 GERENCIADOR DE AGENTES ESPECIALIZADOS
-#    Integração com VoltAgent/awesome-claude-code-subagents
+#    Integration with VoltAgent/awesome-claude-code-subagents
 # ===========================================
 
 set -eo pipefail
@@ -25,7 +25,7 @@ log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
 # ===========================================
-# CATÁLOGO DE AGENTES (usando função)
+# AGENT CATALOG (using function)
 # ===========================================
 
 get_agent_path() {
@@ -150,7 +150,7 @@ get_preset_agents() {
 }
 
 # ===========================================
-# FUNÇÕES
+# FUNCTIONS
 # ===========================================
 
 ensure_dir() {
@@ -269,7 +269,7 @@ list_agents() {
     
     echo ""
     echo -e "${YELLOW}Uso:${NC}"
-    echo "  $0 install <agente>           # Instalar agente específico"
+    echo "  $0 install <agent>              # Install specific agent"
     echo "  $0 install-preset <preset>    # Instalar preset"
 }
 
@@ -346,10 +346,10 @@ PRESETS DISPONÍVEIS:
   review      → code-reviewer, architect-reviewer, security-auditor
 
 EXEMPLOS:
-  # Instalar preset para módulo de autenticação
+  # Install preset for authentication module
   ./agents.sh install-preset auth
 
-  # Instalar agentes específicos
+  # Install specific agents
   ./agents.sh install typescript-pro
   ./agents.sh install react-specialist
 

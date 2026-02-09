@@ -113,7 +113,7 @@ download_agent() {
     fi
 }
 
-# Garantir que agentes estão instalados
+# Ensure agents are installed
 ensure_agents_installed() {
     local agents="$1"
     local failed=0
@@ -136,7 +136,7 @@ ensure_agents_installed() {
     return $failed
 }
 
-# Listar agentes instalados
+# List installed agents
 list_installed_agents() {
     if [[ ! -d "$AGENTS_DIR" ]]; then
         echo ""
@@ -166,7 +166,7 @@ copy_agents_to_worktree() {
         fi
     done
 
-    # Salvar lista de agentes usados
+    # Save list of used agents
     echo "$agents" > "$worktree_path/.claude/AGENTS_USED"
 
     # Copiar AGENT_CLAUDE.md base

@@ -1,23 +1,23 @@
-# 🛠️ Presets Customizados para Este Projeto
+# 🛠️ Custom Presets for This Project
 
-Como este projeto é em **Bash**, os presets padrão (focados em TypeScript/Python) não são ideais.
+Since this project is in **Bash**, the default presets (focused on TypeScript/Python) are not ideal.
 
-## Agentes Recomendados para Este Projeto
+## Recommended Agents for This Project
 
-### Para scripts bash:
-- `cli-developer` - Expertise em CLI e scripts
-- `devops-engineer` - Boas práticas de shell
-- `code-reviewer` - Review de código
+### For bash scripts:
+- `cli-developer` - CLI and scripting expertise
+- `devops-engineer` - Shell best practices
+- `code-reviewer` - Code review
 
-### Para documentação:
-- `documentation-engineer` - Docs técnicos
-- `technical-writer` - README, guias
+### For documentation:
+- `documentation-engineer` - Technical docs
+- `technical-writer` - README, guides
 
-### Para testes:
-- `qa-expert` - Estratégias de teste
-- `test-automator` - Automação
+### For testing:
+- `qa-expert` - Testing strategies
+- `test-automator` - Automation
 
-## Presets Sugeridos
+## Suggested Presets
 
 ### `bash-dev`
 ```bash
@@ -34,15 +34,15 @@ Como este projeto é em **Bash**, os presets padrão (focados em TypeScript/Pyth
 .claude/scripts/orchestrate.sh setup tests --agents qa-expert,test-automator,cli-developer
 ```
 
-## Exemplo de Uso
+## Usage Example
 
 ```bash
-# Desenvolver nova feature
-.claude/scripts/orchestrate.sh setup nova-feature --agents cli-developer,devops-engineer
+# Develop new feature
+.claude/scripts/orchestrate.sh setup new-feature --agents cli-developer,devops-engineer
 
-# Criar documentação
-.claude/scripts/orchestrate.sh setup documentacao --agents documentation-engineer,technical-writer
+# Create documentation
+.claude/scripts/orchestrate.sh setup documentation --agents documentation-engineer,technical-writer
 
-# Adicionar testes
-.claude/scripts/orchestrate.sh setup testes --agents qa-expert,test-automator
+# Add tests
+.claude/scripts/orchestrate.sh setup tests --agents qa-expert,test-automator
 ```

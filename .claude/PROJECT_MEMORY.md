@@ -1,39 +1,39 @@
 # Project Memory - Claude Orchestrator
 
-> **Última atualização**: 2026-01-28 11:42
-> **Versão**: 3.3
+> **Last update**: 2026-01-28 11:42
+> **Version**: 3.3
 
-## Visão Geral
+## Overview
 
-### Projeto
+### Project
 
-- **Nome**: claude-orchestrator
-- **Descrição**: Sistema de orquestração de agentes Claude usando Git Worktrees com agentes especializados
-- **Início**: 2025-01-21
+- **Name**: claude-orchestrator
+- **Description**: Claude agent orchestration system using Git Worktrees with specialized agents
+- **Started**: 2025-01-21
 - **Repo**: [local/github]
 
 ### Stack
 
-| Camada | Tecnologia |
-|--------|------------|
-| Linguagem | Bash |
-| Dependências | Git, curl, Claude CLI |
-| Agentes | VoltAgent/awesome-claude-code-subagents |
+| Layer        | Technology                      |
+|--------------|---------------------------------|
+| Language     | Bash                            |
+| Dependencies | Git, curl, Claude CLI           |
+| Agents       | VoltAgent/awesome-claude-code-subagents |
 
-## Arquitetura v3.1
+## Architecture v3.1
 
-### Estrutura Modular
+### Modular Structure
 
 ```
 .claude/scripts/
-├── orchestrate.sh          # Entry point (68 linhas)
+├── orchestrate.sh          # Entry point (68 lines)
 ├── lib/
-│   ├── logging.sh          # Log e cores
-│   ├── core.sh             # Config e utilitários
-│   ├── validation.sh       # Validação de entrada
-│   ├── git.sh              # Operações git/worktree
-│   ├── process.sh          # Gestão de processos
-│   └── agents.sh           # Gestão de agentes
+│   ├── logging.sh          # Logging and colors
+│   ├── core.sh             # Config and utilities
+│   ├── validation.sh       # Input validation
+│   ├── git.sh              # Git/worktree operations
+│   ├── process.sh          # Process management
+│   └── agents.sh           # Agent management
 ├── commands/
 │   ├── init.sh             # init, init-sample
 │   ├── doctor.sh           # doctor, doctor --fix
@@ -45,149 +45,149 @@
 │   ├── update.sh           # update, update-check
 │   └── help.sh             # help
 ├── tests/
-│   ├── test_runner.sh      # Framework de testes
-│   └── test_validation.sh  # 20 testes
+│   ├── test_runner.sh      # Test framework
+│   └── test_validation.sh  # 20 tests
 └── completions/
     └── orchestrate.bash    # Shell completions
 ```
 
-### Componentes
+### Components
 
-| Componente | Arquivo | Responsabilidade |
-|------------|---------|------------------|
-| Entry Point | orchestrate.sh | Carregar libs e rotear comandos |
-| Logging | lib/logging.sh | Cores, timestamps, formatação |
-| Core | lib/core.sh | Configuração, traps, utilitários |
-| Validation | lib/validation.sh | Validar nomes, presets, arquivos |
-| Git | lib/git.sh | Worktrees, branches, merge |
-| Process | lib/process.sh | PIDs, logs, start/stop |
-| Agents | lib/agents.sh | Download, cache, presets |
+| Component   | File               | Responsibility                          |
+|-------------|--------------------|-----------------------------------------|
+| Entry Point | orchestrate.sh     | Load libs and route commands            |
+| Logging     | lib/logging.sh     | Colors, timestamps, formatting          |
+| Core        | lib/core.sh        | Configuration, traps, utilities         |
+| Validation  | lib/validation.sh  | Validate names, presets, files          |
+| Git         | lib/git.sh         | Worktrees, branches, merge              |
+| Process     | lib/process.sh     | PIDs, logs, start/stop                  |
+| Agents      | lib/agents.sh      | Download, cache, presets                |
 
 ## Roadmap
 
-### v1.0 - Base
+### v1.0 - Foundation
 
-- [x] Orquestração básica com worktrees
-- [x] Memória persistente
-- [x] Comandos básicos (setup, start, status, merge)
+- [x] Basic orchestration with worktrees
+- [x] Persistent memory
+- [x] Basic commands (setup, start, status, merge)
 
-### v2.0 - Robustez
+### v2.0 - Robustness
 
-- [x] Validação pré-execução
-- [x] Sistema de checkpoints
-- [x] Recovery automático
+- [x] Pre-execution validation
+- [x] Checkpoint system
+- [x] Automatic recovery
 - [x] Monitor dashboard
 
-### v3.0 - Agentes Especializados
+### v3.0 - Specialized Agents
 
-- [x] Integração com VoltAgent
-- [x] Download automático de agentes
-- [x] Sistema de presets
-- [x] Cache local de agentes
+- [x] VoltAgent integration
+- [x] Automatic agent download
+- [x] Preset system
+- [x] Local agent cache
 
-### v3.1 - Modularização
+### v3.1 - Modularization
 
-- [x] Refatorar script em módulos (lib/, commands/)
-- [x] Validação de entrada em todos os comandos
-- [x] Comando doctor para diagnóstico
-- [x] Confirmação em operações destrutivas
-- [x] Output JSON (status --json)
-- [x] Framework de testes automatizados
+- [x] Refactor script into modules (lib/, commands/)
+- [x] Input validation in all commands
+- [x] Doctor command for diagnostics
+- [x] Confirmation in destructive operations
+- [x] JSON output (status --json)
+- [x] Automated testing framework
 - [x] Shell completions
-- [x] Exemplos de tarefas (init-sample)
-- [x] Comandos de verificação (verify, pre-merge, report)
+- [x] Task examples (init-sample)
+- [x] Verification commands (verify, pre-merge, report)
 
-### v3.2 - Gestão de Memória
+### v3.2 - Memory Management
 
-- [x] Flags para update-memory (--bump, --changelog, --full)
-- [x] Incremento automático de versão
-- [x] Geração de changelog baseado em commits
-- [x] Fluxo de execução direta no CLAUDE.md
-- [x] Rotina obrigatória de update-memory após commits
+- [x] Flags for update-memory (--bump, --changelog, --full)
+- [x] Automatic version increment
+- [x] Changelog generation from commits
+- [x] Direct execution flow in CLAUDE.md
+- [x] Mandatory update-memory routine after commits
 
-### v3.3 - Auto-Update (ATUAL)
+### v3.3 - Auto-Update (CURRENT)
 
-- [x] Comando `update` para atualizar do remote
-- [x] Comando `update-check` para verificar atualizações
-- [x] Backup automático antes de atualizar
-- [x] Rollback automático em caso de falha
-- [x] Verificação de integridade pós-update
-- [x] Comando `install-cli` para criar atalho global
-- [x] Comando `uninstall-cli` para remover atalho
+- [x] `update` command to update from remote
+- [x] `update-check` command to check for updates
+- [x] Automatic backup before updating
+- [x] Automatic rollback on failure
+- [x] Post-update integrity verification
+- [x] `install-cli` command to create global shortcut
+- [x] `uninstall-cli` command to remove shortcut
 
-### v4.0 - Futuro
+### v4.0 - Future
 
-- [ ] Interface web para monitoramento
-- [ ] Integração com CI/CD
-- [ ] Métricas e analytics
-- [ ] Suporte a múltiplos LLMs
-- [ ] Presets customizáveis (YAML)
+- [ ] Web interface for monitoring
+- [ ] CI/CD integration
+- [ ] Metrics and analytics
+- [ ] Multi-LLM support
+- [ ] Customizable presets (YAML)
 
-## Decisões de Arquitetura
+## Architecture Decisions
 
-### ADR-001: Bash puro vs Node/Python
+### ADR-001: Pure Bash vs Node/Python
 
-- **Decisão**: Bash puro
-- **Motivo**: Zero dependências, funciona em qualquer sistema com Git
-- **Trade-off**: Menos features avançadas, código mais verboso
+- **Decision**: Pure Bash
+- **Reason**: Zero dependencies, works on any system with Git
+- **Trade-off**: Fewer advanced features, more verbose code
 
 ### ADR-002: Git Worktrees vs Branches
 
-- **Decisão**: Worktrees
-- **Motivo**: Execução paralela real, cada agente em diretório isolado
-- **Trade-off**: Mais complexo, usa mais disco
+- **Decision**: Worktrees
+- **Reason**: True parallel execution, each agent in isolated directory
+- **Trade-off**: More complex, uses more disk space
 
-### ADR-003: Agentes como Markdown
+### ADR-003: Agents as Markdown
 
-- **Decisão**: Arquivos .md com instruções
-- **Motivo**: Simples, versionável, editável, compatível com VoltAgent
-- **Trade-off**: Sem validação de schema
+- **Decision**: .md files with instructions
+- **Reason**: Simple, versionable, editable, compatible with VoltAgent
+- **Trade-off**: No schema validation
 
-### ADR-004: Arquitetura Modular
+### ADR-004: Modular Architecture
 
-- **Decisão**: Separar em lib/ e commands/
-- **Motivo**: Facilita manutenção, testes e extensibilidade
-- **Trade-off**: Mais arquivos para gerenciar
+- **Decision**: Separate into lib/ and commands/
+- **Reason**: Facilitates maintenance, testing, and extensibility
+- **Trade-off**: More files to manage
 
-## Problemas Resolvidos
+## Resolved Problems
 
-| Problema | Versão | Solução |
-|----------|--------|---------|
-| `--workdir` inexistente | 3.1 | Usar cd no subshell |
-| Falta de permissões | 3.1 | Usar `--dangerously-skip-permissions` |
-| Script monolítico | 3.1 | Modularização em lib/ e commands/ |
-| Sem validação | 3.1 | Criar lib/validation.sh |
-| Operações destrutivas | 3.1 | Criar função confirm() |
-| update-memory só timestamp | 3.2 | Adicionar --bump, --changelog, --full |
-| Sem fluxo para tarefas diretas | 3.2 | Documentar execução direta no CLAUDE.md |
+| Problem                        | Version | Solution                                    |
+|-------------------------------|---------|---------------------------------------------|
+| Non-existent `--workdir`      | 3.1     | Use cd in subshell                          |
+| Missing permissions           | 3.1     | Use `--dangerously-skip-permissions`        |
+| Monolithic script             | 3.1     | Modularization into lib/ and commands/      |
+| No validation                 | 3.1     | Create lib/validation.sh                    |
+| Destructive operations        | 3.1     | Create confirm() function                   |
+| update-memory timestamp only  | 3.2     | Add --bump, --changelog, --full             |
+| No flow for direct tasks      | 3.2     | Document direct execution in CLAUDE.md      |
 
-## Lições Aprendidas
+## Lessons Learned
 
-1. **Compatibilidade bash**: Evitar `declare -A`, preferir funções `case`
-2. **set -e em testes**: Não usar, permite testes que esperam falhas
-3. **Redireção em for**: `for x in *.txt 2>/dev/null` é inválido
-4. **Escape em testes**: Usar aspas simples para strings literais
-5. **Modularização**: Facilita muito testes e manutenção
-6. **Memória após commits**: Sempre atualizar conteúdo da memória, não só timestamp!
-7. **README sempre**: Atualizar README.md ao adicionar/modificar features
+1. **Bash compatibility**: Avoid `declare -A`, prefer `case` functions
+2. **set -e in tests**: Don't use, allows tests that expect failures
+3. **Redirection in for**: `for x in *.txt 2>/dev/null` is invalid
+4. **Escaping in tests**: Use single quotes for literal strings
+5. **Modularization**: Makes testing and maintenance much easier
+6. **Memory after commits**: Always update memory content, not just timestamp!
+7. **Always README**: Update README.md when adding/modifying features
 
-## Próxima Sessão
+## Next Session
 
-### Concluído
+### Completed
 
-- [x] Modularização completa
-- [x] Testes automatizados
-- [x] Documentação atualizada
-- [x] update-memory com versionamento e changelog
-- [x] Fluxo de execução direta documentado
-- [x] Comando update para auto-atualização
+- [x] Complete modularization
+- [x] Automated tests
+- [x] Updated documentation
+- [x] update-memory with versioning and changelog
+- [x] Direct execution flow documented
+- [x] Update command for auto-update
 
-### Ideias Futuras
+### Future Ideas
 
-- Dashboard web com WebSocket
-- Métricas de tempo de execução por agente
-- Integração com GitHub Actions
-- Suporte a presets em YAML
+- Web dashboard with WebSocket
+- Execution time metrics per agent
+- GitHub Actions integration
+- YAML preset support
 
 ---
-> Atualize com: `.claude/scripts/orchestrate.sh update-memory`
+> Update with: `.claude/scripts/orchestrate.sh update-memory`

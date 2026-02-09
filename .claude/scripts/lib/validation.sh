@@ -1,13 +1,13 @@
 #!/bin/bash
 # =============================================
-# VALIDATION - Validação de entrada
+# VALIDATION - Input validation
 # =============================================
 
 # =============================================
-# VALIDAÇÃO DE NOMES
+# NAME VALIDATION
 # =============================================
 
-# Valida nome de worktree/branch (apenas a-z, A-Z, 0-9, _, -)
+# Validate worktree/branch name (only a-z, A-Z, 0-9, _, -)
 validate_name() {
     local name=$1
     local type=${2:-"nome"}
@@ -31,7 +31,7 @@ validate_name() {
     return 0
 }
 
-# Valida nome de preset
+# Validate preset name
 validate_preset() {
     local preset=$1
     local valid_presets=$(list_presets)
@@ -50,7 +50,7 @@ validate_preset() {
     return 0
 }
 
-# Valida lista de agentes
+# Validate agent list
 validate_agents_list() {
     local agents=$1
 
@@ -59,7 +59,7 @@ validate_agents_list() {
         return 1
     fi
 
-    # Verificar formato (separado por vírgula ou espaço)
+    # Check format (comma or space separated)
     local agent
     for agent in ${agents//,/ }; do
         if ! validate_name "$agent" "agente"; then
@@ -71,10 +71,10 @@ validate_agents_list() {
 }
 
 # =============================================
-# VALIDAÇÃO DE ARQUIVOS
+# FILE VALIDATION
 # =============================================
 
-# Valida estrutura mínima de arquivo de tarefa
+# Validate minimum task file structure
 validate_task_file() {
     local file=$1
 
@@ -83,13 +83,13 @@ validate_task_file() {
         return 1
     fi
 
-    # Verificar se não está vazio
+    # Check if not empty
     if [[ ! -s "$file" ]]; then
         log_error "Arquivo de tarefa vazio: $file"
         return 1
     fi
 
-    # Verificar seções obrigatórias
+    # Check required sections
     local has_title=$(grep -c "^# " "$file" 2>/dev/null || echo 0)
     if [[ $has_title -eq 0 ]]; then
         log_warn "Arquivo de tarefa sem título (# ...): $file"
@@ -103,7 +103,7 @@ validate_task_file() {
     return 0
 }
 
-# Valida estrutura de DONE.md
+# Validate DONE.md structure
 validate_done_file() {
     local file=$1
     local errors=0
@@ -112,7 +112,7 @@ validate_done_file() {
         return 1
     fi
 
-    # Verificar seções recomendadas
+    # Check recommended sections
     local has_summary=$(grep -ci "## resumo\|## summary" "$file" 2>/dev/null || echo 0)
     local has_files=$(grep -ci "## arquivos\|## files" "$file" 2>/dev/null || echo 0)
     local has_test=$(grep -ci "## como testar\|## test\|## testing" "$file" 2>/dev/null || echo 0)
@@ -125,10 +125,10 @@ validate_done_file() {
 }
 
 # =============================================
-# VALIDAÇÃO DE AMBIENTE
+# ENVIRONMENT VALIDATION
 # =============================================
 
-# Verifica se é um repositório git
+# Check if it's a git repository
 validate_git_repo() {
     if ! git rev-parse --is-inside-work-tree &>/dev/null; then
         log_error "Não é um repositório Git"
@@ -137,7 +137,7 @@ validate_git_repo() {
     return 0
 }
 
-# Verifica se Claude CLI está instalado
+# Check if Claude CLI is installed
 validate_claude_cli() {
     if ! command -v claude &>/dev/null; then
         log_error "Claude CLI não encontrado"
@@ -147,7 +147,7 @@ validate_claude_cli() {
     return 0
 }
 
-# Verifica se há worktrees órfãs
+# Check for orphaned worktrees
 check_orphan_worktrees() {
     local orphans=0
 
@@ -163,7 +163,7 @@ check_orphan_worktrees() {
 }
 
 # =============================================
-# SANITIZAÇÃO
+# SANITIZATION
 # =============================================
 
 # Escapa string para uso seguro em sed

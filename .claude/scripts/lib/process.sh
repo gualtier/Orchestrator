@@ -1,10 +1,10 @@
 #!/bin/bash
 # =============================================
-# PROCESS - Gerenciamento de processos
+# PROCESS - Process Management
 # =============================================
 
 # =============================================
-# GERENCIAMENTO DE PID
+# PID MANAGEMENT
 # =============================================
 
 get_pid_file() {
@@ -22,7 +22,7 @@ get_log_file() {
     echo "$ORCHESTRATION_DIR/logs/$name.log"
 }
 
-# Verifica se processo está rodando
+# Check if process is running
 is_process_running() {
     local name=$1
     local pidfile=$(get_pid_file "$name")
@@ -36,7 +36,7 @@ is_process_running() {
     return 1
 }
 
-# Obtém PID do processo
+# Get process PID
 get_process_pid() {
     local name=$1
     local pidfile=$(get_pid_file "$name")
@@ -48,7 +48,7 @@ get_process_pid() {
     fi
 }
 
-# Obtém tempo de execução
+# Get execution time
 get_process_runtime() {
     local name=$1
     local start_time_file=$(get_start_time_file "$name")
@@ -66,7 +66,7 @@ get_process_runtime() {
 }
 
 # =============================================
-# INICIAR/PARAR AGENTES
+# START/STOP AGENTS
 # =============================================
 
 start_agent_process() {
@@ -77,29 +77,29 @@ start_agent_process() {
     local logfile=$(get_log_file "$name")
     local start_time_file=$(get_start_time_file "$name")
 
-    # Verificar se já está rodando
+    # Check if already running
     if is_process_running "$name"; then
         local pid=$(get_process_pid "$name")
         log_warn "Agente $name já está rodando (PID: $pid)"
         return 0
     fi
 
-    # Garantir diretórios
+    # Ensure directories exist
     ensure_dir "$ORCHESTRATION_DIR/pids"
     ensure_dir "$ORCHESTRATION_DIR/logs"
 
-    # Iniciar processo
+    # Start process
     log_info "Iniciando agente: $name"
 
     (cd "$worktree_path" && nohup claude --dangerously-skip-permissions -p "$prompt" > "$logfile" 2>&1) &
 
     local pid=$!
 
-    # Salvar PID e timestamp
+    # Save PID and timestamp
     echo $pid > "$pidfile"
     echo $(date '+%s') > "$start_time_file"
 
-    # Verificar se iniciou
+    # Check if started
     sleep 1
     if kill -0 "$pid" 2>/dev/null; then
         log_success "Agente $name iniciado (PID: $pid)"
@@ -126,10 +126,10 @@ stop_agent_process() {
     local pid=$(get_process_pid "$name")
     log_info "Parando agente $name (PID: $pid)..."
 
-    # Tentar SIGTERM primeiro
+    # Try SIGTERM first
     kill "$pid" 2>/dev/null
 
-    # Aguardar até 10 segundos
+    # Wait up to 10 seconds
     local count=0
     while kill -0 "$pid" 2>/dev/null && [[ $count -lt 10 ]]; do
         sleep 1
@@ -182,7 +182,7 @@ follow_agent_logs() {
     fi
 }
 
-# Rotação de logs
+# Log rotation
 rotate_logs() {
     local max_size=${1:-10485760}  # 10MB default
     local max_files=${2:-5}
@@ -211,7 +211,7 @@ get_agent_status() {
     local name=$1
     local worktree_path="../${PROJECT_NAME}-$name"
 
-    # Verificar arquivos de status
+    # Check status files
     if file_exists "$worktree_path/DONE.md"; then
         echo "done"
     elif file_exists "$worktree_path/BLOCKED.md"; then

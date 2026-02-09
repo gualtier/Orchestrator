@@ -3,14 +3,14 @@
 # TESTS: validation.sh
 # =============================================
 
-# Carregar módulos necessários
+# Load required modules
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$SCRIPT_DIR/lib/logging.sh"
 source "$SCRIPT_DIR/lib/core.sh"
 source "$SCRIPT_DIR/lib/validation.sh"
 
 # =============================================
-# TESTES DE validate_name
+# TESTS FOR validate_name
 # =============================================
 
 test_validate_name_valid_simple() {
@@ -51,7 +51,7 @@ test_validate_name_invalid_too_long() {
 }
 
 # =============================================
-# TESTES DE validate_preset
+# TESTS FOR validate_preset
 # =============================================
 
 test_validate_preset_auth() {
@@ -75,7 +75,7 @@ test_validate_preset_empty() {
 }
 
 # =============================================
-# TESTES DE escape_sed
+# TESTS FOR escape_sed
 # =============================================
 
 test_escape_sed_normal() {
@@ -94,7 +94,7 @@ test_escape_sed_with_ampersand() {
 }
 
 # =============================================
-# TESTES DE sanitize_string
+# TESTS FOR sanitize_string
 # =============================================
 
 test_sanitize_string_normal() {
