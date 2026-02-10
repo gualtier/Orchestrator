@@ -55,6 +55,50 @@ cd ~/your-project
 # Now you can use: orch status, orch help, etc.
 ```
 
+## Global CLI Installation
+
+The `orch` command can be installed globally to work across **all your projects**:
+
+```bash
+# Install global CLI (requires sudo)
+.claude/scripts/orchestrate.sh install-cli
+
+# Or with custom name
+.claude/scripts/orchestrate.sh install-cli my-orch
+```
+
+### How It Works
+
+- **One installation, all projects**: Install once, use everywhere
+- **Auto-detection**: Automatically detects the current project by your working directory
+- **Per-project scripts**: Each project maintains its own `.claude/` directory
+- **Safe updates**: `orch update` only updates the current project
+
+### Example Usage
+
+```bash
+# In project A
+cd ~/projects/my-app
+orch status
+# ↑ Uses ~/projects/my-app/.claude/
+
+# In project B
+cd ~/projects/another-app
+orch status
+# ↑ Uses ~/projects/another-app/.claude/
+
+# Update only affects current project
+orch update
+# ↑ Updates only ~/projects/another-app/.claude/scripts/
+```
+
+### Alternative: Shell Alias (no sudo)
+
+```bash
+# Add to ~/.zshrc or ~/.bashrc
+alias orch="/path/to/your-project/.claude/scripts/orchestrate.sh"
+```
+
 ## Quick Start
 
 ```bash

@@ -176,6 +176,7 @@
 | Destructive operations        | 3.1     | Create confirm() function                   |
 | update-memory timestamp only  | 3.2     | Add --bump, --changelog, --full             |
 | No flow for direct tasks      | 3.2     | Document direct execution in CLAUDE.md      |
+| Symlink not resolving path    | 3.4     | Resolve symlinks with readlink loop         |
 
 ## Lessons Learned
 
@@ -186,6 +187,8 @@
 5. **Modularization**: Makes testing and maintenance much easier
 6. **Memory after commits**: Always update memory content, not just timestamp!
 7. **Always README**: Update README.md when adding/modifying features
+8. **Symlink resolution**: When using symlinks for global CLI, must resolve with readlink to find real script directory
+9. **Project-agnostic CLI**: Global CLI should detect project by current directory, not installation location
 
 ## Next Session
 
