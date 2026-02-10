@@ -1,8 +1,17 @@
-# Claude Orchestrator v3.3
+# Claude Orchestrator v3.4
 
 Claude agent orchestration system with **modular architecture** and **specialized agents**.
 
 ## What's New
+
+### v3.4 - Learning & Enhanced Monitoring
+
+- **`learn` command** - Extract insights from completed tasks
+- **Learning system** - Incorporate project knowledge into CLAUDE.md
+- **Enhanced status** - Rich dashboard with progress bars, velocity, ETA
+- **Watch mode** - Live auto-refreshing status updates (`status --watch`)
+- **Activity tracking** - Real-time indicators (active/idle/stalled)
+- **Compact mode** - One-line per agent summary (`status --compact`)
 
 ### v3.3 - Auto-Update & CLI
 
