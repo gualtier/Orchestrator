@@ -160,6 +160,17 @@ orch update-memory --changelog    # Generate changelog
 orch update-memory --full         # Bump + changelog
 ```
 
+### Learning
+
+```bash
+orch learn extract                # Extract from last 5 tasks
+orch learn extract --all          # Extract from all archived tasks
+orch learn extract --apply        # Extract and auto-apply
+orch learn review                 # Review pending learnings
+orch learn add-role <file>        # Add specialized agent role
+orch learn show                   # Show current learnings
+```
+
 ### Updates
 
 ```bash

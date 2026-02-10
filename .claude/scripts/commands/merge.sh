@@ -65,6 +65,7 @@ cmd_merge() {
 
     if [[ $failed -eq 0 ]]; then
         log_success "Merge completo! ($merged branches)"
+        log_info "💡 Tip: Extract learnings with: $0 learn extract"
     else
         log_warn "Merge parcial: $merged OK, $failed com conflitos"
     fi

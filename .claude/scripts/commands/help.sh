@@ -63,6 +63,16 @@ MEMÓRIA:
     --commits <n>           Número de commits no changelog (default: 5)
     --full                  Equivalente a --bump --changelog
 
+LEARNING:
+  learn extract [opções]    Extrair insights de tarefas completas
+    --last N                Extrair das últimas N tarefas (default: 5)
+    --all                   Extrair de todas as tarefas arquivadas
+    --apply                 Aplicar automaticamente sem revisão
+  learn review              Revisar learnings pendentes
+  learn add-role <arquivo>  Adicionar papel de agente ao CLAUDE.md
+    --name "Nome"           Nome para o papel externo
+  learn show                Mostrar seção de learnings atual
+
 ATUALIZAÇÃO:
   update                    Atualizar orquestrador do remote
   update-check              Verificar se há atualizações disponíveis

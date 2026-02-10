@@ -1,0 +1,5 @@
+# Ignore pending learnings (temporary)
+pending/
+
+# Ignore CLAUDE.md backups
+archive/backups/*.backup.*

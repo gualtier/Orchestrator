@@ -28,6 +28,7 @@ source "$SCRIPT_DIR/commands/status.sh"
 source "$SCRIPT_DIR/commands/verify.sh"
 source "$SCRIPT_DIR/commands/merge.sh"
 source "$SCRIPT_DIR/commands/update.sh"
+source "$SCRIPT_DIR/commands/learn.sh"
 source "$SCRIPT_DIR/commands/help.sh"
 
 # =============================================
@@ -87,6 +88,9 @@ main() {
         # Memory
         show-memory) cmd_show_memory ;;
         update-memory) cmd_update_memory "$@" ;;
+
+        # Learning
+        learn|learning) cmd_learn "$@" ;;
 
         # Update
         update) cmd_update ;;
