@@ -18,6 +18,7 @@ source "$SCRIPT_DIR/lib/validation.sh"
 source "$SCRIPT_DIR/lib/git.sh"
 source "$SCRIPT_DIR/lib/process.sh"
 source "$SCRIPT_DIR/lib/agents.sh"
+source "$SCRIPT_DIR/lib/monitoring.sh"
 
 # Comandos
 source "$SCRIPT_DIR/commands/init.sh"

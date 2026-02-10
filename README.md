@@ -126,11 +126,15 @@ orch restart <agent>               # Restart
 ### Monitoring
 
 ```bash
-orch status            # View status (text)
-orch status --json     # View status (JSON)
-orch wait              # Wait for completion
-orch logs <agent>      # View logs
-orch follow <agent>    # Follow logs
+orch status                # View status (standard)
+orch status --enhanced     # Rich dashboard with activity tracking
+orch status --watch        # Live auto-refresh (5s interval)
+orch status --watch 10     # Custom refresh interval
+orch status --compact      # One-line per agent summary
+orch status --json         # JSON output for automation
+orch wait                  # Wait with live updates
+orch logs <agent>          # View logs
+orch follow <agent>        # Follow logs
 ```
 
 ### Verification

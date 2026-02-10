@@ -38,9 +38,12 @@ EXECUÇÃO:
   restart <agente>          Reiniciar agente
 
 MONITORAMENTO:
-  status                    Ver status (formato texto)
+  status                    Ver status (formato texto padrão)
+  status --enhanced|-e      Ver status com detalhes avançados
+  status --watch|-w [N]     Atualização ao vivo (intervalo N segundos)
+  status --compact|-c       Formato compacto (uma linha por agente)
   status --json             Ver status (formato JSON)
-  wait [intervalo]          Aguardar conclusão
+  wait [intervalo]          Aguardar conclusão (com modo watch)
   logs <agente> [n]         Ver últimas n linhas de log
   follow <agente>           Seguir logs em tempo real
 
