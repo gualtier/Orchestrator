@@ -1,6 +1,15 @@
 # Changelog
 
 
+## [2026-02-09]
+
+- feat(monitoring): add enhanced progress monitoring with live updates (206a7bc)
+- feat(learn): add learning extraction and management system (3f98341)
+- i18n: translate all Portuguese content to English (500a464)
+- docs: translate README to English (bc932d6)
+- docs(memory): atualizar timestamp após feat gitignore (930a580)
+
+
 ## [2026-01-26]
 
 - docs: update README and PROJECT_MEMORY to v3.1 (3e00386)

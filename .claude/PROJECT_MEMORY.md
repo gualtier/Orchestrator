@@ -1,7 +1,7 @@
 # Project Memory - Claude Orchestrator
 
-> **Last update**: 2026-01-28 11:42
-> **Version**: 3.3
+> **Last update**: 2026-02-09 23:19:54
+> **Version**: 3.4
 
 ## Overview
 
@@ -20,24 +20,27 @@
 | Dependencies | Git, curl, Claude CLI           |
 | Agents       | VoltAgent/awesome-claude-code-subagents |
 
-## Architecture v3.1
+## Architecture v3.4
 
 ### Modular Structure
 
 ```
 .claude/scripts/
-├── orchestrate.sh          # Entry point (68 lines)
+├── orchestrate.sh          # Entry point
 ├── lib/
 │   ├── logging.sh          # Logging and colors
 │   ├── core.sh             # Config and utilities
 │   ├── validation.sh       # Input validation
 │   ├── git.sh              # Git/worktree operations
 │   ├── process.sh          # Process management
-│   └── agents.sh           # Agent management
+│   ├── agents.sh           # Agent management
+│   ├── monitoring.sh       # Enhanced monitoring (NEW v3.4)
+│   └── learning.sh         # Learning extraction (NEW v3.4)
 ├── commands/
 │   ├── init.sh             # init, init-sample
 │   ├── doctor.sh           # doctor, doctor --fix
 │   ├── setup.sh            # setup
+│   ├── learn.sh            # learn command (NEW v3.4)
 │   ├── start.sh            # start, stop, restart, logs
 │   ├── status.sh           # status, status --json, wait
 │   ├── verify.sh           # verify, review, pre-merge, report
@@ -62,6 +65,8 @@
 | Git         | lib/git.sh         | Worktrees, branches, merge              |
 | Process     | lib/process.sh     | PIDs, logs, start/stop                  |
 | Agents      | lib/agents.sh      | Download, cache, presets                |
+| Monitoring  | lib/monitoring.sh  | Progress bars, velocity, ETA, activity  |
+| Learning    | lib/learning.sh    | Extract insights, parse DONE.md         |
 
 ## Roadmap
 
@@ -105,13 +110,24 @@
 - [x] Direct execution flow in CLAUDE.md
 - [x] Mandatory update-memory routine after commits
 
-### v3.3 - Auto-Update (CURRENT)
+### v3.3 - Auto-Update
 
 - [x] `update` command to update from remote
 - [x] `update-check` command to check for updates
 - [x] Automatic backup before updating
 - [x] Automatic rollback on failure
 - [x] Post-update integrity verification
+
+### v3.4 - Learning & Enhanced Monitoring (CURRENT)
+
+- [x] Learning system (`orch learn`)
+- [x] Extract insights from completed tasks
+- [x] Incorporate knowledge into CLAUDE.md
+- [x] Enhanced status with progress bars
+- [x] Activity tracking (active/idle/stalled)
+- [x] Velocity and ETA calculations
+- [x] Watch mode with live updates
+- [x] Compact status format
 - [x] `install-cli` command to create global shortcut
 - [x] `uninstall-cli` command to remove shortcut
 
