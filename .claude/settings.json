@@ -1,0 +1,33 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/reinject-context.sh"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "You check whether project memory needs updating. Look at the conversation: did the assistant run any 'git commit' commands? If yes, check if '.claude/scripts/orchestrate.sh update-memory' was run AFTER the last commit. If commits were made without a subsequent update-memory, respond {\"ok\": false, \"reason\": \"Commits were made but project memory was not updated. Run: .claude/scripts/orchestrate.sh update-memory\"}. If the input field 'stop_hook_active' is true, OR no commits were made, OR update-memory was already run, respond {\"ok\": true}."
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "You check whether all requested tasks are complete. Review the conversation: did the user request specific tasks that the assistant agreed to do? Are there clearly unfinished tasks? If there are obvious incomplete tasks, respond {\"ok\": false, \"reason\": \"Incomplete: [brief description of what remains]\"}. If the input field 'stop_hook_active' is true, OR all tasks appear complete, OR the assistant is appropriately pausing for user input or clarification, respond {\"ok\": true}. Be pragmatic: do not block for minor items, optional suggestions, or if the assistant reasonably completed the work."
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -376,6 +376,18 @@ cd ~/projects/my-app && orch status
 cd ~/projects/other-app && orch status
 ```
 
+## Hooks
+
+The orchestrator uses [Claude Code hooks](https://code.claude.com/docs/en/hooks-guide) to automate workflow enforcement. Configured in `.claude/settings.json`:
+
+| Hook | Event | What it does |
+| ---- | ----- | ------------ |
+| Re-inject context | `SessionStart` (compact) | Re-injects `PROJECT_MEMORY.md` + `CAPABILITIES.md` after context compaction so Rule #1 survives long sessions |
+| Memory update check | `Stop` (prompt) | Blocks if you made commits without running `update-memory` |
+| Task completion check | `Stop` (prompt) | Blocks if there are clearly unfinished tasks |
+
+The prompt-based hooks use a lightweight model (Haiku) to evaluate conditions with judgment rather than rigid rules.
+
 ## Structure
 
 ```text

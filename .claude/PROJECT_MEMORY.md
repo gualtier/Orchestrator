@@ -160,7 +160,7 @@
 - [x] Autonomous skill invocation (Claude auto-chains SDD pipeline)
 - [x] README with practical usage examples and memory value proposition
 
-### v3.5.1 - Update System Overhaul (CURRENT)
+### v3.5.1 - Update System Overhaul
 
 - [x] Dedicated `orchestrator` remote for updates (no longer requires `origin`)
 - [x] Auto-creates `orchestrator` remote in projects where `origin` points elsewhere
@@ -168,6 +168,14 @@
 - [x] `orch update` no longer overwrites project-specific `CLAUDE.md`
 - [x] CLAUDE.md references CAPABILITIES.md in Rule #1 (memory + capabilities)
 - [x] Repo URL changed from `Orchestrator-` to `Orchestrator`
+
+### v3.5.2 - Claude Code Hooks (CURRENT)
+
+- [x] Claude Code hooks system (`.claude/settings.json`, `.claude/hooks/`)
+- [x] Context re-injection on compaction (`SessionStart` hook, matcher: `compact`)
+- [x] Memory update enforcement (`Stop` prompt-based hook, checks commits vs update-memory)
+- [x] Task completion check (`Stop` prompt-based hook, blocks on unfinished tasks)
+- [x] `reinject-context.sh` - outputs PROJECT_MEMORY.md + CAPABILITIES.md after compaction
 
 ### v4.0 - Future
 
