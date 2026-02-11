@@ -138,6 +138,82 @@ orch merge
 orch update-memory --full
 ```
 
+## How It Works in Practice
+
+You just describe what you want. Claude handles the rest autonomously.
+
+### Example 1: Large Feature
+
+```text
+You:   I need a payment system with Stripe, webhooks, and subscriptions
+
+Claude: Starting SDD flow for this feature.
+
+        → /sdd-specify creates spec with requirements and acceptance criteria
+        → /sdd-research investigates Stripe SDK, webhook security, pricing patterns
+        → /sdd-plan designs architecture with 3 modules:
+            | Module   | Worktree | Preset  |
+            | Payments | payments | api     |
+            | Webhooks | webhooks | backend |
+            | Billing  | billing  | fullstack |
+        → /sdd-gate checks constitutional compliance (all pass)
+        → /sdd-tasks generates task files for each module
+        → /orch-setup creates 3 isolated worktrees
+        → /orch-start launches 9 specialized agents in parallel
+
+        ... agents work independently ...
+
+        → /orch-status shows progress:
+            payments: ██████████ 100% ✅
+            webhooks: ████████░░  80% 🔄
+            billing:  ██████░░░░  60% 🔄
+
+        All worktrees complete. Run /orch-merge when ready.
+
+You:   /orch-merge
+```
+
+### Example 2: Small Task (No SDD Needed)
+
+```text
+You:   Add a health check endpoint to the API
+
+Claude: Small task (1 file), implementing directly.
+        → Creates GET /health endpoint
+        → Adds test
+        → Commits and updates memory
+```
+
+### Example 3: Check Status Anytime
+
+```text
+You:   /sdd-status
+
+Claude: ACTIVE SPECS:
+          001-payment-system  [executing]  → 2/3 worktrees merged
+          002-user-dashboard  [planned]    → tasks pending
+
+You:   /orch-status
+
+Claude: WORKTREES:
+          payments  ✅ merged
+          webhooks  ✅ merged
+          billing   🔄 in progress (2 agents working)
+```
+
+### Example 4: Fully Autonomous
+
+```text
+You:   Users need to export their data as CSV and PDF
+
+Claude: → Specifies, researches, plans, generates tasks
+        → Sets up worktree with backend agents
+        → Starts agents, monitors progress
+        → Notifies you when done and ready to merge
+```
+
+Claude decides when to use SDD (multi-module features) vs direct execution (small tasks). You only intervene for destructive actions like `/orch-merge` and `/sdd-archive`.
+
 ## SDD Pipeline
 
 ```text
