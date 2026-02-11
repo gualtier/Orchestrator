@@ -383,10 +383,11 @@ The orchestrator uses [Claude Code hooks](https://code.claude.com/docs/en/hooks-
 | Hook | Event | What it does |
 | ---- | ----- | ------------ |
 | Re-inject context | `SessionStart` (compact) | Re-injects `PROJECT_MEMORY.md` + `CAPABILITIES.md` after context compaction so Rule #1 survives long sessions |
-| Memory update check | `Stop` (prompt) | Blocks if you made commits without running `update-memory` |
+| Memory & merge check | `Stop` (prompt) | Blocks if: (1) commits made without `update-memory`, or (2) merge done without `update-memory --full` and `learn extract` |
 | Task completion check | `Stop` (prompt) | Blocks if there are clearly unfinished tasks |
+| Self-dev docs sync | `Stop` (command) | **Source repo only**: blocks if scripts/skills changed without updating CAPABILITIES.md, version bumped without changelog, or commands changed without README update |
 
-The prompt-based hooks use a lightweight model (Haiku) to evaluate conditions with judgment rather than rigid rules.
+The prompt-based hooks use a lightweight model (Haiku) to evaluate conditions with judgment rather than rigid rules. The self-dev docs sync hook only activates in the orchestrator source repository (detected by git origin URL) and is silent in client projects.
 
 ## Structure
 
