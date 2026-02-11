@@ -1,7 +1,7 @@
 # Project Memory - Claude Orchestrator
 
-> **Last update**: 2026-02-11 03:00:35
-> **Version**: 3.5
+> **Last update**: 2026-02-11 14:30:00
+> **Version**: 3.5.1
 
 ## Overview
 
@@ -140,7 +140,7 @@
 - [x] `install-cli` command to create global shortcut
 - [x] `uninstall-cli` command to remove shortcut
 
-### v3.5 - Spec-Driven Development (CURRENT)
+### v3.5 - Spec-Driven Development
 
 - [x] SDD integration inspired by GitHub Spec-Kit
 - [x] Constitution system (editable project principles)
@@ -159,6 +159,15 @@
 - [x] Native slash commands for SDD and orchestration workflows
 - [x] Autonomous skill invocation (Claude auto-chains SDD pipeline)
 - [x] README with practical usage examples and memory value proposition
+
+### v3.5.1 - Update System Overhaul (CURRENT)
+
+- [x] Dedicated `orchestrator` remote for updates (no longer requires `origin`)
+- [x] Auto-creates `orchestrator` remote in projects where `origin` points elsewhere
+- [x] `.claude/CAPABILITIES.md` - auto-updated capabilities file (replaces CLAUDE.md in update paths)
+- [x] `orch update` no longer overwrites project-specific `CLAUDE.md`
+- [x] CLAUDE.md references CAPABILITIES.md in Rule #1 (memory + capabilities)
+- [x] Repo URL changed from `Orchestrator-` to `Orchestrator`
 
 ### v4.0 - Future
 
@@ -214,6 +223,8 @@
 | Symlink not resolving path    | 3.4     | Resolve symlinks with readlink loop         |
 | macOS `head -n -1` invalid    | 3.5     | Use `sed '$d'` for BSD compatibility        |
 | Glob trailing slash in paths  | 3.5     | Strip trailing slash in spec_dir_for()      |
+| Update overwrites CLAUDE.md   | 3.5.1   | Separate CAPABILITIES.md, remove CLAUDE.md from update paths |
+| Update requires `origin` remote | 3.5.1 | Auto-create `orchestrator` remote, fallback to `origin`     |
 
 ## Lessons Learned
 

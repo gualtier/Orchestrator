@@ -6,6 +6,7 @@
 # Configuration
 ORCHESTRATOR_BACKUP_DIR="$ORCHESTRATION_DIR/.backups"
 ORCHESTRATOR_SCRIPTS_PATH=".claude/scripts"
+ORCHESTRATOR_REPO_URL="https://github.com/gualtier/Orchestrator.git"
 MAX_BACKUPS=5
 
 # All paths that should be updated
@@ -15,23 +16,60 @@ ORCHESTRATOR_UPDATE_PATHS=(
     ".claude/specs/constitution.md"
     ".claude/specs/templates"
     ".claude/AGENT_CLAUDE_BASE.md"
-    "CLAUDE.md"
+    ".claude/CAPABILITIES.md"
 )
 
 # =============================================
 # PRIVATE HELPER FUNCTIONS
 # =============================================
 
+# Resolve the remote used for orchestrator updates.
+# Prefers a dedicated "orchestrator" remote, falls back to "origin".
+_resolve_remote() {
+    if git remote get-url orchestrator &>/dev/null; then
+        echo "orchestrator"
+    elif git remote get-url origin &>/dev/null; then
+        echo "origin"
+    else
+        echo ""
+    fi
+}
+
 _has_remote() {
-    git remote get-url origin &>/dev/null
+    local remote=$(_resolve_remote)
+    [[ -n "$remote" ]]
+}
+
+# Ensure the "orchestrator" remote exists, creating it if needed.
+_ensure_orchestrator_remote() {
+    if git remote get-url orchestrator &>/dev/null; then
+        return 0
+    fi
+
+    # If origin already points to the Orchestrator repo, no need for a separate remote
+    local origin_url=$(git remote get-url origin 2>/dev/null || echo "")
+    if [[ "$origin_url" == *"gualtier/Orchestrator"* ]]; then
+        return 0
+    fi
+
+    # Add dedicated remote
+    log_step "Adding 'orchestrator' remote for updates..."
+    if git remote add orchestrator "$ORCHESTRATOR_REPO_URL" 2>/dev/null; then
+        log_success "Remote 'orchestrator' added: $ORCHESTRATOR_REPO_URL"
+        return 0
+    else
+        log_error "Failed to add 'orchestrator' remote"
+        return 1
+    fi
 }
 
 _get_remote_default_branch() {
-    local branch=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@')
+    local remote=$(_resolve_remote)
+    local branch=$(git symbolic-ref "refs/remotes/$remote/HEAD" 2>/dev/null | sed "s@^refs/remotes/$remote/@@")
     if [[ -z "$branch" ]]; then
-        if git rev-parse --verify origin/main &>/dev/null; then
+        if git rev-parse --verify "$remote/main" &>/dev/null; then
             branch="main"
-        elif git rev-parse --verify origin/master &>/dev/null; then
+        elif git rev-parse --verify "$remote/master" &>/dev/null; then
             branch="master"
         fi
     fi
@@ -44,25 +82,29 @@ _get_local_version() {
 }
 
 _get_remote_version() {
+    local remote=$(_resolve_remote)
     local branch=$(_get_remote_default_branch)
-    local remote_content=$(git show "origin/$branch:$ORCHESTRATOR_SCRIPTS_PATH/orchestrate.sh" 2>/dev/null)
+    local remote_content=$(git show "$remote/$branch:$ORCHESTRATOR_SCRIPTS_PATH/orchestrate.sh" 2>/dev/null)
     local version_line=$(echo "$remote_content" | grep -o "ORQUESTRADOR DE AGENTES CLAUDE v[0-9.]*")
     echo "${version_line##*v}"
 }
 
 _get_commits_behind() {
+    local remote=$(_resolve_remote)
     local branch=$(_get_remote_default_branch)
-    git rev-list --count "HEAD..origin/$branch" -- "${ORCHESTRATOR_UPDATE_PATHS[@]}" 2>/dev/null || echo "0"
+    git rev-list --count "HEAD..$remote/$branch" -- "${ORCHESTRATOR_UPDATE_PATHS[@]}" 2>/dev/null || echo "0"
 }
 
 _get_pending_commits() {
+    local remote=$(_resolve_remote)
     local branch=$(_get_remote_default_branch)
-    git log --oneline "HEAD..origin/$branch" -- "${ORCHESTRATOR_UPDATE_PATHS[@]}" 2>/dev/null
+    git log --oneline "HEAD..$remote/$branch" -- "${ORCHESTRATOR_UPDATE_PATHS[@]}" 2>/dev/null
 }
 
 _get_changed_files() {
+    local remote=$(_resolve_remote)
     local branch=$(_get_remote_default_branch)
-    git diff --name-only "HEAD" "origin/$branch" -- "${ORCHESTRATOR_UPDATE_PATHS[@]}" 2>/dev/null
+    git diff --name-only "HEAD" "$remote/$branch" -- "${ORCHESTRATOR_UPDATE_PATHS[@]}" 2>/dev/null
 }
 
 _has_local_changes() {
@@ -140,12 +182,13 @@ _verify_scripts() {
 }
 
 _apply_update() {
+    local remote=$(_resolve_remote)
     local branch=$(_get_remote_default_branch)
 
     # Update all orchestrator paths (scripts, skills, specs, etc.)
     for path in "${ORCHESTRATOR_UPDATE_PATHS[@]}"; do
-        if git ls-tree -r --name-only "origin/$branch" -- "$path" &>/dev/null; then
-            git checkout "origin/$branch" -- "$path" 2>/dev/null || true
+        if git ls-tree -r --name-only "$remote/$branch" -- "$path" &>/dev/null; then
+            git checkout "$remote/$branch" -- "$path" 2>/dev/null || true
         fi
     done
 }
@@ -235,17 +278,21 @@ cmd_update_check() {
 
     validate_git_repo || return 1
 
+    _ensure_orchestrator_remote || return 1
+
     if ! _has_remote; then
-        log_error "Remote 'origin' not configured"
-        log_info "Configure with: git remote add origin <url>"
+        log_error "No update remote configured"
+        log_info "Configure with: git remote add orchestrator $ORCHESTRATOR_REPO_URL"
         return 1
     fi
 
-    log_step "Checking for updates..."
+    local remote=$(_resolve_remote)
+
+    log_step "Checking for updates (remote: $remote)..."
 
     local branch=$(_get_remote_default_branch)
 
-    if ! git fetch origin "$branch" --quiet 2>/dev/null; then
+    if ! git fetch "$remote" "$branch" --quiet 2>/dev/null; then
         log_error "Failed to connect to remote"
         log_info "Check your internet connection"
         return 1
@@ -258,7 +305,7 @@ cmd_update_check() {
     echo ""
     log_info "Local version:  v$local_version"
     log_info "Remote version: v$remote_version"
-    log_info "Branch:         $branch"
+    log_info "Remote:         $remote ($branch)"
     echo ""
 
     if [[ "$commits_behind" == "0" ]]; then
@@ -291,12 +338,15 @@ cmd_update() {
 
     validate_git_repo || return 1
 
+    _ensure_orchestrator_remote || return 1
+
     if ! _has_remote; then
-        log_error "Remote 'origin' not configured"
-        log_info "Configure with: git remote add origin <url>"
+        log_error "No update remote configured"
+        log_info "Configure with: git remote add orchestrator $ORCHESTRATOR_REPO_URL"
         return 1
     fi
 
+    local remote=$(_resolve_remote)
     local branch=$(_get_remote_default_branch)
 
     # Check for local changes
@@ -315,8 +365,8 @@ cmd_update() {
     fi
 
     # Fetch
-    log_step "Fetching updates..."
-    if ! git fetch origin "$branch" --quiet 2>/dev/null; then
+    log_step "Fetching updates (remote: $remote)..."
+    if ! git fetch "$remote" "$branch" --quiet 2>/dev/null; then
         log_error "Failed to connect to remote"
         return 1
     fi
