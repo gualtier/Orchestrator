@@ -1,6 +1,6 @@
 # Project Memory - Claude Orchestrator
 
-> **Last update**: 2026-02-09 23:19:54
+> **Last update**: 2026-02-11 03:00:35
 > **Version**: 3.5
 
 ## Overview
@@ -157,6 +157,8 @@
 - [x] Shell completions for sdd commands
 - [x] Claude Code Skills integration (14 skills: `/sdd-*`, `/orch-*`)
 - [x] Native slash commands for SDD and orchestration workflows
+- [x] Autonomous skill invocation (Claude auto-chains SDD pipeline)
+- [x] README with practical usage examples and memory value proposition
 
 ### v4.0 - Future
 
@@ -224,6 +226,8 @@
 7. **Always README**: Update README.md when adding/modifying features
 8. **Symlink resolution**: When using symlinks for global CLI, must resolve with readlink to find real script directory
 9. **Project-agnostic CLI**: Global CLI should detect project by current directory, not installation location
+10. **Skills autonomy**: Don't set `disable-model-invocation: true` on skills meant for autonomous use - use "Use proactively" in description instead
+11. **README-first**: Usage examples before changelog - new users need to see what it does before version history
 
 ## Next Session
 
@@ -235,6 +239,9 @@
 - [x] update-memory with versioning and changelog
 - [x] Direct execution flow documented
 - [x] Update command for auto-update
+- [x] SDD integration (v3.5)
+- [x] 14 Claude Code Skills with autonomous invocation
+- [x] README rewrite with usage examples and memory docs
 
 ### Future Ideas
 
