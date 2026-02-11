@@ -76,6 +76,18 @@ LEARNING:
     --name "Nome"           Nome para o papel externo
   learn show                Mostrar seção de learnings atual
 
+SDD (SPEC-DRIVEN DEVELOPMENT):
+  sdd init                  Initialize SDD structure with templates
+  sdd constitution          Show/create project constitution
+  sdd specify "desc"        Create a new spec from description
+  sdd research <number>     Create research doc (MANDATORY before plan)
+  sdd plan <number>         Create implementation plan (requires research)
+  sdd gate <number>         Check constitutional gates
+  sdd tasks <number>        Generate orchestrator tasks from plan
+  sdd status                Show all active specs
+  sdd archive <number>      Archive completed spec
+  sdd help                  Show SDD help
+
 ATUALIZAÇÃO:
   update                    Atualizar orquestrador do remote
   update-check              Verificar se há atualizações disponíveis
@@ -96,35 +108,44 @@ PRESETS DE AGENTES:
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-EXEMPLO COMPLETO:
+EXAMPLE (SDD-FIRST WORKFLOW - Recommended):
 
-  # 1. Inicializar
-  ./orchestrate.sh init
-  ./orchestrate.sh doctor
+  # 1. Initialize
+  ./orchestrate.sh sdd init
 
-  # 2. Create worktrees
+  # 2. Create spec
+  ./orchestrate.sh sdd specify "User authentication with OAuth"
+  # ... refine spec.md with Claude ...
+
+  # 3. Research (MANDATORY)
+  ./orchestrate.sh sdd research 001
+  # ... fill research.md with Claude ...
+
+  # 4. Plan & verify
+  ./orchestrate.sh sdd plan 001
+  # ... refine plan.md with Claude ...
+  ./orchestrate.sh sdd gate 001
+
+  # 5. Generate tasks & execute
+  ./orchestrate.sh sdd tasks 001
   ./orchestrate.sh setup auth --preset auth
-  ./orchestrate.sh setup api --preset api
-
-  # 3. Create tasks
-  ./orchestrate.sh init-sample
-
-  # 4. Start
   ./orchestrate.sh start
-
-  # 5. Monitorar
-  ./orchestrate.sh status
   ./orchestrate.sh wait
 
-  # 6. Check quality
+  # 6. Verify & merge
   ./orchestrate.sh verify-all
-  ./orchestrate.sh pre-merge
-  ./orchestrate.sh report
+  ./orchestrate.sh merge
+  ./orchestrate.sh sdd archive 001
+  ./orchestrate.sh update-memory --full
 
-  # 7. Finalizar
+EXAMPLE (DIRECT MODE - Small tasks):
+
+  ./orchestrate.sh init
+  ./orchestrate.sh setup auth --preset auth
+  ./orchestrate.sh start
+  ./orchestrate.sh wait
   ./orchestrate.sh merge
   ./orchestrate.sh update-memory --full
-  ./orchestrate.sh cleanup
 
 EOF
 }

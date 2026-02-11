@@ -63,6 +63,33 @@ start_single_agent() {
         project_context=$(head -50 "$MEMORY_FILE")
     fi
 
+    # Extrair contexto SDD se a task tiver spec-ref
+    local sdd_context=""
+    if grep -q "spec-ref:" "$task_file" 2>/dev/null; then
+        local spec_ref=$(grep "spec-ref:" "$task_file" | head -1 | sed 's/.*spec-ref: *//')
+        local spec_path="$PROJECT_ROOT/$spec_ref"
+        local spec_dir=$(dirname "$spec_path")
+
+        if [[ -f "$spec_path" ]]; then
+            sdd_context+="
+### Specification
+$(head -80 "$spec_path")
+"
+        fi
+        if [[ -f "$spec_dir/research.md" ]]; then
+            sdd_context+="
+### Research Findings
+$(head -80 "$spec_dir/research.md")
+"
+        fi
+        if [[ -f "$spec_dir/plan.md" ]]; then
+            sdd_context+="
+### Implementation Plan
+$(head -80 "$spec_dir/plan.md")
+"
+        fi
+    fi
+
     # Construir prompt
     local full_prompt="# CONTEXTO
 
@@ -88,7 +115,18 @@ $(cat "$agent_file")
     full_prompt+="
 ## Contexto do Projeto
 $project_context
+"
 
+    # Inject SDD context if available
+    if [[ -n "$sdd_context" ]]; then
+        full_prompt+="
+## SDD Context (Spec-Driven Development)
+The following specification, research, and plan documents guide this task:
+$sdd_context
+"
+    fi
+
+    full_prompt+="
 ## SUA TAREFA
 $task
 

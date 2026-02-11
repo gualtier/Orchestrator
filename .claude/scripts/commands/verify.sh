@@ -85,9 +85,24 @@ cmd_verify() {
     fi
 
     # 6. Check commits
-    echo -e "${YELLOW}[5/5] Verificando commits...${NC}"
+    echo -e "${YELLOW}[5/6] Verificando commits...${NC}"
     local commit_count=$(cd "$worktree_path" && count_commits_since main)
     log_info "$commit_count commit(s) desde main"
+
+    # 7. Check spec traceability (SDD)
+    echo -e "${YELLOW}[6/6] Verificando rastreabilidade SDD...${NC}"
+    local task_file="$ORCHESTRATION_DIR/tasks/${name}.md"
+    if grep -q "spec-ref:" "$task_file" 2>/dev/null; then
+        local spec_ref=$(grep "spec-ref:" "$task_file" | head -1 | sed 's/.*spec-ref: *//')
+        if file_exists "$PROJECT_ROOT/$spec_ref"; then
+            log_success "Task traceable to spec: $spec_ref"
+        else
+            log_warn "Referenced spec not found: $spec_ref"
+            ((warnings++))
+        fi
+    else
+        log_info "No SDD reference (direct task mode)"
+    fi
 
     # Resumo
     echo ""

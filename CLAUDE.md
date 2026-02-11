@@ -48,6 +48,70 @@ cat .claude/PROJECT_MEMORY.md
 
 ---
 
+## 📐 SDD-FIRST WORKFLOW (Recommended)
+
+For medium/large features, use **Spec-Driven Development** (inspired by [GitHub Spec-Kit](https://github.com/github/spec-kit)):
+
+```
+constitution → specify → research (MANDATORY) → plan → gate → tasks → [orchestrator]
+```
+
+### SDD Flow (Skills or CLI)
+
+**With Claude Code Skills** (recommended - type these directly):
+
+```text
+/sdd-init                          # 1. Initialize (first time)
+/sdd-specify "feature description" # 2. Create spec
+/sdd-research 001                  # 3. Research (MANDATORY)
+/sdd-plan 001                      # 4. Create plan
+/sdd-gate 001                      # 5. Check gates
+/sdd-tasks 001                     # 6. Generate tasks
+/orch-setup auth --preset auth     # 7. Create worktrees
+/orch-start                        # 8. Start agents
+/orch-merge                        # 9. Merge
+/sdd-archive 001                   # 10. Archive
+```
+
+**With CLI** (bash):
+
+```bash
+.claude/scripts/orchestrate.sh sdd init
+.claude/scripts/orchestrate.sh sdd specify "feature description"
+.claude/scripts/orchestrate.sh sdd research 001
+.claude/scripts/orchestrate.sh sdd plan 001
+.claude/scripts/orchestrate.sh sdd gate 001
+.claude/scripts/orchestrate.sh sdd tasks 001
+.claude/scripts/orchestrate.sh setup auth --preset auth
+.claude/scripts/orchestrate.sh start
+.claude/scripts/orchestrate.sh merge
+.claude/scripts/orchestrate.sh sdd archive 001
+.claude/scripts/orchestrate.sh update-memory --full
+```
+
+### SDD Artifacts
+
+```
+.claude/specs/
+├── constitution.md           # Project principles (editable)
+├── templates/                # Reusable templates
+└── active/001-feature-name/
+    ├── spec.md               # WHAT: requirements, user stories, acceptance criteria
+    ├── research.md           # WHY: library analysis, benchmarks, security, patterns
+    ├── plan.md               # HOW: architecture, tech decisions, worktree mapping
+    └── tasks.md              # Generated bridge to orchestration/tasks/
+```
+
+### When to Use SDD vs Direct
+
+| Criteria   | SDD Flow                       | Direct Execution |
+| ---------- | ------------------------------ | ---------------- |
+| Scope      | Multiple modules, new features | 1-3 files, bug fixes |
+| Complexity | Needs research/planning        | Straightforward |
+| Duration   | Multiple worktrees             | Single session |
+
+---
+
 ## 🎯 ARCHITECT WORKFLOW
 
 ### 1. Analyze Request → Choose Presets
@@ -130,11 +194,12 @@ Confirm? (y/n/adjust)
               │                               │
               ▼                               ▼
 ┌─────────────────────────┐     ┌─────────────────────────────┐
-│  DIRECT EXECUTION       │     │  3. PROPOSE WORKTREES       │
-│  - Implement            │     │     Choose presets          │
-│  - Test                 │     └─────────────────────────────┘
-│  - Commit               │                   │
-└─────────────────────────┘                   ▼
+│  DIRECT EXECUTION       │     │  3. SDD FLOW (Recommended)  │
+│  - Implement            │     │     sdd specify → research  │
+│  - Test                 │     │     → plan → gate → tasks   │
+│  - Commit               │     └─────────────────────────────┘
+└─────────────────────────┘                   │
+              │                               ▼
               │               ┌─────────────────────────────────┐
               │               │  4. CREATE WORKTREES            │
               │               │     orchestrate.sh setup        │
@@ -142,20 +207,20 @@ Confirm? (y/n/adjust)
               │                               │
               │                               ▼
               │               ┌─────────────────────────────────┐
-              │               │  5. CREATE TASKS                │
-              │               │     tasks/<name>.md             │
-              │               └─────────────────────────────────┘
-              │                               │
-              │                               ▼
-              │               ┌─────────────────────────────────┐
-              │               │  6. EXECUTE AND MONITOR         │
+              │               │  5. EXECUTE AND MONITOR         │
               │               │     start → wait                │
               │               └─────────────────────────────────┘
               │                               │
               │                               ▼
               │               ┌─────────────────────────────────┐
-              │               │  7. MERGE AND CLEANUP           │
+              │               │  6. MERGE AND CLEANUP           │
               │               │     merge → cleanup             │
+              │               └─────────────────────────────────┘
+              │                               │
+              │                               ▼
+              │               ┌─────────────────────────────────┐
+              │               │  7. ARCHIVE SPEC                │
+              │               │     sdd archive <number>        │
               │               └─────────────────────────────────┘
               │                               │
               └───────────────┬───────────────┘

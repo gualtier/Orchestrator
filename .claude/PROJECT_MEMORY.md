@@ -1,7 +1,7 @@
 # Project Memory - Claude Orchestrator
 
 > **Last update**: 2026-02-09 23:19:54
-> **Version**: 3.4
+> **Version**: 3.5
 
 ## Overview
 
@@ -20,11 +20,17 @@
 | Dependencies | Git, curl, Claude CLI           |
 | Agents       | VoltAgent/awesome-claude-code-subagents |
 
-## Architecture v3.4
+## Architecture v3.5
 
 ### Modular Structure
 
 ```
+.claude/skills/                     # Claude Code Skills (NEW v3.5)
+├── sdd*/SKILL.md                   # 8 SDD skills (/sdd-init, /sdd-specify, etc.)
+├── orch*/SKILL.md                  # 4 orchestrator skills (/orch-setup, etc.)
+├── sdd/SKILL.md                    # SDD hub (/sdd)
+└── orch/SKILL.md                   # Orchestrator hub (/orch)
+
 .claude/scripts/
 ├── orchestrate.sh          # Entry point
 ├── lib/
@@ -34,13 +40,15 @@
 │   ├── git.sh              # Git/worktree operations
 │   ├── process.sh          # Process management
 │   ├── agents.sh           # Agent management
-│   ├── monitoring.sh       # Enhanced monitoring (NEW v3.4)
-│   └── learning.sh         # Learning extraction (NEW v3.4)
+│   ├── monitoring.sh       # Enhanced monitoring (v3.4)
+│   ├── learning.sh         # Learning extraction (v3.4)
+│   └── sdd.sh              # SDD library (NEW v3.5)
 ├── commands/
 │   ├── init.sh             # init, init-sample
 │   ├── doctor.sh           # doctor, doctor --fix
 │   ├── setup.sh            # setup
-│   ├── learn.sh            # learn command (NEW v3.4)
+│   ├── learn.sh            # learn command (v3.4)
+│   ├── sdd.sh              # sdd command (NEW v3.5)
 │   ├── start.sh            # start, stop, restart, logs
 │   ├── status.sh           # status, status --json, wait
 │   ├── verify.sh           # verify, review, pre-merge, report
@@ -67,6 +75,7 @@
 | Agents      | lib/agents.sh      | Download, cache, presets                |
 | Monitoring  | lib/monitoring.sh  | Progress bars, velocity, ETA, activity  |
 | Learning    | lib/learning.sh    | Extract insights, parse DONE.md         |
+| SDD         | lib/sdd.sh         | Spec numbering, templates, gates, tasks |
 
 ## Roadmap
 
@@ -118,7 +127,7 @@
 - [x] Automatic rollback on failure
 - [x] Post-update integrity verification
 
-### v3.4 - Learning & Enhanced Monitoring (CURRENT)
+### v3.4 - Learning & Enhanced Monitoring
 
 - [x] Learning system (`orch learn`)
 - [x] Extract insights from completed tasks
@@ -130,6 +139,24 @@
 - [x] Compact status format
 - [x] `install-cli` command to create global shortcut
 - [x] `uninstall-cli` command to remove shortcut
+
+### v3.5 - Spec-Driven Development (CURRENT)
+
+- [x] SDD integration inspired by GitHub Spec-Kit
+- [x] Constitution system (editable project principles)
+- [x] `sdd specify` - auto-numbered spec creation with templates
+- [x] `sdd research` - mandatory research gate before planning
+- [x] `sdd plan` - technical plans with worktree mapping
+- [x] `sdd gate` - constitutional gates (research, simplicity, test-first, traceability)
+- [x] `sdd tasks` - bridge: generates orchestrator tasks from plan
+- [x] `sdd status` - spec lifecycle tracking
+- [x] `sdd archive` - completed spec archival
+- [x] Spec traceability in verify command (step 6/6)
+- [x] SDD context injection into agent prompts (spec-ref)
+- [x] Agent SDD awareness (AGENT_CLAUDE_BASE.md)
+- [x] Shell completions for sdd commands
+- [x] Claude Code Skills integration (14 skills: `/sdd-*`, `/orch-*`)
+- [x] Native slash commands for SDD and orchestration workflows
 
 ### v4.0 - Future
 
@@ -165,9 +192,15 @@
 - **Reason**: Facilitates maintenance, testing, and extensibility
 - **Trade-off**: More files to manage
 
+### ADR-005: Native SDD over Spec-Kit CLI
+
+- **Decision**: Build SDD concepts natively in Bash, not install spec-kit Python CLI
+- **Reason**: Zero additional dependencies, deep integration with orchestrator pipeline, full customization
+- **Trade-off**: Must maintain our own implementation of SDD concepts
+
 ## Resolved Problems
 
-| Problem                        | Version | Solution                                    |
+| Problem                       | Version | Solution                                   |
 |-------------------------------|---------|---------------------------------------------|
 | Non-existent `--workdir`      | 3.1     | Use cd in subshell                          |
 | Missing permissions           | 3.1     | Use `--dangerously-skip-permissions`        |
@@ -177,6 +210,8 @@
 | update-memory timestamp only  | 3.2     | Add --bump, --changelog, --full             |
 | No flow for direct tasks      | 3.2     | Document direct execution in CLAUDE.md      |
 | Symlink not resolving path    | 3.4     | Resolve symlinks with readlink loop         |
+| macOS `head -n -1` invalid    | 3.5     | Use `sed '$d'` for BSD compatibility        |
+| Glob trailing slash in paths  | 3.5     | Strip trailing slash in spec_dir_for()      |
 
 ## Lessons Learned
 

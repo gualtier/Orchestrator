@@ -26,6 +26,7 @@ source "$SCRIPT_DIR/lib/git.sh"
 source "$SCRIPT_DIR/lib/process.sh"
 source "$SCRIPT_DIR/lib/agents.sh"
 source "$SCRIPT_DIR/lib/monitoring.sh"
+source "$SCRIPT_DIR/lib/sdd.sh"
 
 # Comandos
 source "$SCRIPT_DIR/commands/init.sh"
@@ -37,6 +38,7 @@ source "$SCRIPT_DIR/commands/verify.sh"
 source "$SCRIPT_DIR/commands/merge.sh"
 source "$SCRIPT_DIR/commands/update.sh"
 source "$SCRIPT_DIR/commands/learn.sh"
+source "$SCRIPT_DIR/commands/sdd.sh"
 source "$SCRIPT_DIR/commands/help.sh"
 
 # =============================================
@@ -99,6 +101,9 @@ main() {
 
         # Learning
         learn|learning) cmd_learn "$@" ;;
+
+        # SDD (Spec-Driven Development)
+        sdd|spec|specify) cmd_sdd "$@" ;;
 
         # Update
         update) cmd_update ;;

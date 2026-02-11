@@ -39,10 +39,14 @@ You have specialized expertise according to the agents in `.claude/agents/`.
 # ✅ Completed: [task]
 ## Summary
 [What was done]
+## Spec Reference
+[If task has spec-ref, include it: e.g. .claude/specs/active/001-feature/spec.md]
 ## Modified Files
 - path/file.ts - [change]
 ## How to Test
 [Instructions]
+## Requirements Covered
+[List REQ- items from spec that were implemented, if applicable]
 ```
 
 ### BLOCKED.md (if needed)
@@ -53,6 +57,16 @@ You have specialized expertise according to the agents in `.claude/agents/`.
 ## Need
 [What unblocks]
 ```
+
+## SDD Awareness
+
+If your task includes a `spec-ref:` metadata line, it was generated from a Spec-Driven Development (SDD) flow:
+
+- The **spec** defines WHAT to build (requirements, acceptance criteria)
+- The **research** documents WHY certain decisions were made (libraries, patterns)
+- The **plan** describes HOW to build it (architecture, tech decisions)
+- Always trace your implementation back to spec requirements (REQ- markers)
+- Include `spec-ref` in DONE.md for traceability
 
 ## Commit Pattern
 ```
