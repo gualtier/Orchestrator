@@ -1,6 +1,15 @@
 # Changelog
 
 
+## [2026-02-11]
+
+- feat(hooks): add post-merge routine check and self-dev docs sync (7f184e6)
+- feat(hooks): add Claude Code hooks for memory, context reinject, and task checks (a562a54)
+- feat(update): auto-detect remote and separate CAPABILITIES.md (7028567)
+- feat(update): expand scope to skills/specs and add what's new message (22b9677)
+- docs(memory): update project memory with v3.5 completion status (396cf54)
+
+
 ## [2026-02-09]
 
 - feat(monitoring): add enhanced progress monitoring with live updates (206a7bc)

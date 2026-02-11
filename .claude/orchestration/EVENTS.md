@@ -6,3 +6,4 @@
 [2026-02-11T03:04:55Z] SDD_TASKS: 001-user-authentication-with-oauth-and-jwt
 [2026-02-11T03:05:17Z] SDD_ARCHIVE: 001-user-authentication-with-oauth-and-jwt
 [2026-02-11T03:05:24Z] SDD_SPECIFY: 002-product-catalog-with-search
+[2026-02-11 17:42:06] CHANGELOG: 5 commits adicionados
