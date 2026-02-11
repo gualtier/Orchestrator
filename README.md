@@ -342,6 +342,20 @@ orch cleanup             # Clean up worktrees
 
 ### Memory & Learning
 
+Claude Code sessions are stateless - every new conversation starts from zero. Memory fixes this.
+
+`PROJECT_MEMORY.md` gives Claude instant context about your project: architecture, resolved problems, lessons learned, conventions, and what happened in previous sessions. Without it, Claude rediscovers your project every time, repeats solved mistakes, and asks the same questions.
+
+```text
+Session 1: Claude discovers macOS `head -n` behaves differently than Linux
+           → update-memory records this as a resolved problem
+
+Session 2: Claude reads memory, already knows about the macOS quirk
+           → writes compatible code from the start
+```
+
+The `learn` command goes further - it extracts patterns and insights from completed tasks and feeds them back into memory automatically.
+
 ```bash
 orch show-memory                  # Show memory
 orch update-memory --full         # Bump version + changelog
