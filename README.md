@@ -2,142 +2,6 @@
 
 Claude agent orchestration system with **Spec-Driven Development**, **modular architecture**, and **specialized agents**.
 
-## What's New
-
-### v3.5 - Spec-Driven Development & Claude Code Skills
-
-- **SDD (Spec-Driven Development)** - Full spec-first workflow inspired by [GitHub Spec-Kit](https://github.com/github/spec-kit)
-- **Constitution system** - Editable project principles that govern spec-to-code transformation
-- **Mandatory research gate** - `sdd plan` requires `research.md` to exist
-- **Constitutional gates** - Automated compliance checks (research, simplicity, test-first, traceability)
-- **SDD → Orchestrator bridge** - `sdd tasks` generates orchestrator tasks from plans
-- **14 Claude Code Skills** - Native `/sdd-*` and `/orch-*` slash commands
-- **Autonomous architect** - Claude auto-invokes skills to drive the full SDD pipeline
-
-### v3.4 - Learning & Enhanced Monitoring
-
-- **`learn` command** - Extract insights from completed tasks
-- **Enhanced status** - Rich dashboard with progress bars, velocity, ETA
-- **Watch mode** - Live auto-refreshing status updates (`status --watch`)
-- **Activity tracking** - Real-time indicators (active/idle/stalled)
-
-### v3.3 - Auto-Update & CLI
-
-- **`update` command** - Update orchestrator from remote
-- **`install-cli` command** - Install global shortcut (`orch`)
-- **Automatic backup** - Creates backup before updating
-
-### v3.2 - Memory Management
-
-- **`update-memory --full`** - Auto-increment version + generate changelog
-
-### v3.1 - Modularization
-
-- Modular architecture (lib/ and commands/)
-- `doctor` command, validation, JSON output, tests, shell completions
-
-## Installation
-
-```bash
-# Copy to your project
-cp -r orchestrator-v3/.claude ~/your-project/
-cp orchestrator-v3/CLAUDE.md ~/your-project/
-
-# Make executable
-chmod +x ~/your-project/.claude/scripts/*.sh
-
-# Initialize
-cd ~/your-project
-.claude/scripts/orchestrate.sh init
-.claude/scripts/orchestrate.sh doctor
-
-# (Optional) Install global CLI
-.claude/scripts/orchestrate.sh install-cli
-# Now you can use: orch status, orch help, etc.
-```
-
-## Claude Code Skills
-
-The orchestrator integrates natively with Claude Code through **14 skills** (slash commands):
-
-### SDD Skills
-
-| Skill | Description | Auto |
-|-------|-------------|------|
-| `/sdd` | Hub - shows status, workflow, constitution | Yes |
-| `/sdd-init` | Initialize SDD structure with templates | No |
-| `/sdd-specify "desc"` | Create spec from feature description | Yes |
-| `/sdd-research 001` | Fill mandatory research document | Yes |
-| `/sdd-plan 001` | Create technical plan with worktree mapping | Yes |
-| `/sdd-gate 001` | Check constitutional gates | Yes |
-| `/sdd-tasks 001` | Generate orchestrator tasks from plan | Yes |
-| `/sdd-status` | Show spec lifecycle status | Yes |
-| `/sdd-archive 001` | Archive completed spec | No |
-
-### Orchestrator Skills
-
-| Skill | Description | Auto |
-|-------|-------------|------|
-| `/orch` | Hub - shows agent status and workflow | Yes |
-| `/orch-setup name --preset p` | Create worktree with agents | Yes |
-| `/orch-start` | Start agents in worktrees | Yes |
-| `/orch-status` | Monitor agent progress | Yes |
-| `/orch-merge` | Merge and cleanup | No |
-
-**Auto = Yes** means Claude can invoke the skill autonomously as part of the architect workflow. **No** means user-only (destructive/one-time actions).
-
-## Quick Start
-
-### SDD-First Workflow (Recommended)
-
-For medium/large features, use Spec-Driven Development:
-
-```bash
-# 1. Initialize SDD (first time only)
-orch sdd init
-
-# 2. Create specification
-orch sdd specify "User authentication with OAuth and JWT"
-# ... Claude refines spec.md ...
-
-# 3. Research (MANDATORY before planning)
-orch sdd research 001
-# ... Claude investigates libs, benchmarks, security ...
-
-# 4. Plan & verify
-orch sdd plan 001
-orch sdd gate 001
-
-# 5. Generate tasks & execute
-orch sdd tasks 001
-orch setup auth --preset auth
-orch setup api --preset api
-orch start
-orch wait
-
-# 6. Verify & merge
-orch verify-all
-orch merge
-orch sdd archive 001
-orch update-memory --full
-```
-
-Or use Claude Code Skills directly:
-
-```bash
-/sdd-specify "User authentication with OAuth and JWT"
-```
-
-### Direct Workflow (Small tasks)
-
-```bash
-orch setup auth --preset auth
-orch start
-orch wait
-orch merge
-orch update-memory --full
-```
-
 ## How It Works in Practice
 
 You just describe what you want. Claude handles the rest autonomously.
@@ -213,6 +77,142 @@ Claude: → Specifies, researches, plans, generates tasks
 ```
 
 Claude decides when to use SDD (multi-module features) vs direct execution (small tasks). You only intervene for destructive actions like `/orch-merge` and `/sdd-archive`.
+
+## What's New
+
+### v3.5 - Spec-Driven Development & Claude Code Skills
+
+- **SDD (Spec-Driven Development)** - Full spec-first workflow inspired by [GitHub Spec-Kit](https://github.com/github/spec-kit)
+- **Constitution system** - Editable project principles that govern spec-to-code transformation
+- **Mandatory research gate** - `sdd plan` requires `research.md` to exist
+- **Constitutional gates** - Automated compliance checks (research, simplicity, test-first, traceability)
+- **SDD → Orchestrator bridge** - `sdd tasks` generates orchestrator tasks from plans
+- **14 Claude Code Skills** - Native `/sdd-*` and `/orch-*` slash commands
+- **Autonomous architect** - Claude auto-invokes skills to drive the full SDD pipeline
+
+### v3.4 - Learning & Enhanced Monitoring
+
+- **`learn` command** - Extract insights from completed tasks
+- **Enhanced status** - Rich dashboard with progress bars, velocity, ETA
+- **Watch mode** - Live auto-refreshing status updates (`status --watch`)
+- **Activity tracking** - Real-time indicators (active/idle/stalled)
+
+### v3.3 - Auto-Update & CLI
+
+- **`update` command** - Update orchestrator from remote
+- **`install-cli` command** - Install global shortcut (`orch`)
+- **Automatic backup** - Creates backup before updating
+
+### v3.2 - Memory Management
+
+- **`update-memory --full`** - Auto-increment version + generate changelog
+
+### v3.1 - Modularization
+
+- Modular architecture (lib/ and commands/)
+- `doctor` command, validation, JSON output, tests, shell completions
+
+## Installation
+
+```bash
+# Copy to your project
+cp -r orchestrator-v3/.claude ~/your-project/
+cp orchestrator-v3/CLAUDE.md ~/your-project/
+
+# Make executable
+chmod +x ~/your-project/.claude/scripts/*.sh
+
+# Initialize
+cd ~/your-project
+.claude/scripts/orchestrate.sh init
+.claude/scripts/orchestrate.sh doctor
+
+# (Optional) Install global CLI
+.claude/scripts/orchestrate.sh install-cli
+# Now you can use: orch status, orch help, etc.
+```
+
+## Claude Code Skills
+
+The orchestrator integrates natively with Claude Code through **14 skills** (slash commands):
+
+### SDD Skills
+
+| Skill | Description | Auto |
+| ----- | ----------- | ---- |
+| `/sdd` | Hub - shows status, workflow, constitution | Yes |
+| `/sdd-init` | Initialize SDD structure with templates | No |
+| `/sdd-specify "desc"` | Create spec from feature description | Yes |
+| `/sdd-research 001` | Fill mandatory research document | Yes |
+| `/sdd-plan 001` | Create technical plan with worktree mapping | Yes |
+| `/sdd-gate 001` | Check constitutional gates | Yes |
+| `/sdd-tasks 001` | Generate orchestrator tasks from plan | Yes |
+| `/sdd-status` | Show spec lifecycle status | Yes |
+| `/sdd-archive 001` | Archive completed spec | No |
+
+### Orchestrator Skills
+
+| Skill | Description | Auto |
+| ----- | ----------- | ---- |
+| `/orch` | Hub - shows agent status and workflow | Yes |
+| `/orch-setup name --preset p` | Create worktree with agents | Yes |
+| `/orch-start` | Start agents in worktrees | Yes |
+| `/orch-status` | Monitor agent progress | Yes |
+| `/orch-merge` | Merge and cleanup | No |
+
+**Auto = Yes** means Claude can invoke the skill autonomously as part of the architect workflow. **No** means user-only (destructive/one-time actions).
+
+## Quick Start
+
+### SDD-First Workflow (Recommended)
+
+For medium/large features, use Spec-Driven Development:
+
+```bash
+# 1. Initialize SDD (first time only)
+orch sdd init
+
+# 2. Create specification
+orch sdd specify "User authentication with OAuth and JWT"
+# ... Claude refines spec.md ...
+
+# 3. Research (MANDATORY before planning)
+orch sdd research 001
+# ... Claude investigates libs, benchmarks, security ...
+
+# 4. Plan & verify
+orch sdd plan 001
+orch sdd gate 001
+
+# 5. Generate tasks & execute
+orch sdd tasks 001
+orch setup auth --preset auth
+orch setup api --preset api
+orch start
+orch wait
+
+# 6. Verify & merge
+orch verify-all
+orch merge
+orch sdd archive 001
+orch update-memory --full
+```
+
+Or use Claude Code Skills directly:
+
+```bash
+/sdd-specify "User authentication with OAuth and JWT"
+```
+
+### Direct Workflow (Small tasks)
+
+```bash
+orch setup auth --preset auth
+orch start
+orch wait
+orch merge
+orch update-memory --full
+```
 
 ## SDD Pipeline
 
