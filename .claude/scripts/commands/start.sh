@@ -4,7 +4,18 @@
 # =============================================
 
 cmd_start() {
-    local names=("$@")
+    local names=()
+    local monitor=true
+    local monitor_interval=10
+
+    # Parse flags and agent names
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --no-monitor) monitor=false; shift ;;
+            --interval) monitor_interval="$2"; shift 2 ;;
+            *) names+=("$1"); shift ;;
+        esac
+    done
 
     # Se nenhum nome especificado, iniciar todos
     if [[ ${#names[@]} -eq 0 ]]; then
@@ -22,10 +33,13 @@ cmd_start() {
     log_step "Iniciando ${#names[@]} agente(s)..."
 
     local failed=0
+    local started=0
     for name in "${names[@]}"; do
         if ! start_single_agent "$name"; then
             log_warn "Agente $name falhou ao iniciar, continuando com os demais..."
             ((failed++)) || true
+        else
+            ((started++)) || true
         fi
         sleep 2
     done
@@ -33,6 +47,69 @@ cmd_start() {
     if [[ $failed -gt 0 ]]; then
         log_warn "$failed agente(s) falharam ao iniciar"
     fi
+
+    # If no agents started or monitoring disabled, stop here
+    if [[ $started -eq 0 ]] || [[ "$monitor" == "false" ]]; then
+        return 0
+    fi
+
+    # Enter monitoring loop
+    echo ""
+    log_info "Monitoring agents (Ctrl+C to detach, agents keep running)..."
+    echo ""
+
+    _monitor_until_done "$monitor_interval"
+}
+
+# Monitor all agents until completion or Ctrl+C
+_monitor_until_done() {
+    local interval=${1:-10}
+
+    # Ctrl+C detaches from monitoring, agents keep running
+    trap 'echo ""; log_info "Detached from monitoring. Agents still running."; log_info "Reattach with: orchestrate.sh status --watch"; trap - INT; return 0' INT
+
+    while true; do
+        clear
+
+        # Check for new errors and show notifications
+        check_and_notify_errors 2>/dev/null || true
+
+        # Show enhanced status
+        cmd_status_enhanced
+
+        # Count completion states
+        local total=0 done=0 blocked=0 stopped=0
+        for task_file in "$ORCHESTRATION_DIR/tasks"/*.md; do
+            [[ -f "$task_file" ]] || continue
+            local name=$(basename "$task_file" .md)
+            local status=$(get_agent_status "$name")
+            ((total++)) || true
+
+            case "$status" in
+                done|done_no_report) ((done++)) || true ;;
+                blocked) ((blocked++)) || true ;;
+                stopped) ((stopped++)) || true ;;
+            esac
+        done
+
+        # All agents finished (done + blocked + stopped = total)
+        local finished=$((done + blocked + stopped))
+        if [[ $finished -eq $total ]] && [[ $total -gt 0 ]]; then
+            echo ""
+            if [[ $done -eq $total ]]; then
+                log_success "All $total agent(s) completed successfully!"
+            else
+                log_warn "All agents finished: $done completed, $blocked blocked, $stopped stopped"
+            fi
+            log_info "Next steps: orchestrate.sh verify-all && orchestrate.sh merge"
+            break
+        fi
+
+        sleep "$interval"
+    done
+
+    # Restore default INT handler
+    trap - INT
 }
 
 start_single_agent() {

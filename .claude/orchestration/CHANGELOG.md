@@ -2,6 +2,7 @@
 
 ## [2026-02-12]
 
+- feat(start): auto-monitor agents until completion with --no-monitor opt-out
 - fix(process): prevent set -e from killing script when one agent fails to start
 - fix(process): disable set -e inheritance in nohup subshell for agent launch
 - fix(process): improve health check from single sleep to 3-attempt retry loop
