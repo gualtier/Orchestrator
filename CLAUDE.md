@@ -70,8 +70,9 @@ constitution → specify → research (MANDATORY) → plan → gate → tasks �
 /sdd-tasks 001                     # 6. Generate tasks
 /orch-setup auth --preset auth     # 7. Create worktrees
 /orch-start                        # 8. Start agents
-/orch-merge                        # 9. Merge
-/sdd-archive 001                   # 10. Archive
+/orch-errors                       # 9. Monitor errors (active)
+/orch-merge                        # 10. Merge
+/sdd-archive 001                   # 11. Archive
 ```
 
 **With CLI** (bash):
@@ -85,6 +86,7 @@ constitution → specify → research (MANDATORY) → plan → gate → tasks �
 .claude/scripts/orchestrate.sh sdd tasks 001
 .claude/scripts/orchestrate.sh setup auth --preset auth
 .claude/scripts/orchestrate.sh start
+.claude/scripts/orchestrate.sh errors     # Active error monitoring
 .claude/scripts/orchestrate.sh merge
 .claude/scripts/orchestrate.sh sdd archive 001
 .claude/scripts/orchestrate.sh update-memory --full
@@ -167,6 +169,7 @@ Confirm? (y/n/adjust)
 
 # Execute
 .claude/scripts/orchestrate.sh start
+.claude/scripts/orchestrate.sh errors    # Monitor errors actively
 .claude/scripts/orchestrate.sh wait
 .claude/scripts/orchestrate.sh merge
 ```
@@ -209,7 +212,7 @@ Confirm? (y/n/adjust)
               │                               ▼
               │               ┌─────────────────────────────────┐
               │               │  5. EXECUTE AND MONITOR         │
-              │               │     start → wait                │
+              │               │     start → errors → wait       │
               │               └─────────────────────────────────┘
               │                               │
               │                               ▼
@@ -287,6 +290,7 @@ DON'T TOUCH:
 # Execute
 .claude/scripts/orchestrate.sh start
 .claude/scripts/orchestrate.sh status
+.claude/scripts/orchestrate.sh errors    # Error monitoring dashboard
 .claude/scripts/orchestrate.sh wait
 
 # Finalize

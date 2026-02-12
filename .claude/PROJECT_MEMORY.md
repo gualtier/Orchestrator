@@ -27,7 +27,7 @@
 ```
 .claude/skills/                     # Claude Code Skills (NEW v3.5)
 ├── sdd*/SKILL.md                   # 8 SDD skills (/sdd-init, /sdd-specify, etc.)
-├── orch*/SKILL.md                  # 4 orchestrator skills (/orch-setup, etc.)
+├── orch*/SKILL.md                  # 5 orchestrator skills (/orch-setup, /orch-errors, etc.)
 ├── sdd/SKILL.md                    # SDD hub (/sdd)
 └── orch/SKILL.md                   # Orchestrator hub (/orch)
 
@@ -41,6 +41,7 @@
 │   ├── process.sh          # Process management
 │   ├── agents.sh           # Agent management
 │   ├── monitoring.sh       # Enhanced monitoring (v3.4)
+│   ├── error_detection.sh  # Active error monitoring (v3.6)
 │   ├── learning.sh         # Learning extraction (v3.4)
 │   └── sdd.sh              # SDD library (NEW v3.5)
 ├── commands/
@@ -48,6 +49,7 @@
 │   ├── doctor.sh           # doctor, doctor --fix
 │   ├── setup.sh            # setup
 │   ├── learn.sh            # learn command (v3.4)
+│   ├── errors.sh           # error monitoring dashboard (v3.6)
 │   ├── sdd.sh              # sdd command (NEW v3.5)
 │   ├── start.sh            # start, stop, restart, logs
 │   ├── status.sh           # status, status --json, wait
@@ -74,6 +76,7 @@
 | Process     | lib/process.sh     | PIDs, logs, start/stop                  |
 | Agents      | lib/agents.sh      | Download, cache, presets                |
 | Monitoring  | lib/monitoring.sh  | Progress bars, velocity, ETA, activity  |
+| Errors      | lib/error_detection.sh | Active error monitoring, log polling, classification |
 | Learning    | lib/learning.sh    | Extract insights, parse DONE.md         |
 | SDD         | lib/sdd.sh         | Spec numbering, templates, gates, tasks |
 
@@ -155,7 +158,7 @@
 - [x] SDD context injection into agent prompts (spec-ref)
 - [x] Agent SDD awareness (AGENT_CLAUDE_BASE.md)
 - [x] Shell completions for sdd commands
-- [x] Claude Code Skills integration (14 skills: `/sdd-*`, `/orch-*`)
+- [x] Claude Code Skills integration (15 skills: `/sdd-*`, `/orch-*`)
 - [x] Native slash commands for SDD and orchestration workflows
 - [x] Autonomous skill invocation (Claude auto-chains SDD pipeline)
 - [x] README with practical usage examples and memory value proposition
@@ -169,13 +172,29 @@
 - [x] CLAUDE.md references CAPABILITIES.md in Rule #1 (memory + capabilities)
 - [x] Repo URL changed from `Orchestrator-` to `Orchestrator`
 
-### v3.5.2 - Claude Code Hooks (CURRENT)
+### v3.5.2 - Claude Code Hooks
 
 - [x] Claude Code hooks system (`.claude/settings.json`, `.claude/hooks/`)
 - [x] Context re-injection on compaction (`SessionStart` hook, matcher: `compact`)
 - [x] Memory update enforcement (`Stop` prompt-based hook, checks commits vs update-memory)
 - [x] Task completion check (`Stop` prompt-based hook, blocks on unfinished tasks)
 - [x] `reinject-context.sh` - outputs PROJECT_MEMORY.md + CAPABILITIES.md after compaction
+
+### v3.6 - Active Error Monitoring (CURRENT)
+
+- [x] `lib/error_detection.sh` - Core error detection engine (540+ lines)
+- [x] `commands/errors.sh` - Error monitoring dashboard (330+ lines)
+- [x] Incremental byte-offset log polling (`tail -c +offset | grep -E`)
+- [x] 3-tier severity classification: CRITICAL / WARNING / INFO
+- [x] Error context extraction (file/line from error messages)
+- [x] Corrective action suggestions per error type
+- [x] `orchestrate.sh errors` command with `--watch`, `--agent`, `--recent`, `--clear`
+- [x] Error counts integrated into `status` (standard + enhanced modes)
+- [x] Real-time error notifications during `wait` and `status --watch`
+- [x] Persistent error log (`.claude/orchestration/errors.log`, pipe-delimited)
+- [x] Error state per agent (`.claude/orchestration/pids/<name>.errors`)
+- [x] `/orch-errors` skill for Claude Code
+- [x] Zero external dependencies, bash 3.2+ compatible
 
 ### v4.0 - Future
 
@@ -233,6 +252,8 @@
 | Glob trailing slash in paths  | 3.5     | Strip trailing slash in spec_dir_for()      |
 | Update overwrites CLAUDE.md   | 3.5.1   | Separate CAPABILITIES.md, remove CLAUDE.md from update paths |
 | Update requires `origin` remote | 3.5.1 | Auto-create `orchestrator` remote, fallback to `origin`     |
+| New features invisible to orch  | 3.6   | Update ALL consciousness files: CAPABILITIES.md, PROJECT_MEMORY.md, skills, CLAUDE.md |
+| Gate counts all `\|` lines      | 3.6   | Simplicity gate counts ALL table rows in plan.md, not just Worktree Mapping. Use lists instead of tables for non-module sections |
 
 ## Lessons Learned
 
@@ -247,6 +268,9 @@
 9. **Project-agnostic CLI**: Global CLI should detect project by current directory, not installation location
 10. **Skills autonomy**: Don't set `disable-model-invocation: true` on skills meant for autonomous use - use "Use proactively" in description instead
 11. **README-first**: Usage examples before changelog - new users need to see what it does before version history
+12. **Post-merge checklist (MANDATORY)**: After EVERY merge, run in this exact order: (1) `update-memory --full` (with --full!), (2) `learn extract`. Never skip or use wrong flags
+13. **Feature consciousness checklist**: When adding a new feature, update ALL 4 consciousness layers: (1) CAPABILITIES.md — CLI commands + feature description, (2) PROJECT_MEMORY.md — architecture tree + components table + roadmap, (3) CLAUDE.md — workflow diagrams + command references, (4) Skills — create new skill + update /orch hub. Missing any layer = orch won't know the feature exists in future sessions
+14. **CAPABILITIES.md = full CLI reference**: Must list ALL commands, not just "main" ones. Undocumented commands are invisible commands. Audit with `grep "^\s*[a-z-]*)" orchestrate.sh` vs documented list
 
 ## Next Session
 

@@ -1,6 +1,6 @@
-# Claude Orchestrator v3.5
+# Claude Orchestrator v3.6
 
-Claude agent orchestration system with **Spec-Driven Development**, **modular architecture**, and **specialized agents**.
+Claude agent orchestration system with **Spec-Driven Development**, **active error monitoring**, and **specialized agents**.
 
 ## How It Works in Practice
 
@@ -27,9 +27,13 @@ Claude: Starting SDD flow for this feature.
 
         ... agents work independently ...
 
+        → /orch-errors detects issues in real-time:
+            ⚠ webhooks: TypeError in handler.ts:42
+              → Check null handling in webhook payload parser
+
         → /orch-status shows progress:
             payments: ██████████ 100% ✅
-            webhooks: ████████░░  80% 🔄
+            webhooks: ████████░░  80% 🔄 (1 warning)
             billing:  ██████░░░░  60% 🔄
 
         All worktrees complete. Run /orch-merge when ready.
@@ -80,6 +84,16 @@ Claude decides when to use SDD (multi-module features) vs direct execution (smal
 
 ## What's New
 
+### v3.6 - Active Error Monitoring
+
+- **Error detection engine** - Incremental byte-offset log polling catches errors as they happen (~5-25ms per agent)
+- **3-tier severity classification** - CRITICAL / WARNING / INFO with color-coded display
+- **Corrective action suggestions** - Each error type includes actionable fix recommendations
+- **Error dashboard** - `orch errors` with `--watch`, `--agent`, `--recent`, `--clear` modes
+- **Integrated monitoring** - Error counts in `status`, real-time notifications during `wait` and `--watch`
+- **`/orch-errors` skill** - Claude Code slash command for error dashboard access
+- **15 Claude Code Skills** - Now includes error monitoring alongside SDD and orchestration
+
 ### v3.5 - Spec-Driven Development & Claude Code Skills
 
 - **SDD (Spec-Driven Development)** - Full spec-first workflow inspired by [GitHub Spec-Kit](https://github.com/github/spec-kit)
@@ -87,7 +101,7 @@ Claude decides when to use SDD (multi-module features) vs direct execution (smal
 - **Mandatory research gate** - `sdd plan` requires `research.md` to exist
 - **Constitutional gates** - Automated compliance checks (research, simplicity, test-first, traceability)
 - **SDD → Orchestrator bridge** - `sdd tasks` generates orchestrator tasks from plans
-- **14 Claude Code Skills** - Native `/sdd-*` and `/orch-*` slash commands
+- **Claude Code Skills** - Native `/sdd-*` and `/orch-*` slash commands
 - **Autonomous architect** - Claude auto-invokes skills to drive the full SDD pipeline
 
 ### v3.4 - Learning & Enhanced Monitoring
@@ -134,7 +148,7 @@ cd ~/your-project
 
 ## Claude Code Skills
 
-The orchestrator integrates natively with Claude Code through **14 skills** (slash commands):
+The orchestrator integrates natively with Claude Code through **15 skills** (slash commands):
 
 ### SDD Skills
 
@@ -158,6 +172,7 @@ The orchestrator integrates natively with Claude Code through **14 skills** (sla
 | `/orch-setup name --preset p` | Create worktree with agents | Yes |
 | `/orch-start` | Start agents in worktrees | Yes |
 | `/orch-status` | Monitor agent progress | Yes |
+| `/orch-errors` | Error monitoring dashboard | Yes |
 | `/orch-merge` | Merge and cleanup | No |
 
 **Auto = Yes** means Claude can invoke the skill autonomously as part of the architect workflow. **No** means user-only (destructive/one-time actions).
@@ -318,7 +333,12 @@ orch status --enhanced     # Rich dashboard
 orch status --watch        # Live auto-refresh
 orch status --compact      # One-line per agent
 orch status --json         # JSON output
-orch wait                  # Wait with live updates
+orch errors                # Error monitoring dashboard
+orch errors --watch        # Live error monitoring (auto-refresh)
+orch errors --agent <name> # Filter errors by agent
+orch errors --recent       # Show last 50 errors with details
+orch errors --clear        # Clear error tracking
+orch wait                  # Wait with live updates + error notifications
 orch logs <agent>          # View logs
 orch follow <agent>        # Follow logs
 ```
@@ -400,7 +420,7 @@ project/
 │   ├── agents/                        # Installed agents (VoltAgent)
 │   ├── skills/                        # Claude Code Skills
 │   │   ├── sdd*/SKILL.md             # SDD skills (8)
-│   │   ├── orch*/SKILL.md            # Orchestrator skills (4)
+│   │   ├── orch*/SKILL.md            # Orchestrator skills (5)
 │   │   ├── sdd/SKILL.md              # SDD hub
 │   │   └── orch/SKILL.md             # Orchestrator hub
 │   ├── specs/                         # SDD specifications
@@ -410,8 +430,8 @@ project/
 │   │   └── archive/                   # Completed specs
 │   ├── scripts/
 │   │   ├── orchestrate.sh             # Entry point
-│   │   ├── lib/                       # Libraries (9 modules)
-│   │   ├── commands/                  # Commands (11 modules)
+│   │   ├── lib/                       # Libraries (10 modules)
+│   │   ├── commands/                  # Commands (12 modules)
 │   │   ├── tests/                     # Test framework
 │   │   └── completions/               # Shell completions
 │   └── orchestration/

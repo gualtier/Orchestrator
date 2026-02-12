@@ -13,12 +13,16 @@ Show current orchestration status.
 ## Options
 
 ```bash
-# Enhanced status with details
+# Enhanced status with details (includes error counts)
 .claude/scripts/orchestrate.sh status --enhanced
 
-# Live updates (every 5 seconds)
+# Live updates (every 5 seconds, with error notifications)
 .claude/scripts/orchestrate.sh status --watch
 
 # JSON format (for automation)
 .claude/scripts/orchestrate.sh status --json
 ```
+
+## Error Monitoring
+
+If agents show errors, use `/orch-errors` for the full error dashboard with severity breakdown and suggested actions.

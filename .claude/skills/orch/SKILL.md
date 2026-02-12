@@ -20,6 +20,7 @@ Multi-agent orchestration using Git Worktrees with specialized agents.
 | `/orch-setup` | Create worktree with agent preset |
 | `/orch-start` | Start agents |
 | `/orch-status` | Monitor agent progress |
+| `/orch-errors` | Error monitoring dashboard |
 | `/orch-merge` | Merge and cleanup |
 | `/sdd` | Spec-Driven Development flow |
 
@@ -27,7 +28,7 @@ Multi-agent orchestration using Git Worktrees with specialized agents.
 
 **For large features** (recommended):
 ```
-/sdd → /sdd-specify → /sdd-research → /sdd-plan → /sdd-gate → /sdd-tasks → /orch-setup → /orch-start
+/sdd → /sdd-specify → /sdd-research → /sdd-plan → /sdd-gate → /sdd-tasks → /orch-setup → /orch-start → /orch-errors → /orch-merge
 ```
 
 **For small tasks** (direct):
