@@ -89,7 +89,7 @@ get_spec_status() {
             if grep -q "spec-ref:.*${spec_num}" "$task_file" 2>/dev/null; then
                 ((task_count++))
                 local task_name=$(basename "$task_file" .md)
-                local worktree_path="../${PROJECT_NAME}-${task_name}"
+                local worktree_path=$(get_worktree_path "$task_name")
                 if [[ -f "$worktree_path/DONE.md" ]]; then
                     ((done_count++))
                 fi

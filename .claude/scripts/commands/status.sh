@@ -63,7 +63,7 @@ cmd_status_standard() {
         [[ -f "$task_file" ]] || continue
 
         local name=$(basename "$task_file" .md)
-        local worktree_path="../${PROJECT_NAME}-$name"
+        local worktree_path=$(get_worktree_path "$name")
 
         ((total++))
 
@@ -174,7 +174,7 @@ cmd_status_enhanced() {
         [[ -f "$task_file" ]] || continue
 
         local name=$(basename "$task_file" .md)
-        local worktree_path="../${PROJECT_NAME}-$name"
+        local worktree_path=$(get_worktree_path "$name")
         ((total++))
 
         echo ""
@@ -402,7 +402,7 @@ cmd_status_json() {
         [[ -f "$task_file" ]] || continue
 
         local name=$(basename "$task_file" .md)
-        local worktree_path="../${PROJECT_NAME}-$name"
+        local worktree_path=$(get_worktree_path "$name")
         local status=$(get_agent_status "$name")
         local progress=$(get_agent_progress "$name")
         local agents=""

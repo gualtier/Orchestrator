@@ -60,6 +60,12 @@ ensure_dir() { mkdir -p "$1"; }
 file_exists() { [[ -f "$1" ]]; }
 dir_exists() { [[ -d "$1" ]]; }
 
+# Get absolute worktree path for a given agent name
+get_worktree_path() {
+    local name=$1
+    echo "$(dirname "$PROJECT_ROOT")/${PROJECT_NAME}-$name"
+}
+
 # =============================================
 # INTERACTIVE CONFIRMATION
 # =============================================

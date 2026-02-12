@@ -78,7 +78,7 @@ get_elapsed_seconds() {
 # Returns: "commit_count files_changed last_commit_msg"
 get_agent_activity() {
     local name=$1
-    local worktree_path="../${PROJECT_NAME}-$name"
+    local worktree_path=$(get_worktree_path "$name")
 
     if ! dir_exists "$worktree_path"; then
         echo "0 0 none"
@@ -112,7 +112,7 @@ get_agent_activity() {
 # Returns: timestamp (unix epoch) or "0"
 get_last_activity_time() {
     local name=$1
-    local worktree_path="../${PROJECT_NAME}-$name"
+    local worktree_path=$(get_worktree_path "$name")
 
     if ! dir_exists "$worktree_path"; then
         echo "0"
@@ -160,7 +160,7 @@ get_activity_indicator() {
 # Returns: "item text" or "no active item"
 get_current_task_item() {
     local name=$1
-    local worktree_path="../${PROJECT_NAME}-$name"
+    local worktree_path=$(get_worktree_path "$name")
     local progress_file="$worktree_path/PROGRESS.md"
 
     if ! file_exists "$progress_file"; then
@@ -203,7 +203,7 @@ calculate_velocity() {
         return
     fi
 
-    local worktree_path="../${PROJECT_NAME}-$name"
+    local worktree_path=$(get_worktree_path "$name")
     local progress_file="$worktree_path/PROGRESS.md"
 
     if ! file_exists "$progress_file"; then
@@ -250,7 +250,7 @@ estimate_remaining_time() {
         return
     fi
 
-    local worktree_path="../${PROJECT_NAME}-$name"
+    local worktree_path=$(get_worktree_path "$name")
     local progress_file="$worktree_path/PROGRESS.md"
 
     local done_items=$(grep -c "\- \[x\]" "$progress_file" 2>/dev/null || echo 0)

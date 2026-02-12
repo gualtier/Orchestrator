@@ -11,7 +11,7 @@ cmd_verify() {
         return 1
     fi
 
-    local worktree_path="../${PROJECT_NAME}-$name"
+    local worktree_path=$(get_worktree_path "$name")
     local errors=0
     local warnings=0
 
@@ -150,7 +150,7 @@ cmd_review() {
         return 1
     fi
 
-    local worktree_path="../${PROJECT_NAME}-$name"
+    local worktree_path=$(get_worktree_path "$name")
     local review_name="review-$name"
 
     if ! dir_exists "$worktree_path"; then
@@ -252,7 +252,7 @@ cmd_pre_merge() {
 
     local all_files=""
     for name in "${worktrees[@]}"; do
-        local worktree_path="../${PROJECT_NAME}-$name"
+        local worktree_path=$(get_worktree_path "$name")
         local files=$(cd "$worktree_path" && files_changed_since main 2>/dev/null)
         all_files="$all_files"$'\n'"$files"
     done
@@ -317,7 +317,7 @@ EOF
         [[ -f "$task_file" ]] || continue
         ((total++))
         local name=$(basename "$task_file" .md)
-        local worktree_path="../${PROJECT_NAME}-$name"
+        local worktree_path=$(get_worktree_path "$name")
 
         file_exists "$worktree_path/DONE.md" && ((done++))
         file_exists "$worktree_path/BLOCKED.md" && ((blocked++))
@@ -340,7 +340,7 @@ EOF
     for task_file in "$ORCHESTRATION_DIR/tasks"/*.md; do
         [[ -f "$task_file" ]] || continue
         local name=$(basename "$task_file" .md)
-        local worktree_path="../${PROJECT_NAME}-$name"
+        local worktree_path=$(get_worktree_path "$name")
 
         echo "### $name" >> "$report_file"
         echo "" >> "$report_file"

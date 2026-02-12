@@ -1,5 +1,17 @@
 # Changelog
 
+## [2026-02-12]
+
+- fix(process): prevent set -e from killing script when one agent fails to start
+- fix(process): disable set -e inheritance in nohup subshell for agent launch
+- fix(process): improve health check from single sleep to 3-attempt retry loop
+- fix(paths): replace all 23 relative worktree paths with absolute get_worktree_path()
+- docs(v3.6): complete error monitoring integration across all consciousness layers (84dea0f)
+- feat(error-monitor): implement active error monitoring for orchestrator agents (a6d1250)
+- fix(agents): ensure DONE.md creation and add commit-based fallback detection (ede4ef2)
+- docs(memory): update memory and changelog after hooks feature (b44b8f3)
+- feat(hooks): add post-merge routine check and self-dev docs sync (7f184e6)
+
 ## [v3.6] - 2026-02-12
 
 ### Active Error Monitoring

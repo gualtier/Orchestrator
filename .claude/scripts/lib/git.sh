@@ -46,7 +46,7 @@ list_worktrees() {
 # Check if worktree exists
 worktree_exists() {
     local name=$1
-    local worktree_path="../${PROJECT_NAME}-$name"
+    local worktree_path=$(get_worktree_path "$name")
     dir_exists "$worktree_path"
 }
 
@@ -54,7 +54,7 @@ worktree_exists() {
 create_git_worktree() {
     local name=$1
     local from_branch=${2:-$(current_branch)}
-    local worktree_path="../${PROJECT_NAME}-$name"
+    local worktree_path=$(get_worktree_path "$name")
     local branch="feature/$name"
 
     # Validate name
@@ -104,7 +104,7 @@ create_git_worktree() {
 remove_git_worktree() {
     local name=$1
     local force=${2:-false}
-    local worktree_path="../${PROJECT_NAME}-$name"
+    local worktree_path=$(get_worktree_path "$name")
 
     if ! worktree_exists "$name"; then
         log_warn "Worktree não existe: $name"

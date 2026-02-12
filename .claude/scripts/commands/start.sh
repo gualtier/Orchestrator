@@ -21,15 +21,23 @@ cmd_start() {
 
     log_step "Iniciando ${#names[@]} agente(s)..."
 
+    local failed=0
     for name in "${names[@]}"; do
-        start_single_agent "$name"
+        if ! start_single_agent "$name"; then
+            log_warn "Agente $name falhou ao iniciar, continuando com os demais..."
+            ((failed++)) || true
+        fi
         sleep 2
     done
+
+    if [[ $failed -gt 0 ]]; then
+        log_warn "$failed agente(s) falharam ao iniciar"
+    fi
 }
 
 start_single_agent() {
     local name=$1
-    local worktree_path="../${PROJECT_NAME}-$name"
+    local worktree_path=$(get_worktree_path "$name")
     local task_file="$ORCHESTRATION_DIR/tasks/$name.md"
 
     # Validations

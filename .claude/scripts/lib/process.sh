@@ -91,7 +91,7 @@ start_agent_process() {
     # Start process
     log_info "Iniciando agente: $name"
 
-    (cd "$worktree_path" && nohup claude --dangerously-skip-permissions -p "$prompt" > "$logfile" 2>&1) &
+    (set +e; cd "$worktree_path" && nohup claude --dangerously-skip-permissions -p "$prompt" > "$logfile" 2>&1) &
 
     local pid=$!
 
@@ -99,16 +99,21 @@ start_agent_process() {
     echo $pid > "$pidfile"
     echo $(date '+%s') > "$start_time_file"
 
-    # Check if started
-    sleep 1
-    if kill -0 "$pid" 2>/dev/null; then
-        log_success "Agente $name iniciado (PID: $pid)"
-        return 0
-    else
-        log_error "Falha ao iniciar agente $name"
-        rm -f "$pidfile" "$start_time_file"
-        return 1
-    fi
+    # Check if started (retry up to 3 times)
+    local attempts=0
+    local max_attempts=3
+    while [[ $attempts -lt $max_attempts ]]; do
+        sleep 1
+        if kill -0 "$pid" 2>/dev/null; then
+            log_success "Agente $name iniciado (PID: $pid)"
+            return 0
+        fi
+        ((attempts++)) || true
+    done
+
+    log_error "Falha ao iniciar agente $name (processo morreu após ${max_attempts}s)"
+    rm -f "$pidfile" "$start_time_file"
+    return 1
 }
 
 stop_agent_process() {
@@ -209,7 +214,7 @@ rotate_logs() {
 
 get_agent_status() {
     local name=$1
-    local worktree_path="../${PROJECT_NAME}-$name"
+    local worktree_path=$(get_worktree_path "$name")
 
     # Check status files
     if file_exists "$worktree_path/DONE.md"; then
@@ -238,7 +243,7 @@ get_agent_status() {
 
 get_agent_progress() {
     local name=$1
-    local worktree_path="../${PROJECT_NAME}-$name"
+    local worktree_path=$(get_worktree_path "$name")
     local progress_file="$worktree_path/PROGRESS.md"
 
     if file_exists "$progress_file"; then

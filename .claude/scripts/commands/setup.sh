@@ -68,7 +68,7 @@ cmd_setup() {
     # Create worktree
     create_git_worktree "$name" "$from_branch" || return 1
 
-    local worktree_path="../${PROJECT_NAME}-$name"
+    local worktree_path=$(get_worktree_path "$name")
 
     # Copiar agentes para worktree
     if [[ -n "$agents_to_copy" ]]; then

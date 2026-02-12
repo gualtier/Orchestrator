@@ -12,7 +12,7 @@ cmd_merge() {
     for task_file in "$ORCHESTRATION_DIR/tasks"/*.md; do
         [[ -f "$task_file" ]] || continue
         local name=$(basename "$task_file" .md)
-        local worktree_path="../${PROJECT_NAME}-$name"
+        local worktree_path=$(get_worktree_path "$name")
 
         # Pular reviews
         [[ "$name" == review-* ]] && continue
@@ -101,7 +101,7 @@ cmd_cleanup() {
         [[ -f "$task_file" ]] || continue
 
         local name=$(basename "$task_file" .md)
-        local worktree_path="../${PROJECT_NAME}-$name"
+        local worktree_path=$(get_worktree_path "$name")
 
         # Stop agent if running
         stop_agent_process "$name" true 2>/dev/null || true
