@@ -95,8 +95,16 @@ cmd_status_standard() {
                 echo -e "│ Task: ${GREEN}✅ COMPLETED${NC}"
                 ((done++))
                 ;;
+            done_no_report)
+                echo -e "│ Task: ${YELLOW}⚠️  COMPLETED (no DONE.md)${NC}"
+                ((done++))
+                ;;
             blocked)
                 echo -e "│ Task: ${RED}🚫 BLOCKED${NC}"
+                ((blocked++))
+                ;;
+            stopped)
+                echo -e "│ Task: ${RED}⏹️  STOPPED (no commits)${NC}"
                 ((blocked++))
                 ;;
             running)
@@ -194,8 +202,16 @@ cmd_status_enhanced() {
                 echo -e "${YELLOW}║${NC} ${BOLD}Status:${NC} ${GREEN}✅ COMPLETED${NC}"
                 ((done++))
                 ;;
+            done_no_report)
+                echo -e "${YELLOW}║${NC} ${BOLD}Status:${NC} ${YELLOW}⚠️  COMPLETED (no DONE.md)${NC}"
+                ((done++))
+                ;;
             blocked)
                 echo -e "${YELLOW}║${NC} ${BOLD}Status:${NC} ${RED}🚫 BLOCKED${NC}"
+                ((blocked++))
+                ;;
+            stopped)
+                echo -e "${YELLOW}║${NC} ${BOLD}Status:${NC} ${RED}⏹️  STOPPED (no commits)${NC}"
                 ((blocked++))
                 ;;
             running)
@@ -294,9 +310,11 @@ cmd_status_compact() {
         is_process_running "$name" && proc_icon="🟢"
 
         case "$status" in
-            done)    status_icon="✅" ;;
-            blocked) status_icon="🚫" ;;
-            running) status_icon="🔄" ;;
+            done)            status_icon="✅" ;;
+            done_no_report)  status_icon="⚠️" ;;
+            blocked)         status_icon="🚫" ;;
+            stopped)         status_icon="⏹️" ;;
+            running)         status_icon="🔄" ;;
         esac
 
         local bar=$(render_progress_bar "$progress" 20)
@@ -387,9 +405,9 @@ cmd_status_json() {
         local name=$(basename "$task_file" .md)
         local status=$(get_agent_status "$name")
         case "$status" in
-            done) ((done++)) ;;
+            done|done_no_report) ((done++)) ;;
             running) ((running++)) ;;
-            blocked) ((blocked++)) ;;
+            blocked|stopped) ((blocked++)) ;;
         esac
     done
 

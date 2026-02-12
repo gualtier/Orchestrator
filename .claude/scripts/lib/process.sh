@@ -216,6 +216,19 @@ get_agent_status() {
         echo "done"
     elif file_exists "$worktree_path/BLOCKED.md"; then
         echo "blocked"
+    elif ! is_process_running "$name"; then
+        # Process stopped — check if agent made commits (fallback detection)
+        local commits=0
+        if dir_exists "$worktree_path"; then
+            commits=$(cd "$worktree_path" && git log --oneline main..HEAD 2>/dev/null | wc -l | tr -d ' ')
+        fi
+        if [[ $commits -gt 0 ]]; then
+            echo "done_no_report"
+        elif file_exists "$worktree_path/PROGRESS.md"; then
+            echo "stopped"
+        else
+            echo "pending"
+        fi
     elif file_exists "$worktree_path/PROGRESS.md"; then
         echo "running"
     else

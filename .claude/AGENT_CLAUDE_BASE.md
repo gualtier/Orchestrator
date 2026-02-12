@@ -18,7 +18,7 @@ You have specialized expertise according to the agents in `.claude/agents/`.
 3. Execute task step by step
 4. Update PROGRESS.md frequently
 5. Make descriptive commits
-6. Create DONE.md when finished
+6. **MANDATORY**: Create DONE.md when finished (the orchestrator requires this file to detect completion — without it your work is considered incomplete)
 
 ## Status Files
 

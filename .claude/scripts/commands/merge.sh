@@ -18,9 +18,18 @@ cmd_merge() {
         [[ "$name" == review-* ]] && continue
 
         if ! file_exists "$worktree_path/DONE.md"; then
-            log_error "Agente $name não terminou (sem DONE.md)"
-            log_info "Use: $0 verify $name"
-            return 1
+            # Fallback: check if agent made commits despite missing DONE.md
+            local commits=0
+            if dir_exists "$worktree_path"; then
+                commits=$(cd "$worktree_path" && git log --oneline main..HEAD 2>/dev/null | wc -l | tr -d ' ')
+            fi
+            if [[ $commits -gt 0 ]]; then
+                log_warn "Agent $name has no DONE.md but made $commits commit(s). Proceeding with merge."
+            else
+                log_error "Agent $name did not finish (no DONE.md, no commits)"
+                log_info "Use: $0 verify $name"
+                return 1
+            fi
         fi
     done
 

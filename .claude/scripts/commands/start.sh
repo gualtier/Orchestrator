@@ -95,6 +95,8 @@ $(head -80 "$spec_dir/plan.md")
 
 Você é um agente executor com expertise em: $specialized_agents
 
+⚠️ CRITICAL REQUIREMENT: When you finish your task, you MUST create a DONE.md file in the root of this worktree. This is NOT optional. The orchestrator depends on DONE.md to detect completion. Without it, your work will be considered incomplete even if you made commits.
+
 ## Base Instructions
 $(cat "$worktree_path/.claude/CLAUDE.md" 2>/dev/null || cat "$CLAUDE_DIR/AGENT_CLAUDE.md" 2>/dev/null || echo "")
 
@@ -131,14 +133,20 @@ $sdd_context
 $task
 
 ---
-INSTRUÇÕES FINAIS:
-1. Leia a tarefa acima com atenção
-2. Crie PROGRESS.md imediatamente
-3. Execute passo a passo
-4. Faça commits frequentes: git commit -m 'feat($name): desc'
-5. Crie DONE.md quando terminar
+MANDATORY STEPS (follow in order):
+1. Read the task above carefully
+2. Create PROGRESS.md immediately
+3. Execute step by step
+4. Make frequent commits: git commit -m 'feat($name): desc'
+5. LAST STEP (MANDATORY): Create DONE.md in the root directory with these sections:
+   - # ✅ Completed: [task name]
+   - ## Summary (what was done)
+   - ## Modified Files (list of changed files)
+   - ## How to Test (testing instructions)
 
-COMECE AGORA!"
+⛔ WITHOUT DONE.md YOUR WORK IS CONSIDERED INCOMPLETE. This is the LAST thing you must do before finishing.
+
+START NOW!"
 
     # Registrar evento
     echo "[$(timestamp)] STARTING: $name [agents: $specialized_agents]" >> "$EVENTS_FILE"
