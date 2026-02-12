@@ -2,6 +2,8 @@
 
 ## [2026-02-12]
 
+- fix(sdd): gate miscounting modules by parsing all tables instead of Worktree Mapping only
+- fix(sdd): worktree mapping parser not stopping at ### subsection headings
 - feat(start): auto-monitor agents until completion with --no-monitor opt-out
 - fix(process): prevent set -e from killing script when one agent fails to start
 - fix(process): disable set -e inheritance in nohup subshell for agent launch

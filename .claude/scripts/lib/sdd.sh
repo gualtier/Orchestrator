@@ -204,10 +204,7 @@ check_gates() {
 
     # Gate 2: Simplicity (Article III)
     echo -e "${YELLOW}[2/4] Simplicity Gate...${NC}"
-    local worktree_count=$(grep -c "^|" "$plan_file" 2>/dev/null | head -1)
-    # Subtract header rows (2: header + separator)
-    worktree_count=$((worktree_count - 2))
-    [[ $worktree_count -lt 0 ]] && worktree_count=0
+    local worktree_count=$(parse_worktree_mapping "$plan_file" | wc -l | tr -d ' ')
 
     if [[ $worktree_count -le 3 ]]; then
         log_success "Module count OK ($worktree_count modules)"
@@ -273,8 +270,8 @@ parse_worktree_mapping() {
             continue
         fi
 
-        # Stop at next section
-        if $in_table && echo "$line" | grep -q "^## "; then
+        # Stop at next section (any heading level: ##, ###, etc.)
+        if $in_table && echo "$line" | grep -qE "^#{2,} "; then
             break
         fi
 
