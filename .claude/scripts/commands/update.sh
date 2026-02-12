@@ -234,12 +234,24 @@ _show_whats_new() {
         echo "    - SDD pipeline: specify -> research -> plan -> gate -> tasks"
         echo "    - Constitution system with editable project principles"
         echo "    - Mandatory research gate before planning"
-        echo "    - 14 Claude Code Skills (/sdd-*, /orch-*)"
+        echo "    - Claude Code Skills (/sdd-*, /orch-*)"
         echo "    - Autonomous architect: Claude auto-chains the pipeline"
         echo ""
         echo -e "  ${YELLOW}Quick start:${NC}"
         echo "    orch sdd init          # Initialize SDD (first time)"
         echo "    /sdd-specify \"desc\"    # Or just describe your feature"
+    fi
+
+    if _version_lt "$old_minor" "3.6"; then
+        echo ""
+        echo -e "  ${GREEN}v3.6 - Active Error Monitoring${NC}"
+        echo "    - Error detection engine: incremental log polling (~5-25ms/agent)"
+        echo "    - 3-tier severity: CRITICAL / WARNING / INFO with color-coded display"
+        echo "    - Corrective action suggestions per error type"
+        echo "    - Error dashboard: orch errors (--watch, --agent, --recent, --clear)"
+        echo "    - Integrated into status and wait commands"
+        echo "    - /orch-errors skill for real-time monitoring"
+        echo "    - 15 Claude Code Skills total"
     fi
 
     echo ""

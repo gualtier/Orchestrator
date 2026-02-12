@@ -1,7 +1,7 @@
 #!/bin/bash
 # ===========================================
-# ORQUESTRADOR DE AGENTES CLAUDE v3.5
-#   SDD Edition
+# ORQUESTRADOR DE AGENTES CLAUDE v3.6
+#   Error Monitoring Edition
 # ===========================================
 
 set -eo pipefail
