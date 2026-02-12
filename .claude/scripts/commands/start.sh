@@ -151,6 +151,9 @@ START NOW!"
     # Registrar evento
     echo "[$(timestamp)] STARTING: $name [agents: $specialized_agents]" >> "$EVENTS_FILE"
 
+    # Initialize error tracking for this agent
+    init_error_tracking "$name"
+
     # Start process
     start_agent_process "$name" "$worktree_path" "$full_prompt"
 }

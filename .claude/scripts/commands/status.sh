@@ -125,6 +125,19 @@ cmd_status_standard() {
             echo -e "│ Commit: ${GRAY}$commit${NC}"
         fi
 
+        # Error count (v3.5)
+        local error_count=$(get_error_count "$name" 2>/dev/null || echo "0")
+        if [[ ${error_count:-0} -gt 0 ]]; then
+            local sev_counts=$(get_error_counts_by_severity "$name" 2>/dev/null || echo "0|0|0")
+            local err_critical=$(echo "$sev_counts" | cut -d'|' -f1)
+            local err_warning=$(echo "$sev_counts" | cut -d'|' -f2)
+            if [[ ${err_critical:-0} -gt 0 ]]; then
+                echo -e "│ Errors: ${RED}$error_count (C:$err_critical W:$err_warning)${NC}"
+            else
+                echo -e "│ Errors: ${YELLOW}$error_count (W:$err_warning)${NC}"
+            fi
+        fi
+
         echo -e "${YELLOW}└──────────────────────────────────────${NC}"
     done
 
@@ -267,6 +280,22 @@ cmd_status_enhanced() {
             fi
         fi
 
+        # Error status (v3.5)
+        local error_count=$(get_error_count "$name" 2>/dev/null || echo "0")
+        if [[ ${error_count:-0} -gt 0 ]]; then
+            local sev_counts=$(get_error_counts_by_severity "$name" 2>/dev/null || echo "0|0|0")
+            local err_critical=$(echo "$sev_counts" | cut -d'|' -f1)
+            local err_warning=$(echo "$sev_counts" | cut -d'|' -f2)
+            local err_info=$(echo "$sev_counts" | cut -d'|' -f3)
+            if [[ ${err_critical:-0} -gt 0 ]]; then
+                echo -e "${YELLOW}║${NC} ${BOLD}Errors:${NC} ${RED}$error_count total${NC} (${RED}C:$err_critical${NC} ${YELLOW}W:$err_warning${NC} ${BLUE}I:$err_info${NC})"
+            else
+                echo -e "${YELLOW}║${NC} ${BOLD}Errors:${NC} ${YELLOW}$error_count total${NC} (${YELLOW}W:$err_warning${NC} ${BLUE}I:$err_info${NC})"
+            fi
+        else
+            echo -e "${YELLOW}║${NC} ${BOLD}Errors:${NC} ${GREEN}None${NC}"
+        fi
+
         echo -e "${YELLOW}╚$(printf '═%.0s' {1..60})${NC}"
     done
 
@@ -340,6 +369,9 @@ cmd_status_watch() {
     while true; do
         # Clear screen
         clear
+
+        # Check for new errors and show notifications (REQ-7)
+        check_and_notify_errors 2>/dev/null || true
 
         # Show enhanced status
         cmd_status_enhanced
@@ -439,6 +471,9 @@ cmd_wait() {
         log_info "Polling interval: ${interval}s (Ctrl+C to exit)"
 
         while true; do
+            # Check for new errors and show notifications inline (REQ-7)
+            check_and_notify_errors 2>/dev/null || true
+
             if cmd_status > /dev/null 2>&1; then
                 log_success "All agents completed!"
                 return 0

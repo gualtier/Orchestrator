@@ -26,6 +26,7 @@ source "$SCRIPT_DIR/lib/git.sh"
 source "$SCRIPT_DIR/lib/process.sh"
 source "$SCRIPT_DIR/lib/agents.sh"
 source "$SCRIPT_DIR/lib/monitoring.sh"
+source "$SCRIPT_DIR/lib/error_detection.sh"
 source "$SCRIPT_DIR/lib/sdd.sh"
 
 # Comandos
@@ -38,6 +39,7 @@ source "$SCRIPT_DIR/commands/verify.sh"
 source "$SCRIPT_DIR/commands/merge.sh"
 source "$SCRIPT_DIR/commands/update.sh"
 source "$SCRIPT_DIR/commands/learn.sh"
+source "$SCRIPT_DIR/commands/errors.sh"
 source "$SCRIPT_DIR/commands/sdd.sh"
 source "$SCRIPT_DIR/commands/help.sh"
 
@@ -83,6 +85,7 @@ main() {
         wait) cmd_wait "$@" ;;
         logs) cmd_logs "$@" ;;
         follow) cmd_follow "$@" ;;
+        errors) cmd_errors "$@" ;;
 
         # Verification
         verify) cmd_verify "$@" ;;
