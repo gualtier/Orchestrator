@@ -91,7 +91,7 @@ get_agent_activity() {
     local last_msg="none"
 
     # Check if it's a git repository
-    if [[ -d "$worktree_path/.git" ]]; then
+    if [[ -e "$worktree_path/.git" ]]; then
         # Get default branch
         local default_branch=$(cd "$PROJECT_ROOT" && git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "main")
 

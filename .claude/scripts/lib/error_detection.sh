@@ -95,8 +95,8 @@ init_error_tracking() {
         store_offset "$name" "0"
     fi
 
-    # Reset error state file
-    echo "0|none|0" > "$errors_file"
+    # Reset error state file (5-field format: total|last_error|critical|warning|info)
+    echo "0|none|0|0|0" > "$errors_file"
 
     log_debug "Error tracking initialized for $name"
 }
@@ -279,14 +279,14 @@ check_agent_errors() {
             last_severity="$severity"
 
             case "$severity" in
-                CRITICAL) ((critical_count++)) ;;
-                WARNING) ((warning_count++)) ;;
-                INFO) ((info_count++)) ;;
+                CRITICAL) ((critical_count++)) || true ;;
+                WARNING) ((warning_count++)) || true ;;
+                INFO) ((info_count++)) || true ;;
             esac
 
             # Extract location and truncate message
             local location=$(extract_error_location "$line")
-            local truncated_msg=$(echo "$line" | cut -c1-200)
+            local truncated_msg=$(echo "$line" | cut -c1-200 | tr '|' '/')
 
             # Append to global error log (pipe-delimited format)
             # Format: timestamp|severity|agent|message|location
@@ -297,11 +297,13 @@ check_agent_errors() {
     # Update errors state file
     # Format: total_count|last_error|last_severity
     local total_errors=$((critical_count + warning_count + info_count))
-    local prev_state=$(cat "$errors_file" 2>/dev/null || echo "0|none|0")
+    local prev_state=$(cat "$errors_file" 2>/dev/null || echo "0|none|0|0|0")
     local prev_total=$(echo "$prev_state" | cut -d'|' -f1)
     local cumulative_total=$((prev_total + total_errors))
 
-    echo "${cumulative_total}|${last_error:0:100}|${critical_count}|${warning_count}|${info_count}" > "$errors_file"
+    # Sanitize pipe chars in last_error to prevent field corruption
+    local safe_last_error=$(echo "${last_error:0:100}" | tr '|' '/')
+    echo "${cumulative_total}|${safe_last_error}|${critical_count}|${warning_count}|${info_count}" > "$errors_file"
 
     if [[ $errors_found -eq 1 ]]; then
         return 0

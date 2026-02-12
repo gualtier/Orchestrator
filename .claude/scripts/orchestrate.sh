@@ -4,7 +4,9 @@
 #   Error Monitoring Edition
 # ===========================================
 
-set -eo pipefail
+# Note: set -e deliberately omitted — ((counter++)) returns 1 when counter=0,
+# which kills the script under set -e. Error handling uses explicit || return 1.
+set -o pipefail
 
 # =============================================
 # LOAD MODULES

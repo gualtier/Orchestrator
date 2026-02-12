@@ -2,6 +2,14 @@
 
 ## [2026-02-12]
 
+- fix(set-e): remove set -e from orchestrate.sh, fixes counter crashes and monitor/watch loops
+- fix(monitoring): change .git directory check to -e for worktree .git files
+- fix(stop): rewrite cmd_stop argument parsing to handle --force in any position
+- fix(merge): save/restore branch on failure, abort conflicted merge before continuing
+- fix(learn): guard shift on empty args, prevents crash on `orch learn` with no subcommand
+- fix(process): log cd failure instead of silently masking it in agent subshell
+- fix(errors): sanitize pipe chars in error messages to prevent state/log corruption
+- fix(errors): normalize init format to 5 fields, add || true to counter increments
 - fix(sdd): gate miscounting modules by parsing all tables instead of Worktree Mapping only
 - fix(sdd): worktree mapping parser not stopping at ### subsection headings
 - feat(start): auto-monitor agents until completion with --no-monitor opt-out

@@ -91,7 +91,7 @@ start_agent_process() {
     # Start process
     log_info "Iniciando agente: $name"
 
-    (set +e; cd "$worktree_path" && nohup claude --dangerously-skip-permissions -p "$prompt" > "$logfile" 2>&1) &
+    (set +e; cd "$worktree_path" || { echo "ERROR: Failed to cd to $worktree_path" > "$logfile"; exit 1; }; nohup claude --dangerously-skip-permissions -p "$prompt" > "$logfile" 2>&1) &
 
     local pid=$!
 

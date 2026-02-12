@@ -12,7 +12,7 @@ source "$LIB_DIR/learning.sh"
 
 cmd_learn() {
     local subcmd=${1:-help}
-    shift
+    [[ $# -gt 0 ]] && shift
 
     case "$subcmd" in
         extract)

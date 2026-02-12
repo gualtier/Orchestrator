@@ -244,17 +244,20 @@ START NOW!"
 }
 
 cmd_stop() {
-    local name=$1
-    local force=${2:-false}
+    local name=""
+    local force=false
+
+    # Parse arguments in any order
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --force) force=true; shift ;;
+            *) name="$1"; shift ;;
+        esac
+    done
 
     if [[ -z "$name" ]]; then
         log_error "Uso: $0 stop <agente> [--force]"
         return 1
-    fi
-
-    if [[ "$name" == "--force" ]] || [[ "$2" == "--force" ]]; then
-        force=true
-        [[ "$name" == "--force" ]] && name=$2
     fi
 
     stop_agent_process "$name" "$force"

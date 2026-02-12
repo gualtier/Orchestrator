@@ -33,6 +33,9 @@ cmd_merge() {
         fi
     done
 
+    # Save original branch to restore on failure
+    local original_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "main")
+
     # Mudar para branch alvo
     git checkout "$target" || {
         log_error "Falha ao mudar para $target"
@@ -56,17 +59,17 @@ cmd_merge() {
 
         if git merge "$branch" -m "feat: merge $name"; then
             log_success "$branch merged"
-            ((merged++))
+            ((merged++)) || true
         else
-            log_error "Conflito em $branch"
-            log_info "Resolva manualmente:"
-            log_info "  git status"
-            log_info "  # resolver conflitos"
-            log_info "  git add ."
-            log_info "  git commit"
-            ((failed++))
+            # Abort the failed merge so subsequent merges can proceed
+            git merge --abort 2>/dev/null || true
+            ((failed++)) || true
+
+            log_error "Conflito em $branch (merge abortado automaticamente)"
+            log_info "Após o merge, resolva manualmente com: git merge $branch"
 
             if ! confirm "Continuar com próximo merge?"; then
+                git checkout "$original_branch" 2>/dev/null || true
                 return 1
             fi
         fi
