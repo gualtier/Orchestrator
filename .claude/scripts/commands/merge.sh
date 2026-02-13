@@ -384,13 +384,17 @@ cmd_update_memory() {
     local current_date=$(date '+%Y-%m-%d %H:%M')
     local escaped_date=$(escape_sed "$current_date")
 
-    # 1. Update timestamp
-    if [[ "$(uname)" == "Darwin" ]]; then
-        sed -i '' "s|> \*\*Última atualização\*\*:.*|> **Última atualização**: $escaped_date|" "$MEMORY_FILE"
-    else
-        sed -i "s|> \*\*Última atualização\*\*:.*|> **Última atualização**: $escaped_date|" "$MEMORY_FILE"
+    # 1. Update timestamp (support both English and Portuguese labels)
+    local ts_label="Last update"
+    if grep -q '> \*\*Última atualização\*\*:' "$MEMORY_FILE" 2>/dev/null; then
+        ts_label="Última atualização"
     fi
-    log_info "Timestamp atualizado"
+    if [[ "$(uname)" == "Darwin" ]]; then
+        sed -i '' "s|> \*\*${ts_label}\*\*:.*|> **${ts_label}**: $escaped_date|" "$MEMORY_FILE"
+    else
+        sed -i "s|> \*\*${ts_label}\*\*:.*|> **${ts_label}**: $escaped_date|" "$MEMORY_FILE"
+    fi
+    log_info "Timestamp updated"
 
     # 2. Increment version (if requested)
     if [[ "$bump_version" == "true" ]]; then
@@ -407,29 +411,36 @@ cmd_update_memory() {
 
 # Increment version in X.Y format
 _bump_memory_version() {
-    local current_version=$(grep -o '> \*\*Versão\*\*: [0-9.]*' "$MEMORY_FILE" | grep -o '[0-9.]*$')
+    # Support both English and Portuguese labels
+    local current_version=$(grep -o '> \*\*\(Version\|Versão\)\*\*: [0-9.]*' "$MEMORY_FILE" | grep -o '[0-9.]*$')
 
     if [[ -z "$current_version" ]]; then
-        log_warn "Versão não encontrada na memória"
+        log_warn "Version not found in memory"
         return 0
+    fi
+
+    # Detect which label is used (English or Portuguese)
+    local label="Version"
+    if grep -q '> \*\*Versão\*\*:' "$MEMORY_FILE" 2>/dev/null; then
+        label="Versão"
     fi
 
     # Parse major.minor
     local major=$(echo "$current_version" | cut -d. -f1)
     local minor=$(echo "$current_version" | cut -d. -f2)
 
-    # Incrementar minor
+    # Increment minor
     minor=$((minor + 1))
     local new_version="${major}.${minor}"
 
     # Update in file
     if [[ "$(uname)" == "Darwin" ]]; then
-        sed -i '' "s|> \*\*Versão\*\*: $current_version|> **Versão**: $new_version|" "$MEMORY_FILE"
+        sed -i '' "s|> \*\*${label}\*\*: $current_version|> **${label}**: $new_version|" "$MEMORY_FILE"
     else
-        sed -i "s|> \*\*Versão\*\*: $current_version|> **Versão**: $new_version|" "$MEMORY_FILE"
+        sed -i "s|> \*\*${label}\*\*: $current_version|> **${label}**: $new_version|" "$MEMORY_FILE"
     fi
 
-    log_info "Versão: $current_version → $new_version"
+    log_info "Version: $current_version → $new_version"
 }
 
 # Generate changelog based on recent commits

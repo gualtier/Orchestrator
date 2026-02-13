@@ -254,6 +254,43 @@ _show_whats_new() {
         echo "    - 15 Claude Code Skills total"
     fi
 
+    if _version_lt "$old_minor" "3.7"; then
+        echo ""
+        echo -e "  ${GREEN}v3.7 - SDD Autopilot${NC}"
+        echo "    - sdd run [number]: end-to-end pipeline execution after plan approval"
+        echo "    - Dual mode: single spec or all planned specs at once"
+        echo "    - Fail-fast on gate failure, task errors, or setup errors"
+        echo "    - Integration reminder for multi-agent runs"
+        echo "    - /sdd-run Claude Code skill"
+    fi
+
+    if _version_lt "$old_minor" "3.8"; then
+        echo ""
+        echo -e "  ${GREEN}v3.8 - Agent Teams Backend${NC}"
+        echo "    - Dual execution: --mode teams|worktree on sdd run"
+        echo "    - Native agent coordination via Claude Code Agent Teams"
+        echo "    - Team lead prompt auto-generated from SDD artifacts"
+        echo "    - Branch-per-teammate file conflict mitigation"
+        echo "    - Quality gate hooks: TeammateIdle, TaskCompleted"
+        echo "    - team start|status|stop subcommands"
+        echo "    - /orch-team-start and /orch-team-status skills"
+    fi
+
+    if _version_lt "$old_minor" "3.9"; then
+        echo ""
+        echo -e "  ${GREEN}v3.9 - Merge & Agent Improvements${NC}"
+        echo "    - merge --dry-run: pre-flight check without executing"
+        echo "    - merge --cleanup: auto-remove worktrees after merge"
+        echo "    - Auto-remove DONE.md/PROGRESS.md artifacts after merge"
+        echo "    - Auto-archive specs when all tasks are merged"
+        echo "    - start --timeout: watchdog timer with auto-kill"
+        echo "    - Agent auto-retry with exponential backoff (3 attempts)"
+        echo "    - Project rules injection into agent prompts"
+        echo "    - Full SDD context injection (spec + research + plan)"
+        echo "    - Structured JSON output (--output-format stream-json)"
+        echo "    - Filter orchestrator artifacts from uncommitted checks"
+    fi
+
     echo ""
     log_separator
     echo ""
