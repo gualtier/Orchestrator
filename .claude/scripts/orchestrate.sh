@@ -1,7 +1,7 @@
 #!/bin/bash
 # ===========================================
-# ORQUESTRADOR DE AGENTES CLAUDE v3.7
-#   Autopilot Edition
+# ORQUESTRADOR DE AGENTES CLAUDE v3.8
+#   Autopilot Edition + Agent Teams
 # ===========================================
 
 # Note: set -e deliberately omitted — ((counter++)) returns 1 when counter=0,
@@ -30,6 +30,7 @@ source "$SCRIPT_DIR/lib/agents.sh"
 source "$SCRIPT_DIR/lib/monitoring.sh"
 source "$SCRIPT_DIR/lib/error_detection.sh"
 source "$SCRIPT_DIR/lib/sdd.sh"
+source "$SCRIPT_DIR/lib/teams.sh"
 
 # Comandos
 source "$SCRIPT_DIR/commands/init.sh"
@@ -43,6 +44,7 @@ source "$SCRIPT_DIR/commands/update.sh"
 source "$SCRIPT_DIR/commands/learn.sh"
 source "$SCRIPT_DIR/commands/errors.sh"
 source "$SCRIPT_DIR/commands/sdd.sh"
+source "$SCRIPT_DIR/commands/team.sh"
 source "$SCRIPT_DIR/commands/help.sh"
 
 # =============================================
@@ -109,6 +111,9 @@ main() {
 
         # SDD (Spec-Driven Development)
         sdd|spec|specify) cmd_sdd "$@" ;;
+
+        # Agent Teams (v3.8)
+        team|teams) cmd_team "$@" ;;
 
         # Update
         update) cmd_update ;;

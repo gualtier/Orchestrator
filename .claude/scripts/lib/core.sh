@@ -41,12 +41,19 @@ init_config() {
     ERROR_LOG_FILE="${ORCHESTRATION_DIR}/errors.log"
     ERROR_CACHE_DIR="${ORCHESTRATION_DIR}/pids"
 
+    # Agent Teams (v3.8)
+    # Execution mode: worktree (default) or teams
+    EXECUTION_MODE=${EXECUTION_MODE:-"worktree"}
+    TEAMS_HOME="${HOME}/.claude/teams"
+    TASKS_HOME="${HOME}/.claude/tasks"
+
     # Exportar para subshells
     export PROJECT_ROOT PROJECT_NAME CLAUDE_DIR ORCHESTRATION_DIR
     export AGENTS_DIR MEMORY_FILE STATE_FILE EVENTS_FILE AGENTS_SCRIPT
     export LEARNINGS_DIR LEARNINGS_PENDING LEARNINGS_ROLES LEARNINGS_ARCHIVE
     export SPECS_DIR SPECS_ACTIVE SPECS_ARCHIVE SPECS_TEMPLATES CONSTITUTION_FILE
     export ERROR_POLL_INTERVAL ERROR_LOG_FILE ERROR_CACHE_DIR
+    export EXECUTION_MODE TEAMS_HOME TASKS_HOME
 }
 
 # Initialize configuration automatically

@@ -574,8 +574,42 @@ cmd_sdd_archive() {
 # =============================================
 
 cmd_sdd_run() {
-    local spec_number="${1:-}"
+    local spec_number=""
+    local mode="${EXECUTION_MODE:-worktree}"
     local spec_dirs=()
+
+    # Parse arguments
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --mode)
+                mode="$2"
+                shift 2
+                ;;
+            --mode=*)
+                mode="${1#*=}"
+                shift
+                ;;
+            *)
+                spec_number="$1"
+                shift
+                ;;
+        esac
+    done
+
+    # Validate mode
+    if [[ "$mode" != "worktree" ]] && [[ "$mode" != "teams" ]]; then
+        log_error "Invalid mode: $mode (must be 'worktree' or 'teams')"
+        return 1
+    fi
+
+    # Check teams availability if teams mode requested
+    if [[ "$mode" == "teams" ]]; then
+        if ! detect_teams_available; then
+            log_warn "Agent Teams not available (CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS != 1)"
+            log_info "Falling back to worktree mode..."
+            mode="worktree"
+        fi
+    fi
 
     # Collect target specs
     if [[ -n "$spec_number" ]]; then
@@ -687,55 +721,81 @@ cmd_sdd_run() {
     echo ""
 
     # =========================================
-    # PHASE 2: Setup worktrees (all specs)
+    # PHASE 2: Setup (worktrees or teams)
     # =========================================
-    log_step "[2/3] Setting up worktrees..."
-    echo ""
+    if [[ "$mode" == "teams" ]]; then
+        log_step "[2/3] Teams mode - skipping worktree setup..."
+        log_info "Teammates will work on feature branches within the main repo"
+        echo ""
+    else
+        log_step "[2/3] Setting up worktrees..."
+        echo ""
 
-    for spec_dir in "${spec_dirs[@]}"; do
-        local spec_name=$(basename "$spec_dir")
-        local plan_file="$spec_dir/plan.md"
-        local mappings
-        mappings=$(parse_worktree_mapping "$plan_file")
+        for spec_dir in "${spec_dirs[@]}"; do
+            local spec_name=$(basename "$spec_dir")
+            local plan_file="$spec_dir/plan.md"
+            local mappings
+            mappings=$(parse_worktree_mapping "$plan_file")
 
-        if [[ -z "$mappings" ]]; then
-            log_warn "[$spec_name] No Worktree Mapping table — setting up single worktree"
-            if ! cmd_setup "$spec_name" --preset "fullstack"; then
-                log_error "[$spec_name] Worktree setup failed"
-                if [[ -f "$EVENTS_FILE" ]]; then
-                    echo "[$(date -u +"%Y-%m-%dT%H:%M:%SZ")] SDD_RUN_FAILED: ${spec_name} (setup)" >> "$EVENTS_FILE"
-                fi
-                return 1
-            fi
-        else
-            while IFS='|' read -r module wt_name preset; do
-                [[ -z "$wt_name" ]] && continue
-
-                log_info "Setting up: $wt_name (preset: $preset)"
-                if ! cmd_setup "$wt_name" --preset "$preset"; then
-                    log_error "Worktree setup failed: $wt_name"
+            if [[ -z "$mappings" ]]; then
+                log_warn "[$spec_name] No Worktree Mapping table — setting up single worktree"
+                if ! cmd_setup "$spec_name" --preset "fullstack"; then
+                    log_error "[$spec_name] Worktree setup failed"
                     if [[ -f "$EVENTS_FILE" ]]; then
-                        echo "[$(date -u +"%Y-%m-%dT%H:%M:%SZ")] SDD_RUN_FAILED: ${spec_name} (setup: $wt_name)" >> "$EVENTS_FILE"
+                        echo "[$(date -u +"%Y-%m-%dT%H:%M:%SZ")] SDD_RUN_FAILED: ${spec_name} (setup)" >> "$EVENTS_FILE"
                     fi
                     return 1
                 fi
-            done <<< "$mappings"
+            else
+                while IFS='|' read -r module wt_name preset; do
+                    [[ -z "$wt_name" ]] && continue
+
+                    log_info "Setting up: $wt_name (preset: $preset)"
+                    if ! cmd_setup "$wt_name" --preset "$preset"; then
+                        log_error "Worktree setup failed: $wt_name"
+                        if [[ -f "$EVENTS_FILE" ]]; then
+                            echo "[$(date -u +"%Y-%m-%dT%H:%M:%SZ")] SDD_RUN_FAILED: ${spec_name} (setup: $wt_name)" >> "$EVENTS_FILE"
+                        fi
+                        return 1
+                    fi
+                done <<< "$mappings"
+            fi
+        done
+
+        log_success "All worktrees created"
+        echo ""
+    fi
+
+    # =========================================
+    # PHASE 3: Start agents (worktrees or teams)
+    # =========================================
+    if [[ "$mode" == "teams" ]]; then
+        log_step "[3/3] Starting Agent Team..."
+        echo ""
+        log_warn "NOTE: Agent Teams uses significantly more tokens than worktrees."
+        log_warn "Each teammate is a separate Claude instance with real-time communication."
+        echo ""
+        echo "  An interactive Claude session will start as the team lead."
+        echo "  The team lead will orchestrate teammates to implement the spec."
+        echo ""
+
+        # For teams mode, we handle one spec at a time (teams don't support multiple concurrent teams)
+        if [[ ${#spec_dirs[@]} -gt 1 ]]; then
+            log_warn "Teams mode processes one spec at a time"
         fi
-    done
 
-    log_success "All worktrees created"
-    echo ""
+        for spec_dir in "${spec_dirs[@]}"; do
+            start_team_from_spec "$spec_dir"
+        done
+    else
+        log_step "[3/3] Starting agents..."
+        echo ""
+        echo "  Agents will be monitored until completion."
+        echo "  Press Ctrl+C to detach (agents keep running)."
+        echo ""
 
-    # =========================================
-    # PHASE 3: Start agents + auto-monitor
-    # =========================================
-    log_step "[3/3] Starting agents..."
-    echo ""
-    echo "  Agents will be monitored until completion."
-    echo "  Press Ctrl+C to detach (agents keep running)."
-    echo ""
-
-    cmd_start
+        cmd_start
+    fi
 
     # =========================================
     # POST: Summary
