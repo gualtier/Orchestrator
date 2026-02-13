@@ -281,13 +281,18 @@ parse_worktree_mapping() {
         # Skip empty lines
         [[ -z "$line" ]] && continue
 
-        # Skip table header and separator
-        if echo "$line" | grep -q "^|.*Module\|^|.*---"; then
+        # Skip table separator (|---|---|---| marks end of header)
+        if echo "$line" | grep -q "^|.*---"; then
             header_passed=true
             continue
         fi
 
-        # Parse table rows
+        # Skip header row (any table row before the separator)
+        if ! $header_passed && echo "$line" | grep -q "^|"; then
+            continue
+        fi
+
+        # Parse data rows (after separator)
         if $header_passed && echo "$line" | grep -q "^|"; then
             local module=$(echo "$line" | awk -F'|' '{gsub(/^[ \t]+|[ \t]+$/, "", $2); print $2}')
             local wt_name=$(echo "$line" | awk -F'|' '{gsub(/^[ \t]+|[ \t]+$/, "", $3); print $3}')
