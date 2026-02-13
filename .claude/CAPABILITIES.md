@@ -1,4 +1,4 @@
-# Orchestrator Capabilities v3.6
+# Orchestrator Capabilities v3.7
 
 > This file is auto-updated by `orch update`. Do NOT edit manually.
 > Read this file at the start of every session to know what tools are available.
@@ -10,7 +10,8 @@
 Full specification pipeline before coding. Use for medium/large features.
 
 ```
-constitution -> specify -> research (MANDATORY) -> plan -> gate -> tasks -> orchestrate
+constitution -> specify -> research (MANDATORY) -> plan -> gate -> run (autopilot)
+OR: ... -> gate -> tasks -> setup -> start (manual step-by-step)
 ```
 
 **Skills (type directly in Claude Code):**
@@ -22,7 +23,8 @@ constitution -> specify -> research (MANDATORY) -> plan -> gate -> tasks -> orch
 | `/sdd-research 001` | Research libraries, patterns, security for a spec |
 | `/sdd-plan 001` | Create technical implementation plan |
 | `/sdd-gate 001` | Validate plan against constitutional gates |
-| `/sdd-tasks 001` | Generate orchestrator task files from plan |
+| `/sdd-run [001]` | Autopilot: gate -> tasks -> setup -> start -> monitor (single or all specs) |
+| `/sdd-tasks 001` | Generate orchestrator task files from plan (manual mode) |
 | `/sdd-status` | Show status of all active specs |
 | `/sdd-archive 001` | Archive a completed spec |
 
@@ -77,6 +79,10 @@ orch start             # Start agents in all worktrees
 orch stop              # Stop running agents
 orch restart           # Restart agents
 
+# SDD Autopilot (v3.7)
+orch sdd run [number]  # Autopilot: gate -> tasks -> setup -> start -> monitor
+                       # No number = all planned specs
+
 # Monitoring
 orch status            # Check progress (standard view)
 orch status --enhanced # Detailed view with progress bars, activity, errors
@@ -115,6 +121,16 @@ orch update-check      # Check for updates
 # Help
 orch help              # Show all commands
 ```
+
+### SDD Autopilot (v3.7)
+
+End-to-end pipeline execution after plan approval:
+
+- `sdd run 001` — single spec autopilot
+- `sdd run` — all planned specs at once
+- Fail-fast on gate failure, task errors, or setup errors
+- Integration reminder for multi-agent runs before merge
+- Pauses before merge for review
 
 ### Error Monitoring (v3.6)
 

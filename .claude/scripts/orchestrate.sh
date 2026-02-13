@@ -1,7 +1,7 @@
 #!/bin/bash
 # ===========================================
-# ORQUESTRADOR DE AGENTES CLAUDE v3.6
-#   Error Monitoring Edition
+# ORQUESTRADOR DE AGENTES CLAUDE v3.7
+#   Autopilot Edition
 # ===========================================
 
 # Note: set -e deliberately omitted — ((counter++)) returns 1 when counter=0,

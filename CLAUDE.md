@@ -54,7 +54,8 @@ cat .claude/CAPABILITIES.md
 For medium/large features, use **Spec-Driven Development** (inspired by [GitHub Spec-Kit](https://github.com/github/spec-kit)):
 
 ```
-constitution → specify → research (MANDATORY) → plan → gate → tasks → [orchestrator]
+constitution → specify → research (MANDATORY) → plan → gate → run (autopilot)
+OR: ... → gate → tasks → setup → start (manual step-by-step)
 ```
 
 ### SDD Flow (Skills or CLI)
@@ -67,12 +68,11 @@ constitution → specify → research (MANDATORY) → plan → gate → tasks �
 /sdd-research 001                  # 3. Research (MANDATORY)
 /sdd-plan 001                      # 4. Create plan
 /sdd-gate 001                      # 5. Check gates
-/sdd-tasks 001                     # 6. Generate tasks
-/orch-setup auth --preset auth     # 7. Create worktrees
-/orch-start                        # 8. Start agents
-/orch-errors                       # 9. Monitor errors (active)
-/orch-merge                        # 10. Merge
-/sdd-archive 001                   # 11. Archive
+/sdd-run 001                       # 6. Autopilot (gate->tasks->setup->start->monitor)
+                                   #    OR: /sdd-run (all planned specs)
+# --- After agents complete: ---
+/orch-merge                        # 7. Merge
+/sdd-archive 001                   # 8. Archive
 ```
 
 **With CLI** (bash):
@@ -83,6 +83,8 @@ constitution → specify → research (MANDATORY) → plan → gate → tasks �
 .claude/scripts/orchestrate.sh sdd research 001
 .claude/scripts/orchestrate.sh sdd plan 001
 .claude/scripts/orchestrate.sh sdd gate 001
+.claude/scripts/orchestrate.sh sdd run 001    # Autopilot (or: sdd run for all)
+# --- OR manual step-by-step: ---
 .claude/scripts/orchestrate.sh sdd tasks 001
 .claude/scripts/orchestrate.sh setup auth --preset auth
 .claude/scripts/orchestrate.sh start

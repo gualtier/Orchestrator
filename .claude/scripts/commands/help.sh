@@ -83,6 +83,7 @@ SDD (SPEC-DRIVEN DEVELOPMENT):
   sdd research <number>     Create research doc (MANDATORY before plan)
   sdd plan <number>         Create implementation plan (requires research)
   sdd gate <number>         Check constitutional gates
+  sdd run [number]          Autopilot: gate -> tasks -> setup -> start -> monitor
   sdd tasks <number>        Generate orchestrator tasks from plan
   sdd status                Show all active specs
   sdd archive <number>      Archive completed spec
@@ -126,7 +127,11 @@ EXAMPLE (SDD-FIRST WORKFLOW - Recommended):
   # ... refine plan.md with Claude ...
   ./orchestrate.sh sdd gate 001
 
-  # 5. Generate tasks & execute
+  # 5a. Autopilot (gate -> tasks -> setup -> start -> monitor):
+  ./orchestrate.sh sdd run 001    # Single spec
+  ./orchestrate.sh sdd run        # All planned specs
+
+  # 5b. OR manual step-by-step:
   ./orchestrate.sh sdd tasks 001
   ./orchestrate.sh setup auth --preset auth
   ./orchestrate.sh start

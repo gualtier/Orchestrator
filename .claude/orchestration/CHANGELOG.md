@@ -1,5 +1,18 @@
 # Changelog
 
+## [v3.7] - 2026-02-12
+
+### SDD Autopilot
+
+- feat(sdd): `sdd run` autopilot command — chains gate, tasks, setup, start, and monitor in one command
+- feat(sdd): dual mode — `sdd run 001` (single spec) or `sdd run` (all planned specs)
+- feat(sdd): fail-fast on gate failure, task generation error, or worktree setup failure
+- feat(sdd): integration reminder when multiple agents complete in isolation
+- feat(sdd): stale task cleanup before regeneration on re-runs
+- feat(skills): `/sdd-run` Claude Code skill with full documentation
+- docs: updated CLAUDE.md, help.sh, CAPABILITIES.md, /sdd hub with autopilot workflow
+- docs: added autopilot as alternative path in all SDD flow diagrams
+
 ## [2026-02-12]
 
 - fix(set-e): remove set -e from orchestrate.sh, fixes counter crashes and monitor/watch loops

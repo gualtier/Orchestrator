@@ -26,7 +26,9 @@ Inspired by [GitHub Spec-Kit](https://github.com/github/spec-kit). Specification
      ↓
 /sdd-gate          Check constitutional compliance
      ↓
-/sdd-tasks         Generate orchestrator tasks (SDD → Orchestrator bridge)
+/sdd-run           Autopilot (gate -> tasks -> setup -> start -> monitor)
+     OR             (runs all planned specs, or pass a number for one)
+/sdd-tasks         Generate orchestrator tasks (manual step-by-step)
      ↓
 /orch-setup        Create worktrees with agents
 /orch-start        Start agents

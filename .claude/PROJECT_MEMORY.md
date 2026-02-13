@@ -1,7 +1,7 @@
 # Project Memory - Claude Orchestrator
 
-> **Last update**: 2026-02-11 14:30:00
-> **Version**: 3.5.1
+> **Last update**: 2026-02-12
+> **Version**: 3.7
 
 ## Overview
 
@@ -20,13 +20,13 @@
 | Dependencies | Git, curl, Claude CLI           |
 | Agents       | VoltAgent/awesome-claude-code-subagents |
 
-## Architecture v3.5
+## Architecture v3.7
 
 ### Modular Structure
 
 ```
-.claude/skills/                     # Claude Code Skills (NEW v3.5)
-├── sdd*/SKILL.md                   # 8 SDD skills (/sdd-init, /sdd-specify, etc.)
+.claude/skills/                     # Claude Code Skills (NEW v3.5, updated v3.7)
+├── sdd*/SKILL.md                   # 9 SDD skills (/sdd-init, /sdd-specify, /sdd-run, etc.)
 ├── orch*/SKILL.md                  # 5 orchestrator skills (/orch-setup, /orch-errors, etc.)
 ├── sdd/SKILL.md                    # SDD hub (/sdd)
 └── orch/SKILL.md                   # Orchestrator hub (/orch)
@@ -180,7 +180,7 @@
 - [x] Task completion check (`Stop` prompt-based hook, blocks on unfinished tasks)
 - [x] `reinject-context.sh` - outputs PROJECT_MEMORY.md + CAPABILITIES.md after compaction
 
-### v3.6 - Active Error Monitoring (CURRENT)
+### v3.6 - Active Error Monitoring
 
 - [x] `lib/error_detection.sh` - Core error detection engine (540+ lines)
 - [x] `commands/errors.sh` - Error monitoring dashboard (330+ lines)
@@ -195,6 +195,16 @@
 - [x] Error state per agent (`.claude/orchestration/pids/<name>.errors`)
 - [x] `/orch-errors` skill for Claude Code
 - [x] Zero external dependencies, bash 3.2+ compatible
+
+### v3.7 - SDD Autopilot (CURRENT)
+
+- [x] `sdd run [number]` — autopilot mode: gate -> tasks -> setup -> start -> monitor
+- [x] Dual mode: single spec (`sdd run 001`) or all planned specs (`sdd run`)
+- [x] Fail-fast on gate failure, task generation error, or worktree setup failure
+- [x] Integration reminder for multi-agent runs (cross-module wiring check)
+- [x] Stale task cleanup before regeneration on re-runs
+- [x] `/sdd-run` Claude Code skill
+- [x] Updated all consciousness layers (CAPABILITIES, PROJECT_MEMORY, CLAUDE.md, Skills)
 
 ### v4.0 - Future
 

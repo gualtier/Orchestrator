@@ -17,6 +17,7 @@ cmd_sdd() {
         tasks)        cmd_sdd_tasks "$@" ;;
         status)       cmd_sdd_status ;;
         gate)         cmd_sdd_gate "$@" ;;
+        run)          cmd_sdd_run "$@" ;;
         archive)      cmd_sdd_archive "$@" ;;
         help|--help)  cmd_sdd_help ;;
         *)
@@ -569,6 +570,238 @@ cmd_sdd_archive() {
 }
 
 # =============================================
+# SDD RUN (AUTOPILOT)
+# =============================================
+
+cmd_sdd_run() {
+    local spec_number="${1:-}"
+    local spec_dirs=()
+
+    # Collect target specs
+    if [[ -n "$spec_number" ]]; then
+        # Single spec mode
+        local spec_dir
+        spec_dir=$(spec_dir_for "$spec_number")
+        if [[ $? -ne 0 ]] || [[ -z "$spec_dir" ]]; then
+            log_error "Spec not found: $spec_number"
+            log_info "Run 'orchestrate.sh sdd status' to see active specs"
+            return 1
+        fi
+        spec_dirs+=("$spec_dir")
+    else
+        # All specs mode: collect active specs that have plan.md
+        if [[ ! -d "$SPECS_ACTIVE" ]]; then
+            log_error "No SDD structure found. Run: orchestrate.sh sdd init"
+            return 1
+        fi
+
+        for dir in "$SPECS_ACTIVE"/*/; do
+            [[ -d "$dir" ]] || continue
+            if [[ -f "$dir/plan.md" ]]; then
+                spec_dirs+=("${dir%/}")
+            fi
+        done
+
+        if [[ ${#spec_dirs[@]} -eq 0 ]]; then
+            log_error "No specs with plan.md found"
+            log_info "Create a plan first: orchestrate.sh sdd plan <number>"
+            return 1
+        fi
+    fi
+
+    # Validate prerequisites for all specs
+    for spec_dir in "${spec_dirs[@]}"; do
+        local name=$(basename "$spec_dir")
+        if [[ ! -f "$spec_dir/spec.md" ]]; then
+            log_error "[$name] No spec.md found"
+            return 1
+        fi
+        if [[ ! -f "$spec_dir/research.md" ]]; then
+            log_error "[$name] No research.md found. Run: sdd research ${name%%-*}"
+            return 1
+        fi
+        if [[ ! -f "$spec_dir/plan.md" ]]; then
+            log_error "[$name] No plan.md found. Run: sdd plan ${name%%-*}"
+            return 1
+        fi
+    done
+
+    local spec_count=${#spec_dirs[@]}
+    log_header "SDD AUTOPILOT: $spec_count spec(s)"
+    echo "  Pipeline: gate -> tasks -> setup -> start -> monitor"
+    echo ""
+
+    # List specs being processed
+    for spec_dir in "${spec_dirs[@]}"; do
+        echo "  - $(basename "$spec_dir")"
+    done
+    echo ""
+
+    # Log event
+    if [[ -f "$EVENTS_FILE" ]]; then
+        echo "[$(date -u +"%Y-%m-%dT%H:%M:%SZ")] SDD_RUN_START: ${spec_count} spec(s)" >> "$EVENTS_FILE"
+    fi
+
+    # =========================================
+    # PHASE 1: Gate + Tasks (all specs)
+    # =========================================
+    log_step "[1/3] Checking gates and generating tasks..."
+    echo ""
+
+    for spec_dir in "${spec_dirs[@]}"; do
+        local spec_name=$(basename "$spec_dir")
+        local plan_file="$spec_dir/plan.md"
+
+        # Gate check
+        log_info "[$spec_name] Checking gates..."
+        if ! check_gates "$plan_file"; then
+            log_error "[$spec_name] GATES FAILED — fix issues before running autopilot"
+            if [[ -f "$EVENTS_FILE" ]]; then
+                echo "[$(date -u +"%Y-%m-%dT%H:%M:%SZ")] SDD_RUN_FAILED: ${spec_name} (gate)" >> "$EVENTS_FILE"
+            fi
+            return 1
+        fi
+        log_success "[$spec_name] Gates passed"
+
+        # Clean stale task files for this spec
+        for existing_task in "$ORCHESTRATION_DIR/tasks"/*.md; do
+            [[ -f "$existing_task" ]] || continue
+            if grep -q "spec-ref:.*${spec_name}" "$existing_task" 2>/dev/null; then
+                rm -f "$existing_task"
+            fi
+        done
+
+        # Generate tasks
+        log_info "[$spec_name] Generating tasks..."
+        if ! generate_tasks_from_plan "$spec_dir"; then
+            log_error "[$spec_name] Task generation failed"
+            if [[ -f "$EVENTS_FILE" ]]; then
+                echo "[$(date -u +"%Y-%m-%dT%H:%M:%SZ")] SDD_RUN_FAILED: ${spec_name} (tasks)" >> "$EVENTS_FILE"
+            fi
+            return 1
+        fi
+        echo ""
+    done
+
+    log_success "All gates passed, tasks generated"
+    echo ""
+
+    # =========================================
+    # PHASE 2: Setup worktrees (all specs)
+    # =========================================
+    log_step "[2/3] Setting up worktrees..."
+    echo ""
+
+    for spec_dir in "${spec_dirs[@]}"; do
+        local spec_name=$(basename "$spec_dir")
+        local plan_file="$spec_dir/plan.md"
+        local mappings
+        mappings=$(parse_worktree_mapping "$plan_file")
+
+        if [[ -z "$mappings" ]]; then
+            log_warn "[$spec_name] No Worktree Mapping table — setting up single worktree"
+            if ! cmd_setup "$spec_name" --preset "fullstack"; then
+                log_error "[$spec_name] Worktree setup failed"
+                if [[ -f "$EVENTS_FILE" ]]; then
+                    echo "[$(date -u +"%Y-%m-%dT%H:%M:%SZ")] SDD_RUN_FAILED: ${spec_name} (setup)" >> "$EVENTS_FILE"
+                fi
+                return 1
+            fi
+        else
+            while IFS='|' read -r module wt_name preset; do
+                [[ -z "$wt_name" ]] && continue
+
+                log_info "Setting up: $wt_name (preset: $preset)"
+                if ! cmd_setup "$wt_name" --preset "$preset"; then
+                    log_error "Worktree setup failed: $wt_name"
+                    if [[ -f "$EVENTS_FILE" ]]; then
+                        echo "[$(date -u +"%Y-%m-%dT%H:%M:%SZ")] SDD_RUN_FAILED: ${spec_name} (setup: $wt_name)" >> "$EVENTS_FILE"
+                    fi
+                    return 1
+                fi
+            done <<< "$mappings"
+        fi
+    done
+
+    log_success "All worktrees created"
+    echo ""
+
+    # =========================================
+    # PHASE 3: Start agents + auto-monitor
+    # =========================================
+    log_step "[3/3] Starting agents..."
+    echo ""
+    echo "  Agents will be monitored until completion."
+    echo "  Press Ctrl+C to detach (agents keep running)."
+    echo ""
+
+    cmd_start
+
+    # =========================================
+    # POST: Summary
+    # =========================================
+    echo ""
+    log_header "SDD AUTOPILOT COMPLETE"
+    echo ""
+
+    # Show per-agent results
+    local total=0 done_count=0 blocked_count=0 stopped_count=0
+    printf "  %-25s %-15s %s\n" "AGENT" "STATUS" "COMMITS"
+    log_separator
+
+    for task_file in "$ORCHESTRATION_DIR/tasks"/*.md; do
+        [[ -f "$task_file" ]] || continue
+        local name=$(basename "$task_file" .md)
+        local worktree_path=$(get_worktree_path "$name")
+        local status=$(get_agent_status "$name")
+        ((total++)) || true
+
+        case "$status" in
+            done|done_no_report) ((done_count++)) || true ;;
+            blocked) ((blocked_count++)) || true ;;
+            stopped) ((stopped_count++)) || true ;;
+        esac
+
+        local commits=0
+        if dir_exists "$worktree_path"; then
+            commits=$(cd "$worktree_path" && git log --oneline main..HEAD 2>/dev/null | wc -l | tr -d ' ')
+        fi
+
+        printf "  %-25s %-15s %s\n" "$name" "[$status]" "$commits"
+    done
+
+    echo ""
+
+    if [[ $done_count -eq $total ]] && [[ $total -gt 0 ]]; then
+        echo -e "  ${GREEN}All $total agent(s) completed successfully!${NC}"
+    else
+        echo -e "  ${YELLOW}Results: $done_count completed, $blocked_count blocked, $stopped_count stopped (of $total)${NC}"
+    fi
+
+    echo ""
+    log_separator
+    echo ""
+    echo "  Next steps:"
+    echo "    orchestrate.sh verify-all    # Review agent output"
+    echo "    orchestrate.sh merge         # Merge all worktrees"
+    echo "    orchestrate.sh update-memory --full"
+    echo ""
+
+    # Integration reminder when multiple worktrees were involved
+    if [[ $total -gt 1 ]]; then
+        echo -e "  ${YELLOW}NOTE: Each agent passed its own tests in isolation.${NC}"
+        echo -e "  ${YELLOW}Before merging, run a full end-to-end integration walkthrough${NC}"
+        echo -e "  ${YELLOW}to catch cross-module wiring issues.${NC}"
+        echo ""
+    fi
+
+    # Log event
+    if [[ -f "$EVENTS_FILE" ]]; then
+        echo "[$(date -u +"%Y-%m-%dT%H:%M:%SZ")] SDD_RUN_COMPLETE: $done_count/$total done" >> "$EVENTS_FILE"
+    fi
+}
+
+# =============================================
 # SDD HELP
 # =============================================
 
@@ -578,7 +811,8 @@ cmd_sdd_help() {
     echo -e "${GRAY}Inspired by GitHub Spec-Kit${NC}"
     echo ""
     echo -e "${BOLD}WORKFLOW:${NC}"
-    echo "  constitution -> specify -> research -> plan -> gate -> tasks -> [orchestrator]"
+    echo "  constitution -> specify -> research -> plan -> gate -> run (autopilot)"
+    echo "  OR: ... -> gate -> tasks -> setup -> start (manual step-by-step)"
     echo ""
     echo -e "${BOLD}COMMANDS:${NC}"
     echo ""
@@ -588,6 +822,7 @@ cmd_sdd_help() {
     echo -e "  ${CYAN}sdd research <number>${NC}       Create research doc (MANDATORY)"
     echo -e "  ${CYAN}sdd plan <number>${NC}           Create implementation plan (requires research)"
     echo -e "  ${CYAN}sdd gate <number>${NC}           Check constitutional gates"
+    echo -e "  ${CYAN}sdd run [number]${NC}            Autopilot: gate -> tasks -> setup -> start -> monitor"
     echo -e "  ${CYAN}sdd tasks <number>${NC}          Generate orchestrator tasks from plan"
     echo -e "  ${CYAN}sdd status${NC}                  Show all active specs"
     echo -e "  ${CYAN}sdd archive <number>${NC}        Archive completed spec"
@@ -602,8 +837,16 @@ cmd_sdd_help() {
     echo "  orchestrate.sh sdd plan 001"
     echo "  # ... refine plan.md with Claude ..."
     echo "  orchestrate.sh sdd gate 001"
+    echo ""
+    echo "  # Autopilot (gate -> tasks -> setup -> start -> monitor):"
+    echo "  orchestrate.sh sdd run 001    # Single spec"
+    echo "  orchestrate.sh sdd run        # All planned specs"
+    echo ""
+    echo "  # OR manual step-by-step:"
     echo "  orchestrate.sh sdd tasks 001"
-    echo "  # ... then use normal orchestrator: setup, start, wait, merge ..."
+    echo "  orchestrate.sh setup auth --preset auth"
+    echo "  orchestrate.sh start"
+    echo "  orchestrate.sh merge"
     echo "  orchestrate.sh sdd archive 001"
     echo ""
 }
