@@ -72,45 +72,7 @@ Plan: `.claude/specs/active/001-o-orquestrador-deve-monitorar-erros-dos-agentes-
 - AI-powered error analysis or root cause detection
 
 ### FILES
-
-Create:
-- `.claude/scripts/lib/error_detection.sh` — Core engine (REQ-1 to REQ-5, REQ-8, REQ-9)
-- `.claude/scripts/commands/errors.sh` — Dashboard command (REQ-6)
-
-Modify:
-- `.claude/scripts/lib/core.sh` — Add config vars: ERROR_LOG_FILE, ERROR_POLL_INTERVAL
-- `.claude/scripts/commands/start.sh` — Call `init_error_tracking()` on agent start
-- `.claude/scripts/commands/status.sh` — Error counts in display + check in wait loop (REQ-7)
-- `.claude/scripts/orchestrate.sh` — Register `errors` command + source error_detection.sh
-
-DON'T TOUCH:
-- `.claude/scripts/lib/monitoring.sh` (reuse patterns but don't modify)
-- `.claude/scripts/lib/logging.sh` (use existing functions only)
-- Agent worktrees or agent files
-
-### ARCHITECTURE
-
-Error detection engine uses incremental byte-offset polling:
-1. `stat` log file to get current size (~0.5ms)
-2. Compare with stored offset in `.claude/orchestration/pids/<name>.offset`
-3. If size > offset: `tail -c +offset "$logfile" | grep -E "$patterns"`
-4. Classify matches: CRITICAL/WARNING/INFO
-5. Write to `.claude/orchestration/pids/<name>.errors` + `errors.log`
-6. Show notification via existing `log_warn`/`log_error` functions
-
-Error patterns (3 tiers):
-- CRITICAL: `panic:|FATAL|Segmentation fault|OOMKilled|ENOSPC|core dumped`
-- WARNING: `FAIL |FAILED|Error:|error TS|TypeError|SyntaxError|CONFLICT|Permission denied`
-- INFO: `DeprecationWarning|deprecated|WARN |WARNING`
-
-Error log format (pipe-delimited):
-`timestamp|severity|agent|message|context`
-
-Follow existing conventions:
-- Function names: `get_*`, `is_*`, `show_*`, `cmd_*`
-- Config: ALL_CAPS in `init_config()`
-- Grep: always `2>/dev/null || echo 0`
-- Platform: use `stat_mtime` pattern for macOS/Linux compat
+See plan.md Architecture section for file structure.
 
 ## Completion Criteria
 - [ ] Error Detection Engine + Dashboard module implemented
