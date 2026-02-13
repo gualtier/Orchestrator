@@ -1,4 +1,4 @@
-# Orchestrator Capabilities v3.7
+# Orchestrator Capabilities v3.8
 
 > This file is auto-updated by `orch update`. Do NOT edit manually.
 > Read this file at the start of every session to know what tools are available.
@@ -14,6 +14,10 @@ constitution -> specify -> research (MANDATORY) -> plan -> gate -> run (autopilo
 OR: ... -> gate -> tasks -> setup -> start (manual step-by-step)
 ```
 
+Supports two execution backends:
+- **Worktree mode** (default): Git worktrees with isolated directories per agent
+- **Teams mode**: Claude Code Agent Teams with native coordination (`--mode teams`)
+
 **Skills (type directly in Claude Code):**
 
 | Skill | Description |
@@ -28,9 +32,12 @@ OR: ... -> gate -> tasks -> setup -> start (manual step-by-step)
 | `/sdd-status` | Show status of all active specs |
 | `/sdd-archive 001` | Archive a completed spec |
 
-### Orchestration - Multi-Agent Worktrees
+### Orchestration - Multi-Agent Execution
 
-Parallel execution with specialized agents in Git worktrees.
+Parallel execution with specialized agents. Two backends available:
+
+- **Worktree mode** (default): Git worktrees with isolated directories per agent
+- **Teams mode** (v3.8): Claude Code Agent Teams with native coordination
 
 **Skills:**
 
@@ -42,6 +49,8 @@ Parallel execution with specialized agents in Git worktrees.
 | `/orch-status` | Monitor agent progress |
 | `/orch-errors` | Error monitoring dashboard (severity, suggestions, watch mode) |
 | `/orch-merge` | Merge completed worktrees + post-merge routines |
+| `/orch-team-start` | Start Agent Team from SDD spec (teams mode) |
+| `/orch-team-status` | Monitor Agent Team progress |
 
 **Available Presets:**
 
@@ -82,6 +91,12 @@ orch restart           # Restart agents
 # SDD Autopilot (v3.7)
 orch sdd run [number]  # Autopilot: gate -> tasks -> setup -> start -> monitor
                        # No number = all planned specs
+orch sdd run 001 --mode teams  # Use Agent Teams backend instead of worktrees (v3.8)
+
+# Agent Teams (v3.8)
+orch team start <spec-number>  # Start Agent Team from SDD spec
+orch team status               # Show team status (teammates, tasks, progress)
+orch team stop                 # Stop running team
 
 # Monitoring
 orch status            # Check progress (standard view)
@@ -128,9 +143,24 @@ End-to-end pipeline execution after plan approval:
 
 - `sdd run 001` — single spec autopilot
 - `sdd run` — all planned specs at once
+- `sdd run 001 --mode teams` — use Agent Teams backend (v3.8)
 - Fail-fast on gate failure, task errors, or setup errors
 - Integration reminder for multi-agent runs before merge
 - Pauses before merge for review
+
+### Agent Teams Backend (v3.8)
+
+Alternative execution backend using Claude Code Agent Teams:
+
+- **Dual mode**: `--mode teams|worktree` flag on `sdd run` (default: worktree)
+- **Team lead prompt**: Auto-generated from SDD artifacts (spec, research, plan)
+- **Agent specialization**: Preset agent `.md` content injected into teammate spawn prompts
+- **Branch-per-teammate**: File conflict mitigation without worktree isolation
+- **Quality gate hooks**: `TeammateIdle` (prevents idle without commits) and `TaskCompleted` (validates work)
+- **Graceful fallback**: Falls back to worktrees if `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` is not set
+- **Hybrid monitoring**: Interactive team lead session + background orchestrator dashboard
+- **`team start|status|stop`**: Dedicated team management commands
+- **`EXECUTION_MODE` env var**: Configure default backend (worktree or teams)
 
 ### Error Monitoring (v3.6)
 

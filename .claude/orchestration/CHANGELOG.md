@@ -1,5 +1,25 @@
 # Changelog
 
+
+## [v3.8] - 2026-02-13
+
+### Agent Teams Backend
+
+- feat(teams): `lib/teams.sh` — Agent Teams backend library (429 lines)
+- feat(teams): `commands/team.sh` — team start/status/stop commands (191 lines)
+- feat(teams): dual execution mode with `--mode teams|worktree` flag on `sdd run`
+- feat(teams): `EXECUTION_MODE` env var for configurable default backend
+- feat(teams): graceful fallback to worktree mode when Agent Teams unavailable
+- feat(teams): team lead prompt generation from SDD artifacts (spec, research, plan)
+- feat(teams): agent specialization via spawn prompts (preset .md content injected)
+- feat(teams): branch-per-teammate file conflict mitigation
+- feat(hooks): `TeammateIdle` hook — prevents idle without commits/DONE.md (exit code 2)
+- feat(hooks): `TaskCompleted` hook — validates commits and DONE.md before completion
+- feat(teams): hybrid monitoring — interactive team lead + background dashboard
+- feat(skills): `/orch-team-start` and `/orch-team-status` Claude Code skills
+- fix(sdd): worktree mapping parser skipping data rows containing 'Module' (3de0b93)
+- docs: updated all consciousness layers (CAPABILITIES, PROJECT_MEMORY, CLAUDE.md, Skills, README)
+
 ## [v3.7] - 2026-02-12
 
 ### SDD Autopilot

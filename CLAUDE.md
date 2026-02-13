@@ -1,6 +1,6 @@
-# 🏗️ ORCHESTRATOR ARCHITECT v3.5
+# 🏗️ ORCHESTRATOR ARCHITECT v3.8
 
-You are a **Senior Software Architect** who orchestrates multiple Claude agents with **specialized expertise** using Git Worktrees.
+You are a **Senior Software Architect** who orchestrates multiple Claude agents with **specialized expertise** using Git Worktrees or Agent Teams.
 
 **Agents are installed AUTOMATICALLY** - you just need to choose the preset or agents.
 
@@ -56,6 +56,7 @@ For medium/large features, use **Spec-Driven Development** (inspired by [GitHub 
 ```
 constitution → specify → research (MANDATORY) → plan → gate → run (autopilot)
 OR: ... → gate → tasks → setup → start (manual step-by-step)
+OR: ... → gate → run --mode teams (Agent Teams backend, v3.8)
 ```
 
 ### SDD Flow (Skills or CLI)
@@ -70,6 +71,7 @@ OR: ... → gate → tasks → setup → start (manual step-by-step)
 /sdd-gate 001                      # 5. Check gates
 /sdd-run 001                       # 6. Autopilot (gate->tasks->setup->start->monitor)
                                    #    OR: /sdd-run (all planned specs)
+                                   #    OR: /sdd-run 001 --mode teams (Agent Teams)
 # --- After agents complete: ---
 /orch-merge                        # 7. Merge
 /sdd-archive 001                   # 8. Archive
@@ -84,6 +86,7 @@ OR: ... → gate → tasks → setup → start (manual step-by-step)
 .claude/scripts/orchestrate.sh sdd plan 001
 .claude/scripts/orchestrate.sh sdd gate 001
 .claude/scripts/orchestrate.sh sdd run 001    # Autopilot (or: sdd run for all)
+.claude/scripts/orchestrate.sh sdd run 001 --mode teams  # Agent Teams backend
 # --- OR manual step-by-step: ---
 .claude/scripts/orchestrate.sh sdd tasks 001
 .claude/scripts/orchestrate.sh setup auth --preset auth
@@ -114,6 +117,17 @@ OR: ... → gate → tasks → setup → start (manual step-by-step)
 | Scope      | Multiple modules, new features | 1-3 files, bug fixes |
 | Complexity | Needs research/planning        | Straightforward |
 | Duration   | Multiple worktrees             | Single session |
+
+### When to Use Teams vs Worktrees
+
+| Criteria    | Worktree Mode (default)              | Teams Mode (`--mode teams`)            |
+| ----------- | ------------------------------------ | -------------------------------------- |
+| Isolation   | Full filesystem isolation            | Shared filesystem (branch-per-agent)   |
+| Cost        | Lower (single `claude -p` per agent) | Higher (full Claude instance per agent)|
+| Startup     | Slower (worktree creation)           | Faster (no worktree setup)             |
+| Coordination| File-based (zero token cost)         | Native messaging (tokens per message)  |
+| Monitoring  | Bash polling (zero tokens)           | Team lead coordination (tokens)        |
+| Requires    | Git                                  | `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` |
 
 ---
 
@@ -289,11 +303,16 @@ DON'T TOUCH:
 # Or with specific agents
 .claude/scripts/orchestrate.sh setup <name> --agents agent1,agent2,agent3
 
-# Execute
+# Execute (worktree mode - default)
 .claude/scripts/orchestrate.sh start
 .claude/scripts/orchestrate.sh status
 .claude/scripts/orchestrate.sh errors    # Error monitoring dashboard
 .claude/scripts/orchestrate.sh wait
+
+# Execute (teams mode - v3.8)
+.claude/scripts/orchestrate.sh team start <spec-number>  # Start Agent Team
+.claude/scripts/orchestrate.sh team status               # Show team progress
+.claude/scripts/orchestrate.sh team stop                 # Stop team
 
 # Finalize
 .claude/scripts/orchestrate.sh merge

@@ -1,6 +1,6 @@
-# Claude Orchestrator v3.6
+# Claude Orchestrator v3.8
 
-Claude agent orchestration system with **Spec-Driven Development**, **active error monitoring**, and **specialized agents**.
+Claude agent orchestration system with **Spec-Driven Development**, **Agent Teams**, **active error monitoring**, and **specialized agents**.
 
 ## How It Works in Practice
 
@@ -84,6 +84,24 @@ Claude decides when to use SDD (multi-module features) vs direct execution (smal
 
 ## What's New
 
+### v3.8 - Agent Teams Backend
+
+- **Dual execution mode** — `--mode teams|worktree` flag on `sdd run`. Worktrees remain the default
+- **Agent Teams integration** — Uses Claude Code's native Agent Teams for parallel execution with shared tasks, messaging, and delegate mode
+- **Team lead prompt generation** — Auto-builds comprehensive lead prompt from SDD artifacts (spec, research, plan) with agent specialization
+- **Quality gate hooks** — `TeammateIdle` prevents idle without commits; `TaskCompleted` validates work before marking done
+- **Branch-per-teammate** — File conflict mitigation without worktree isolation
+- **Hybrid monitoring** — Interactive team lead session + background orchestrator dashboard
+- **Graceful fallback** — Falls back to worktrees automatically if `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` is not set
+- **Team commands** — `team start|status|stop` for direct team management
+- **New skills** — `/orch-team-start`, `/orch-team-status` Claude Code slash commands
+
+### v3.7 - SDD Autopilot
+
+- **`sdd run` autopilot** — Chains gate, tasks, setup, start, and monitor in one command
+- **Dual mode** — `sdd run 001` (single spec) or `sdd run` (all planned specs)
+- **Fail-fast** — Stops on gate failure, task generation error, or worktree setup failure
+
 ### v3.6 - Active Error Monitoring
 
 - **Error detection engine** - Incremental byte-offset log polling catches errors as they happen (~5-25ms per agent)
@@ -148,7 +166,7 @@ cd ~/your-project
 
 ## Claude Code Skills
 
-The orchestrator integrates natively with Claude Code through **15 skills** (slash commands):
+The orchestrator integrates natively with Claude Code through **17 skills** (slash commands):
 
 ### SDD Skills
 
@@ -174,6 +192,8 @@ The orchestrator integrates natively with Claude Code through **15 skills** (sla
 | `/orch-status` | Monitor agent progress | Yes |
 | `/orch-errors` | Error monitoring dashboard | Yes |
 | `/orch-merge` | Merge and cleanup | No |
+| `/orch-team-start` | Start Agent Team from SDD spec | Yes |
+| `/orch-team-status` | Monitor Agent Team progress | Yes |
 
 **Auto = Yes** means Claude can invoke the skill autonomously as part of the architect workflow. **No** means user-only (destructive/one-time actions).
 
@@ -301,6 +321,8 @@ orch sdd research <number>   # Create research doc (MANDATORY)
 orch sdd plan <number>       # Create plan (requires research)
 orch sdd gate <number>       # Check constitutional gates
 orch sdd tasks <number>      # Generate orchestrator tasks
+orch sdd run <number>        # Autopilot (gate -> tasks -> setup -> start -> monitor)
+orch sdd run <number> --mode teams  # Use Agent Teams backend
 orch sdd status              # Show active specs
 orch sdd archive <number>    # Archive completed spec
 ```
@@ -317,12 +339,18 @@ orch agents install-preset <p> # Install preset
 ### Execution
 
 ```bash
+# Worktree mode (default)
 orch setup <name> --preset <p>     # Create worktree
 orch setup <name> --agents a1,a2   # With specific agents
 orch start                         # Start all
 orch start <agent>                 # Start specific
 orch stop <agent>                  # Stop
 orch restart <agent>               # Restart
+
+# Agent Teams mode (v3.8)
+orch team start <spec-number>      # Start Agent Team from SDD spec
+orch team status                   # Show team progress
+orch team stop                     # Stop running team
 ```
 
 ### Monitoring
@@ -406,6 +434,8 @@ The orchestrator uses [Claude Code hooks](https://code.claude.com/docs/en/hooks-
 | Memory & merge check | `Stop` (prompt) | Blocks if: (1) commits made without `update-memory`, or (2) merge done without `update-memory --full` and `learn extract` |
 | Task completion check | `Stop` (prompt) | Blocks if there are clearly unfinished tasks |
 | Self-dev docs sync | `Stop` (command) | **Source repo only**: blocks if scripts/skills changed without updating CAPABILITIES.md, version bumped without changelog, or commands changed without README update |
+| TeammateIdle | `TeammateIdle` (command) | Prevents Agent Teams teammates from going idle without commits or DONE.md (exit code 2 with feedback) |
+| TaskCompleted | `TaskCompleted` (command) | Validates teammate has commits and DONE.md before allowing task completion (exit code 2 with feedback) |
 
 The prompt-based hooks use a lightweight model (Haiku) to evaluate conditions with judgment rather than rigid rules. The self-dev docs sync hook only activates in the orchestrator source repository (detected by git origin URL) and is silent in client projects.
 
@@ -419,8 +449,8 @@ project/
 │   ├── AGENT_CLAUDE_BASE.md           # Agent base instructions
 │   ├── agents/                        # Installed agents (VoltAgent)
 │   ├── skills/                        # Claude Code Skills
-│   │   ├── sdd*/SKILL.md             # SDD skills (8)
-│   │   ├── orch*/SKILL.md            # Orchestrator skills (5)
+│   │   ├── sdd*/SKILL.md             # SDD skills (9)
+│   │   ├── orch*/SKILL.md            # Orchestrator skills (7, incl. team-*)
 │   │   ├── sdd/SKILL.md              # SDD hub
 │   │   └── orch/SKILL.md             # Orchestrator hub
 │   ├── specs/                         # SDD specifications
@@ -430,8 +460,8 @@ project/
 │   │   └── archive/                   # Completed specs
 │   ├── scripts/
 │   │   ├── orchestrate.sh             # Entry point
-│   │   ├── lib/                       # Libraries (10 modules)
-│   │   ├── commands/                  # Commands (12 modules)
+│   │   ├── lib/                       # Libraries (11 modules, incl. teams.sh)
+│   │   ├── commands/                  # Commands (13 modules, incl. team.sh)
 │   │   ├── tests/                     # Test framework
 │   │   └── completions/               # Shell completions
 │   └── orchestration/

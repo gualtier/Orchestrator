@@ -1,7 +1,7 @@
 # Project Memory - Claude Orchestrator
 
-> **Last update**: 2026-02-12
-> **Version**: 3.7
+> **Last update**: 2026-02-13
+> **Version**: 3.8
 
 ## Overview
 
@@ -20,14 +20,14 @@
 | Dependencies | Git, curl, Claude CLI           |
 | Agents       | VoltAgent/awesome-claude-code-subagents |
 
-## Architecture v3.7
+## Architecture v3.8
 
 ### Modular Structure
 
 ```
-.claude/skills/                     # Claude Code Skills (NEW v3.5, updated v3.7)
+.claude/skills/                     # Claude Code Skills (NEW v3.5, updated v3.8)
 ├── sdd*/SKILL.md                   # 9 SDD skills (/sdd-init, /sdd-specify, /sdd-run, etc.)
-├── orch*/SKILL.md                  # 5 orchestrator skills (/orch-setup, /orch-errors, etc.)
+├── orch*/SKILL.md                  # 7 orchestrator skills (/orch-setup, /orch-errors, /orch-team-*, etc.)
 ├── sdd/SKILL.md                    # SDD hub (/sdd)
 └── orch/SKILL.md                   # Orchestrator hub (/orch)
 
@@ -43,7 +43,8 @@
 │   ├── monitoring.sh       # Enhanced monitoring (v3.4)
 │   ├── error_detection.sh  # Active error monitoring (v3.6)
 │   ├── learning.sh         # Learning extraction (v3.4)
-│   └── sdd.sh              # SDD library (NEW v3.5)
+│   ├── sdd.sh              # SDD library (NEW v3.5)
+│   └── teams.sh            # Agent Teams backend (NEW v3.8)
 ├── commands/
 │   ├── init.sh             # init, init-sample
 │   ├── doctor.sh           # doctor, doctor --fix
@@ -51,6 +52,7 @@
 │   ├── learn.sh            # learn command (v3.4)
 │   ├── errors.sh           # error monitoring dashboard (v3.6)
 │   ├── sdd.sh              # sdd command (NEW v3.5)
+│   ├── team.sh             # team start/status/stop (NEW v3.8)
 │   ├── start.sh            # start, stop, restart, logs
 │   ├── status.sh           # status, status --json, wait
 │   ├── verify.sh           # verify, review, pre-merge, report
@@ -79,6 +81,8 @@
 | Errors      | lib/error_detection.sh | Active error monitoring, log polling, classification |
 | Learning    | lib/learning.sh    | Extract insights, parse DONE.md         |
 | SDD         | lib/sdd.sh         | Spec numbering, templates, gates, tasks |
+| Teams       | lib/teams.sh       | Agent Teams backend, prompt generation, monitoring |
+| Team Cmds   | commands/team.sh   | team start/status/stop commands         |
 
 ## Roadmap
 
@@ -196,7 +200,7 @@
 - [x] `/orch-errors` skill for Claude Code
 - [x] Zero external dependencies, bash 3.2+ compatible
 
-### v3.7 - SDD Autopilot (CURRENT)
+### v3.7 - SDD Autopilot
 
 - [x] `sdd run [number]` — autopilot mode: gate -> tasks -> setup -> start -> monitor
 - [x] Dual mode: single spec (`sdd run 001`) or all planned specs (`sdd run`)
@@ -204,6 +208,24 @@
 - [x] Integration reminder for multi-agent runs (cross-module wiring check)
 - [x] Stale task cleanup before regeneration on re-runs
 - [x] `/sdd-run` Claude Code skill
+- [x] Updated all consciousness layers (CAPABILITIES, PROJECT_MEMORY, CLAUDE.md, Skills)
+
+### v3.8 - Agent Teams Backend (CURRENT)
+
+- [x] `lib/teams.sh` — Agent Teams backend library (429 lines)
+- [x] `commands/team.sh` — Team management commands (191 lines)
+- [x] Dual execution mode: `--mode teams|worktree` flag on `sdd run`
+- [x] `EXECUTION_MODE` env var for configurable default backend
+- [x] Graceful fallback to worktree mode when Agent Teams unavailable
+- [x] Team lead prompt generation from SDD artifacts (spec, research, plan)
+- [x] Agent specialization via spawn prompts (preset .md content injected)
+- [x] Branch-per-teammate file conflict mitigation
+- [x] `TeammateIdle` hook — prevents idle without commits/DONE.md (exit code 2)
+- [x] `TaskCompleted` hook — validates commits and DONE.md before marking done
+- [x] `team start|status|stop` subcommands
+- [x] `/orch-team-start` and `/orch-team-status` Claude Code skills
+- [x] Hybrid monitoring: interactive team lead + background orchestrator dashboard
+- [x] SDD pipeline fully backend-agnostic (specify/research/plan/gate unchanged)
 - [x] Updated all consciousness layers (CAPABILITIES, PROJECT_MEMORY, CLAUDE.md, Skills)
 
 ### v4.0 - Future
@@ -246,6 +268,12 @@
 - **Reason**: Zero additional dependencies, deep integration with orchestrator pipeline, full customization
 - **Trade-off**: Must maintain our own implementation of SDD concepts
 
+### ADR-006: Dual Backend (Worktrees + Agent Teams)
+
+- **Decision**: Add Agent Teams as alternative execution backend, keep worktrees as default
+- **Reason**: Agent Teams provides native coordination (messaging, shared tasks, delegate mode) without worktree overhead. Worktrees provide filesystem isolation and lower token cost
+- **Trade-off**: Two execution paths to maintain; teams mode has higher token cost and requires experimental flag
+
 ## Resolved Problems
 
 | Problem                       | Version | Solution                                   |
@@ -264,6 +292,8 @@
 | Update requires `origin` remote | 3.5.1 | Auto-create `orchestrator` remote, fallback to `origin`     |
 | New features invisible to orch  | 3.6   | Update ALL consciousness files: CAPABILITIES.md, PROJECT_MEMORY.md, skills, CLAUDE.md |
 | Gate counts all `\|` lines      | 3.6   | Simplicity gate counts ALL table rows in plan.md, not just Worktree Mapping. Use lists instead of tables for non-module sections |
+| No native agent coordination     | 3.8   | Add Agent Teams as alternative backend with native messaging, shared tasks, delegate mode |
+| File conflicts without worktrees | 3.8   | Branch-per-teammate + prompt-based file ownership + plan approval mode |
 
 ## Lessons Learned
 
