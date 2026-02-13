@@ -99,8 +99,16 @@ cmd_status_standard() {
                 echo -e "│ Task: ${YELLOW}⚠️  COMPLETED (no DONE.md)${NC}"
                 ((done++))
                 ;;
+            done_dirty)
+                echo -e "│ Task: ${YELLOW}⚠️  COMPLETED (uncommitted changes!)${NC}"
+                ((done++))
+                ;;
             blocked)
                 echo -e "│ Task: ${RED}🚫 BLOCKED${NC}"
+                ((blocked++))
+                ;;
+            stopped_dirty)
+                echo -e "│ Task: ${RED}⚠️  STOPPED (uncommitted changes, no commits!)${NC}"
                 ((blocked++))
                 ;;
             stopped)
@@ -219,8 +227,16 @@ cmd_status_enhanced() {
                 echo -e "${YELLOW}║${NC} ${BOLD}Status:${NC} ${YELLOW}⚠️  COMPLETED (no DONE.md)${NC}"
                 ((done++))
                 ;;
+            done_dirty)
+                echo -e "${YELLOW}║${NC} ${BOLD}Status:${NC} ${YELLOW}⚠️  COMPLETED (uncommitted changes!)${NC}"
+                ((done++))
+                ;;
             blocked)
                 echo -e "${YELLOW}║${NC} ${BOLD}Status:${NC} ${RED}🚫 BLOCKED${NC}"
+                ((blocked++))
+                ;;
+            stopped_dirty)
+                echo -e "${YELLOW}║${NC} ${BOLD}Status:${NC} ${RED}⚠️  STOPPED (uncommitted changes, no commits!)${NC}"
                 ((blocked++))
                 ;;
             stopped)
@@ -341,7 +357,9 @@ cmd_status_compact() {
         case "$status" in
             done)            status_icon="✅" ;;
             done_no_report)  status_icon="⚠️" ;;
+            done_dirty)      status_icon="⚠️" ;;
             blocked)         status_icon="🚫" ;;
+            stopped_dirty)   status_icon="⏹️" ;;
             stopped)         status_icon="⏹️" ;;
             running)         status_icon="🔄" ;;
         esac
@@ -437,9 +455,9 @@ cmd_status_json() {
         local name=$(basename "$task_file" .md)
         local status=$(get_agent_status "$name")
         case "$status" in
-            done|done_no_report) ((done++)) ;;
+            done|done_no_report|done_dirty) ((done++)) ;;
             running) ((running++)) ;;
-            blocked|stopped) ((blocked++)) ;;
+            blocked|stopped|stopped_dirty) ((blocked++)) ;;
         esac
     done
 

@@ -86,9 +86,9 @@ _monitor_until_done() {
             ((total++)) || true
 
             case "$status" in
-                done|done_no_report) ((done++)) || true ;;
+                done|done_no_report|done_dirty) ((done++)) || true ;;
                 blocked) ((blocked++)) || true ;;
-                stopped) ((stopped++)) || true ;;
+                stopped|stopped_dirty) ((stopped++)) || true ;;
             esac
         done
 

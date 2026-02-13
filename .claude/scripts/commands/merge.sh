@@ -17,6 +17,20 @@ cmd_merge() {
         # Pular reviews
         [[ "$name" == review-* ]] && continue
 
+        # Check for uncommitted changes
+        local uncommitted=0
+        if dir_exists "$worktree_path"; then
+            uncommitted=$(cd "$worktree_path" && git status --porcelain 2>/dev/null | wc -l | tr -d ' ')
+        fi
+        if [[ $uncommitted -gt 0 ]]; then
+            log_warn "Agent $name has $uncommitted uncommitted file(s)! These changes will be LOST on merge."
+            log_info "Inspect with: cd $(get_worktree_path "$name") && git status"
+            if ! confirm "Continue merging $name anyway?"; then
+                log_info "Merge aborted. Commit or discard changes in worktree first."
+                return 1
+            fi
+        fi
+
         if ! file_exists "$worktree_path/DONE.md"; then
             # Fallback: check if agent made commits despite missing DONE.md
             local commits=0

@@ -222,13 +222,21 @@ get_agent_status() {
     elif file_exists "$worktree_path/BLOCKED.md"; then
         echo "blocked"
     elif ! is_process_running "$name"; then
-        # Process stopped — check if agent made commits (fallback detection)
+        # Process stopped — check if agent made commits or has uncommitted changes
         local commits=0
+        local uncommitted=0
         if dir_exists "$worktree_path"; then
             commits=$(cd "$worktree_path" && git log --oneline main..HEAD 2>/dev/null | wc -l | tr -d ' ')
+            uncommitted=$(cd "$worktree_path" && git status --porcelain 2>/dev/null | wc -l | tr -d ' ')
         fi
         if [[ $commits -gt 0 ]]; then
-            echo "done_no_report"
+            if [[ $uncommitted -gt 0 ]]; then
+                echo "done_dirty"
+            else
+                echo "done_no_report"
+            fi
+        elif [[ $uncommitted -gt 0 ]]; then
+            echo "stopped_dirty"
         elif file_exists "$worktree_path/PROGRESS.md"; then
             echo "stopped"
         else
