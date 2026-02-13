@@ -73,6 +73,7 @@ start_agent_process() {
     local name=$1
     local worktree_path=$2
     local prompt=$3
+    local max_retries=${4:-3}
     local pidfile=$(get_pid_file "$name")
     local logfile=$(get_log_file "$name")
     local start_time_file=$(get_start_time_file "$name")
@@ -88,31 +89,64 @@ start_agent_process() {
     ensure_dir "$ORCHESTRATION_DIR/pids"
     ensure_dir "$ORCHESTRATION_DIR/logs"
 
-    # Start process
-    log_info "Iniciando agente: $name"
+    # Retry loop with exponential backoff
+    local retry=0
+    local backoff_delays=(5 10 20)
 
-    (set +e; cd "$worktree_path" || { echo "ERROR: Failed to cd to $worktree_path" > "$logfile"; exit 1; }; nohup claude --dangerously-skip-permissions -p "$prompt" > "$logfile" 2>&1) &
+    while [[ $retry -lt $max_retries ]]; do
+        if [[ $retry -gt 0 ]]; then
+            local delay=${backoff_delays[$((retry - 1))]:-20}
+            log_warn "Retry $retry/$max_retries for $name (waiting ${delay}s)..."
+            sleep "$delay"
+        fi
 
-    local pid=$!
+        log_info "Iniciando agente: $name${retry:+ (attempt $((retry + 1))/$max_retries)}"
 
-    # Save PID and timestamp
-    echo $pid > "$pidfile"
-    echo $(date '+%s') > "$start_time_file"
+        (set +e; unset CLAUDECODE; cd "$worktree_path" || { echo "ERROR: Failed to cd to $worktree_path" > "$logfile"; exit 1; }; nohup claude --dangerously-skip-permissions --output-format stream-json -p "$prompt" > "$logfile" 2>&1) &
 
-    # Check if started (retry up to 3 times)
-    local attempts=0
-    local max_attempts=3
-    while [[ $attempts -lt $max_attempts ]]; do
-        sleep 1
+        local pid=$!
+
+        # Save PID and timestamp
+        echo $pid > "$pidfile"
+        echo $(date '+%s') > "$start_time_file"
+
+        # Wait to confirm process is alive
+        sleep 3
         if kill -0 "$pid" 2>/dev/null; then
             log_success "Agente $name iniciado (PID: $pid)"
             return 0
         fi
-        ((attempts++)) || true
+
+        # Process died — check log for hints
+        log_warn "Agent $name died immediately (attempt $((retry + 1)))"
+        if [[ -s "$logfile" ]]; then
+            log_info "Last log lines:"
+            tail -5 "$logfile" 2>/dev/null | while IFS= read -r line; do
+                echo "    $line"
+            done
+        fi
+
+        rm -f "$pidfile" "$start_time_file"
+        ((retry++)) || true
     done
 
-    log_error "Falha ao iniciar agente $name (processo morreu após ${max_attempts}s)"
-    rm -f "$pidfile" "$start_time_file"
+    log_error "Falha ao iniciar agente $name após $max_retries tentativas"
+
+    # Create BLOCKED.md to signal failure
+    local blocked_file="$worktree_path/BLOCKED.md"
+    cat > "$blocked_file" << BLOCKEOF
+# BLOCKED: $name
+
+Agent failed to start after $max_retries attempts.
+
+## Last Log
+$(tail -20 "$logfile" 2>/dev/null || echo "No log available")
+
+## Timestamp
+$(date '+%Y-%m-%d %H:%M:%S')
+BLOCKEOF
+    log_info "Created BLOCKED.md for $name"
+
     return 1
 }
 

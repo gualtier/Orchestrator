@@ -7,12 +7,14 @@ cmd_start() {
     local names=()
     local monitor=true
     local monitor_interval=10
+    local timeout_minutes=0  # 0 = no timeout
 
     # Parse flags and agent names
     while [[ $# -gt 0 ]]; do
         case "$1" in
             --no-monitor) monitor=false; shift ;;
             --interval) monitor_interval="$2"; shift 2 ;;
+            --timeout) timeout_minutes="$2"; shift 2 ;;
             *) names+=("$1"); shift ;;
         esac
     done
@@ -55,15 +57,21 @@ cmd_start() {
 
     # Enter monitoring loop
     echo ""
-    log_info "Monitoring agents (Ctrl+C to detach, agents keep running)..."
+    if [[ $timeout_minutes -gt 0 ]]; then
+        log_info "Monitoring agents (timeout: ${timeout_minutes}m, Ctrl+C to detach)..."
+    else
+        log_info "Monitoring agents (Ctrl+C to detach, agents keep running)..."
+    fi
     echo ""
 
-    _monitor_until_done "$monitor_interval"
+    _monitor_until_done "$monitor_interval" "$timeout_minutes"
 }
 
-# Monitor all agents until completion or Ctrl+C
+# Monitor all agents until completion, timeout, or Ctrl+C
 _monitor_until_done() {
     local interval=${1:-10}
+    local timeout_minutes=${2:-0}
+    local start_time=$(date '+%s')
 
     # Ctrl+C detaches from monitoring, agents keep running
     trap 'echo ""; log_info "Detached from monitoring. Agents still running."; log_info "Reattach with: orchestrate.sh status --watch"; trap - INT; return 0' INT
@@ -71,11 +79,38 @@ _monitor_until_done() {
     while true; do
         clear
 
+        # Timeout watchdog: kill agents that exceeded the time limit
+        if [[ $timeout_minutes -gt 0 ]]; then
+            local now=$(date '+%s')
+            local elapsed=$(( (now - start_time) / 60 ))
+            if [[ $elapsed -ge $timeout_minutes ]]; then
+                echo ""
+                log_warn "TIMEOUT: ${timeout_minutes}m reached. Stopping running agents..."
+                for task_file in "$ORCHESTRATION_DIR/tasks"/*.md; do
+                    [[ -f "$task_file" ]] || continue
+                    local tname=$(basename "$task_file" .md)
+                    if is_process_running "$tname"; then
+                        log_warn "Killing timed-out agent: $tname (ran ${elapsed}m)"
+                        stop_agent_process "$tname" true 2>/dev/null || true
+                        echo "[$(timestamp)] TIMEOUT: $tname killed after ${elapsed}m" >> "$EVENTS_FILE"
+                    fi
+                done
+                break
+            fi
+        fi
+
         # Check for new errors and show notifications
         check_and_notify_errors 2>/dev/null || true
 
         # Show enhanced status
         cmd_status_enhanced
+
+        # Show timeout countdown if active
+        if [[ $timeout_minutes -gt 0 ]]; then
+            local now=$(date '+%s')
+            local remaining=$(( timeout_minutes - (now - start_time) / 60 ))
+            echo -e "  Timeout: ${remaining}m remaining"
+        fi
 
         # Count completion states
         local total=0 done=0 blocked=0 stopped=0
@@ -158,20 +193,35 @@ start_single_agent() {
         if [[ -f "$spec_path" ]]; then
             sdd_context+="
 ### Specification
-$(head -80 "$spec_path")
+$(cat "$spec_path")
 "
         fi
         if [[ -f "$spec_dir/research.md" ]]; then
             sdd_context+="
 ### Research Findings
-$(head -80 "$spec_dir/research.md")
+$(cat "$spec_dir/research.md")
 "
         fi
         if [[ -f "$spec_dir/plan.md" ]]; then
             sdd_context+="
 ### Implementation Plan
-$(head -80 "$spec_dir/plan.md")
+$(cat "$spec_dir/plan.md")
 "
+        fi
+    fi
+
+    # Extract project rules from the main CLAUDE.md (if they exist)
+    local project_rules=""
+    local main_claude_md="$CLAUDE_DIR/CLAUDE.md"
+    if [[ -f "$PROJECT_ROOT/CLAUDE.md" ]]; then
+        main_claude_md="$PROJECT_ROOT/CLAUDE.md"
+    fi
+    if [[ -f "$main_claude_md" ]]; then
+        # Extract rules/guidelines sections (lines starting with # Rule, ## Rule, or numbered rules)
+        project_rules=$(sed -n '/^#\{1,3\} .*[Rr]ule/,/^#\{1,2\} [^Rr]/p' "$main_claude_md" | sed '$d' 2>/dev/null || true)
+        # If no explicit "Rule" sections, try extracting any section with guidelines/conventions
+        if [[ -z "$project_rules" ]]; then
+            project_rules=$(sed -n '/^#\{1,3\} .*[Gg]uideline\|^#\{1,3\} .*[Cc]onvention\|^#\{1,3\} .*[Ss]tandard/,/^#\{1,2\} /p' "$main_claude_md" | sed '$d' 2>/dev/null || true)
         fi
     fi
 
@@ -183,7 +233,18 @@ Você é um agente executor com expertise em: $specialized_agents
 ⚠️ CRITICAL REQUIREMENT: When you finish your task, you MUST create a DONE.md file in the root of this worktree. This is NOT optional. The orchestrator depends on DONE.md to detect completion. Without it, your work will be considered incomplete even if you made commits.
 
 ## Base Instructions
-$(cat "$worktree_path/.claude/CLAUDE.md" 2>/dev/null || cat "$CLAUDE_DIR/AGENT_CLAUDE.md" 2>/dev/null || echo "")
+$(cat "$worktree_path/.claude/CLAUDE.md" 2>/dev/null || cat "$CLAUDE_DIR/AGENT_CLAUDE.md" 2>/dev/null || echo "")"
+
+    # Inject project rules if found and not already in the worktree's CLAUDE.md
+    if [[ -n "$project_rules" ]]; then
+        full_prompt+="
+
+## Project Rules (from main CLAUDE.md — MUST follow)
+$project_rules
+"
+    fi
+
+    full_prompt+="
 
 ## Expertise Especializada
 "
@@ -220,8 +281,8 @@ $task
 ---
 MANDATORY STEPS (follow in order):
 1. Read the task above carefully
-2. Create PROGRESS.md immediately
-3. Execute step by step
+2. Create PROGRESS.md immediately with ALL planned steps as checkboxes (- [ ] Step name)
+3. Execute step by step — UPDATE PROGRESS.md after EACH completed step (change - [ ] to - [x])
 4. Make frequent commits: git commit -m 'feat($name): desc'
 5. LAST STEP (MANDATORY): Create DONE.md in the root directory with these sections:
    - # ✅ Completed: [task name]

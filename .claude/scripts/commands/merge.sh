@@ -4,18 +4,37 @@
 # =============================================
 
 cmd_merge() {
-    local target=${1:-main}
+    local target="main"
+    local dry_run=false
+    local auto_cleanup=false
+
+    # Parse arguments
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --dry-run)   dry_run=true; shift ;;
+            --cleanup)   auto_cleanup=true; shift ;;
+            *)           target="$1"; shift ;;
+        esac
+    done
 
     # Bug fix: Detect if user passed a worktree name instead of a branch name
-    if [[ -n "$1" ]]; then
-        local task_file="$ORCHESTRATION_DIR/tasks/${target}.md"
-        if [[ -f "$task_file" ]]; then
+    if [[ "$target" != "main" ]]; then
+        local check_task="$ORCHESTRATION_DIR/tasks/${target}.md"
+        if [[ -f "$check_task" ]]; then
             log_error "'$target' is a worktree name, not a target branch."
-            log_info "Usage: orchestrate.sh merge [target-branch]"
-            log_info "  orchestrate.sh merge          # merge all worktrees to main"
-            log_info "  orchestrate.sh merge develop   # merge all worktrees to develop"
+            log_info "Usage: orchestrate.sh merge [target-branch] [--dry-run] [--cleanup]"
+            log_info "  orchestrate.sh merge              # merge all worktrees to main"
+            log_info "  orchestrate.sh merge develop       # merge all worktrees to develop"
+            log_info "  orchestrate.sh merge --dry-run     # pre-flight check without merging"
+            log_info "  orchestrate.sh merge --cleanup     # merge + auto-remove worktrees"
             return 1
         fi
+    fi
+
+    # Dry-run mode: show what would happen without executing
+    if $dry_run; then
+        _merge_dry_run "$target"
+        return $?
     fi
 
     log_step "Iniciando merge para: $target"
@@ -127,6 +146,111 @@ cmd_merge() {
 
     # Registrar evento
     echo "[$(timestamp)] MERGED: $merged branches to $target" >> "$EVENTS_FILE"
+
+    # Auto-cleanup if requested
+    if $auto_cleanup && [[ $failed -eq 0 ]]; then
+        log_step "Auto-cleanup: removing merged worktrees..."
+        FORCE=true cmd_cleanup
+    fi
+}
+
+# Pre-flight check: show what merge would do without executing
+_merge_dry_run() {
+    local target=$1
+
+    log_header "MERGE DRY-RUN (pre-flight check)"
+    echo "  Target branch: $target"
+    echo ""
+
+    local total=0
+    local ready=0
+    local problems=0
+
+    for task_file in "$ORCHESTRATION_DIR/tasks"/*.md; do
+        [[ -f "$task_file" ]] || continue
+        local name=$(basename "$task_file" .md)
+        local worktree_path=$(get_worktree_path "$name")
+        local branch="feature/$name"
+
+        [[ "$name" == review-* ]] && continue
+        ((total++)) || true
+
+        echo -e "  ${BOLD}$name${NC} ($branch)"
+
+        # Check branch exists
+        if ! branch_exists "$branch"; then
+            echo -e "    ${RED}Branch does not exist${NC}"
+            ((problems++)) || true
+            continue
+        fi
+
+        # Check commits
+        local commits=0
+        if dir_exists "$worktree_path"; then
+            commits=$(cd "$worktree_path" && git log --oneline main..HEAD 2>/dev/null | wc -l | tr -d ' ')
+        fi
+        echo "    Commits: $commits"
+
+        # Check DONE.md
+        if file_exists "$worktree_path/DONE.md"; then
+            echo -e "    DONE.md: ${GREEN}present${NC}"
+        elif [[ $commits -gt 0 ]]; then
+            echo -e "    DONE.md: ${YELLOW}missing (but has commits)${NC}"
+        else
+            echo -e "    DONE.md: ${RED}missing (no commits either)${NC}"
+            ((problems++)) || true
+        fi
+
+        # Check uncommitted changes (filtered)
+        local uncommitted=0
+        if dir_exists "$worktree_path"; then
+            uncommitted=$(cd "$worktree_path" && git status --porcelain 2>/dev/null | \
+                grep -v -E '^(\?\?| M|M ) \.claude/(AGENTS_USED|CLAUDE\.md)' | \
+                grep -v -E '^(\?\?| M|M ) uv\.lock$' | \
+                wc -l | tr -d ' ')
+        fi
+        if [[ $uncommitted -gt 0 ]]; then
+            echo -e "    Uncommitted: ${YELLOW}$uncommitted file(s)${NC}"
+        else
+            echo -e "    Uncommitted: ${GREEN}clean${NC}"
+        fi
+
+        # Check for merge conflicts
+        if branch_exists "$branch"; then
+            if simulate_merge "$branch" "$target" 2>/dev/null; then
+                echo -e "    Merge: ${GREEN}no conflicts${NC}"
+                ((ready++)) || true
+            else
+                echo -e "    Merge: ${RED}CONFLICTS detected${NC}"
+                ((problems++)) || true
+            fi
+        fi
+
+        # Check for artifacts that will be cleaned
+        local artifact_list=""
+        for artifact in DONE.md PROGRESS.md BLOCKED.md; do
+            if dir_exists "$worktree_path" && (cd "$worktree_path" && git show "HEAD:$artifact" &>/dev/null); then
+                artifact_list+="$artifact "
+            fi
+        done
+        if [[ -n "$artifact_list" ]]; then
+            echo -e "    Artifacts to clean: ${GRAY}$artifact_list${NC}"
+        fi
+
+        echo ""
+    done
+
+    log_separator
+    if [[ $problems -eq 0 ]]; then
+        echo -e "  ${GREEN}Ready to merge: $ready/$total branches, 0 problems${NC}"
+        echo "  Run: orchestrate.sh merge"
+    else
+        echo -e "  ${YELLOW}$ready/$total ready, $problems problem(s) found${NC}"
+        echo "  Fix issues above before merging."
+    fi
+    echo ""
+
+    return 0
 }
 
 # Auto-archive specs when all their task branches have been merged

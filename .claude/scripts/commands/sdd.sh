@@ -589,6 +589,10 @@ cmd_sdd_run() {
                 mode="${1#*=}"
                 shift
                 ;;
+            --direct)
+                mode="direct"
+                shift
+                ;;
             *)
                 spec_number="$1"
                 shift
@@ -597,8 +601,8 @@ cmd_sdd_run() {
     done
 
     # Validate mode
-    if [[ "$mode" != "worktree" ]] && [[ "$mode" != "teams" ]]; then
-        log_error "Invalid mode: $mode (must be 'worktree' or 'teams')"
+    if [[ "$mode" != "worktree" ]] && [[ "$mode" != "teams" ]] && [[ "$mode" != "direct" ]]; then
+        log_error "Invalid mode: $mode (must be 'worktree', 'teams', or 'direct')"
         return 1
     fi
 
@@ -727,6 +731,10 @@ cmd_sdd_run() {
         log_step "[2/3] Teams mode - skipping worktree setup..."
         log_info "Teammates will work on feature branches within the main repo"
         echo ""
+    elif [[ "$mode" == "direct" ]]; then
+        log_step "[2/3] Direct mode - skipping worktree setup..."
+        log_info "Agent will execute directly on a feature branch in the main repo"
+        echo ""
     else
         log_step "[2/3] Setting up worktrees..."
         echo ""
@@ -747,6 +755,12 @@ cmd_sdd_run() {
                     return 1
                 fi
             else
+                # Auto-detect: if only 1 module and mode not explicitly set, suggest direct mode
+                local mapping_count=$(echo "$mappings" | wc -l | tr -d ' ')
+                if [[ $mapping_count -eq 1 ]] && [[ "${EXECUTION_MODE:-}" != "worktree" ]]; then
+                    log_info "[$spec_name] Single module detected — consider --direct mode for less overhead"
+                fi
+
                 while IFS='|' read -r module wt_name preset; do
                     [[ -z "$wt_name" ]] && continue
 
@@ -787,6 +801,55 @@ cmd_sdd_run() {
         for spec_dir in "${spec_dirs[@]}"; do
             start_team_from_spec "$spec_dir"
         done
+    elif [[ "$mode" == "direct" ]]; then
+        log_step "[3/3] Running agent directly (no worktree)..."
+        echo ""
+
+        for spec_dir in "${spec_dirs[@]}"; do
+            local spec_name=$(basename "$spec_dir")
+            local task_file="$ORCHESTRATION_DIR/tasks/${spec_name}.md"
+
+            # Create a feature branch for the direct execution
+            local branch="feature/${spec_name}"
+            if ! branch_exists "$branch"; then
+                git checkout -b "$branch" 2>/dev/null || {
+                    log_error "Failed to create branch: $branch"
+                    return 1
+                }
+            else
+                git checkout "$branch" 2>/dev/null || {
+                    log_error "Failed to switch to branch: $branch"
+                    return 1
+                }
+            fi
+
+            log_info "Running on branch: $branch"
+
+            # Build the prompt from the task file (reuse start_single_agent logic)
+            if [[ -f "$task_file" ]]; then
+                local task=$(cat "$task_file")
+                log_info "Executing task: $spec_name"
+                echo ""
+                echo "  The agent will run directly in this repository."
+                echo "  Output will be streamed to the log."
+                echo ""
+
+                local logfile=$(get_log_file "$spec_name")
+                ensure_dir "$ORCHESTRATION_DIR/logs"
+
+                (set +e; unset CLAUDECODE; nohup claude --dangerously-skip-permissions --output-format stream-json -p "Execute this task on the current branch:\n\n$task" > "$logfile" 2>&1) &
+                local pid=$!
+                echo $pid > "$(get_pid_file "$spec_name")"
+                echo $(date '+%s') > "$(get_start_time_file "$spec_name")"
+
+                log_success "Direct agent started (PID: $pid)"
+            else
+                log_error "No task file found for $spec_name"
+            fi
+        done
+
+        echo ""
+        log_info "Monitor with: orchestrate.sh status"
     else
         log_step "[3/3] Starting agents..."
         echo ""
