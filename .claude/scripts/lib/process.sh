@@ -227,7 +227,10 @@ get_agent_status() {
         local uncommitted=0
         if dir_exists "$worktree_path"; then
             commits=$(cd "$worktree_path" && git log --oneline main..HEAD 2>/dev/null | wc -l | tr -d ' ')
-            uncommitted=$(cd "$worktree_path" && git status --porcelain 2>/dev/null | wc -l | tr -d ' ')
+            uncommitted=$(cd "$worktree_path" && git status --porcelain 2>/dev/null | \
+                grep -v -E '^(\?\?| M|M ) \.claude/(AGENTS_USED|CLAUDE\.md)' | \
+                grep -v -E '^(\?\?| M|M ) uv\.lock$' | \
+                wc -l | tr -d ' ')
         fi
         if [[ $commits -gt 0 ]]; then
             if [[ $uncommitted -gt 0 ]]; then

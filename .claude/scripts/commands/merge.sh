@@ -6,6 +6,18 @@
 cmd_merge() {
     local target=${1:-main}
 
+    # Bug fix: Detect if user passed a worktree name instead of a branch name
+    if [[ -n "$1" ]]; then
+        local task_file="$ORCHESTRATION_DIR/tasks/${target}.md"
+        if [[ -f "$task_file" ]]; then
+            log_error "'$target' is a worktree name, not a target branch."
+            log_info "Usage: orchestrate.sh merge [target-branch]"
+            log_info "  orchestrate.sh merge          # merge all worktrees to main"
+            log_info "  orchestrate.sh merge develop   # merge all worktrees to develop"
+            return 1
+        fi
+    fi
+
     log_step "Iniciando merge para: $target"
 
     # Check completion of all tasks
@@ -17,10 +29,13 @@ cmd_merge() {
         # Pular reviews
         [[ "$name" == review-* ]] && continue
 
-        # Check for uncommitted changes
+        # Check for uncommitted changes (excluding orchestrator artifacts)
         local uncommitted=0
         if dir_exists "$worktree_path"; then
-            uncommitted=$(cd "$worktree_path" && git status --porcelain 2>/dev/null | wc -l | tr -d ' ')
+            uncommitted=$(cd "$worktree_path" && git status --porcelain 2>/dev/null | \
+                grep -v -E '^(\?\?| M|M ) \.claude/(AGENTS_USED|CLAUDE\.md)' | \
+                grep -v -E '^(\?\?| M|M ) uv\.lock$' | \
+                wc -l | tr -d ' ')
         fi
         if [[ $uncommitted -gt 0 ]]; then
             log_warn "Agent $name has $uncommitted uncommitted file(s)! These changes will be LOST on merge."
@@ -72,6 +87,17 @@ cmd_merge() {
         log_info "Merging $branch..."
 
         if git merge "$branch" -m "feat: merge $name"; then
+            # Remove worktree artifacts that shouldn't live in the target branch
+            local artifacts_removed=false
+            for artifact in DONE.md PROGRESS.md BLOCKED.md; do
+                if [[ -f "$artifact" ]]; then
+                    git rm -f "$artifact" 2>/dev/null && artifacts_removed=true
+                fi
+            done
+            if $artifacts_removed; then
+                git commit -m "chore: remove worktree artifacts from $name merge"
+            fi
+
             log_success "$branch merged"
             ((merged++)) || true
         else
@@ -92,12 +118,56 @@ cmd_merge() {
     if [[ $failed -eq 0 ]]; then
         log_success "Merge completo! ($merged branches)"
         log_info "💡 Tip: Extract learnings with: $0 learn extract"
+
+        # Auto-archive specs whose tasks are all merged
+        _auto_archive_completed_specs
     else
         log_warn "Merge parcial: $merged OK, $failed com conflitos"
     fi
 
     # Registrar evento
     echo "[$(timestamp)] MERGED: $merged branches to $target" >> "$EVENTS_FILE"
+}
+
+# Auto-archive specs when all their task branches have been merged
+_auto_archive_completed_specs() {
+    [[ -d "$SPECS_ACTIVE" ]] || return 0
+
+    for spec_dir in "$SPECS_ACTIVE"/*/; do
+        [[ -d "$spec_dir" ]] || continue
+        [[ -f "$spec_dir/tasks.md" ]] || continue
+
+        local spec_name=$(basename "$spec_dir")
+        local spec_num=${spec_name%%-*}
+        local task_count=0
+        local merged_count=0
+
+        # Count tasks belonging to this spec
+        for task_file in "$ORCHESTRATION_DIR/tasks"/*.md; do
+            [[ -f "$task_file" ]] || continue
+            if grep -q "spec-ref:.*${spec_num}" "$task_file" 2>/dev/null; then
+                ((task_count++))
+                local task_name=$(basename "$task_file" .md)
+                local branch="feature/$task_name"
+
+                # Check if branch was already merged into current branch
+                if git branch --merged HEAD 2>/dev/null | grep -q "$branch"; then
+                    ((merged_count++))
+                fi
+            fi
+        done
+
+        # If all tasks merged, auto-archive
+        if [[ $task_count -gt 0 ]] && [[ $merged_count -eq $task_count ]]; then
+            ensure_dir "$SPECS_ARCHIVE"
+            mv "$spec_dir" "$SPECS_ARCHIVE/"
+            log_success "Spec auto-archived: $spec_name ($task_count/$task_count tasks merged)"
+
+            if [[ -f "$EVENTS_FILE" ]]; then
+                echo "[$(timestamp)] SDD_AUTO_ARCHIVE: ${spec_name}" >> "$EVENTS_FILE"
+            fi
+        fi
+    done
 }
 
 cmd_cleanup() {
