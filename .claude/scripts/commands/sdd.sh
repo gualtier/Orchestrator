@@ -837,7 +837,7 @@ cmd_sdd_run() {
                 local logfile=$(get_log_file "$spec_name")
                 ensure_dir "$ORCHESTRATION_DIR/logs"
 
-                (set +e; unset CLAUDECODE; nohup claude --dangerously-skip-permissions --output-format stream-json -p "Execute this task on the current branch:\n\n$task" > "$logfile" 2>&1) &
+                (set +e; unset CLAUDECODE; nohup claude --dangerously-skip-permissions --verbose --output-format stream-json -p "Execute this task on the current branch:\n\n$task" > "$logfile" 2>&1) &
                 local pid=$!
                 echo $pid > "$(get_pid_file "$spec_name")"
                 echo $(date '+%s') > "$(get_start_time_file "$spec_name")"

@@ -102,7 +102,7 @@ start_agent_process() {
 
         log_info "Iniciando agente: $name${retry:+ (attempt $((retry + 1))/$max_retries)}"
 
-        (set +e; unset CLAUDECODE; cd "$worktree_path" || { echo "ERROR: Failed to cd to $worktree_path" > "$logfile"; exit 1; }; nohup claude --dangerously-skip-permissions --output-format stream-json -p "$prompt" > "$logfile" 2>&1) &
+        (set +e; unset CLAUDECODE; cd "$worktree_path" || { echo "ERROR: Failed to cd to $worktree_path" > "$logfile"; exit 1; }; nohup claude --dangerously-skip-permissions --verbose --output-format stream-json -p "$prompt" > "$logfile" 2>&1) &
 
         local pid=$!
 
