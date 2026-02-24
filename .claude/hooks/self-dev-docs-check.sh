@@ -10,18 +10,13 @@
 
 PROJECT_DIR="${CLAUDE_PROJECT_DIR:-.}"
 
-# === Self-dev detection ===
-# The orchestrator source repo has "orchestrator" in its origin URL.
-# Client projects that USE the orchestrator have it as a secondary remote.
-is_self_dev() {
-  local origin_url
-  origin_url=$(git -C "$PROJECT_DIR" remote get-url origin 2>/dev/null)
-  [[ "$origin_url" == *"orchestrator"* ]]
-}
+# Source shared utilities
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/lib/hook-utils.sh"
 
 # Skip silently if not self-dev
 if ! is_self_dev; then
-  echo '{"ok": true}'
+  json_ok
   exit 0
 fi
 
@@ -80,9 +75,7 @@ fi
 if [[ ${#issues[@]} -gt 0 ]]; then
   reason=$(printf '%s; ' "${issues[@]}")
   reason="${reason%; }"
-  # Escape quotes for JSON
-  reason="${reason//\"/\\\"}"
-  echo "{\"ok\": false, \"reason\": \"[Self-dev] ${reason}\"}"
+  json_fail "[Self-dev] ${reason}"
 else
-  echo '{"ok": true}'
+  json_ok
 fi

@@ -15,8 +15,8 @@
       {
         "hooks": [
           {
-            "type": "prompt",
-            "prompt": "You check whether project memory and post-merge routines need attention. Look at the conversation:\n\n1. COMMITS: Did the assistant run any 'git commit' commands? If yes, check if EITHER:\n   a. '.claude/scripts/orchestrate.sh update-memory' was run AFTER the last commit, OR\n   b. The assistant directly edited PROJECT_MEMORY.md (via Edit/Write tool) as part of the commit — this counts as manual memory update.\n\n2. MERGE: Did the assistant run 'orch merge' or '.claude/scripts/orchestrate.sh merge'? If yes, verify that BOTH of these were run afterward:\n   - 'update-memory --full' (or update-memory with --full flag)\n   - 'learn extract'\n\nRespond {\"ok\": false, \"reason\": \"...\"} if:\n- Commits were made without update-memory AND without manual PROJECT_MEMORY.md edits, OR\n- Merge was run without 'update-memory --full' and 'learn extract'\n\nRespond {\"ok\": true} if:\n- Input field 'stop_hook_active' is true, OR\n- No commits/merges were made, OR\n- All required follow-up commands were run, OR\n- PROJECT_MEMORY.md was manually edited as part of the committed changes"
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/memory-check.sh"
           }
         ]
       },
