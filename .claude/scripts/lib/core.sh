@@ -47,6 +47,10 @@ init_config() {
     TEAMS_HOME="${HOME}/.claude/teams"
     TASKS_HOME="${HOME}/.claude/tasks"
 
+    # SDD Autopilot (v3.9)
+    # When set to 1, hooks pass through without blocking
+    SDD_AUTOPILOT=${SDD_AUTOPILOT:-"0"}
+
     # Exportar para subshells
     export PROJECT_ROOT PROJECT_NAME CLAUDE_DIR ORCHESTRATION_DIR
     export AGENTS_DIR MEMORY_FILE STATE_FILE EVENTS_FILE AGENTS_SCRIPT
@@ -54,6 +58,7 @@ init_config() {
     export SPECS_DIR SPECS_ACTIVE SPECS_ARCHIVE SPECS_TEMPLATES CONSTITUTION_FILE
     export ERROR_POLL_INTERVAL ERROR_LOG_FILE ERROR_CACHE_DIR
     export EXECUTION_MODE TEAMS_HOME TASKS_HOME
+    export SDD_AUTOPILOT
 }
 
 # Initialize configuration automatically

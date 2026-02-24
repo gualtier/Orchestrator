@@ -579,7 +579,11 @@ cmd_sdd_archive() {
 cmd_sdd_run() {
     local spec_number=""
     local mode="${EXECUTION_MODE:-worktree}"
+    local auto_merge=false
     local spec_dirs=()
+
+    # Enable autopilot mode — hooks will pass through without blocking
+    export SDD_AUTOPILOT=1
 
     # Parse arguments
     while [[ $# -gt 0 ]]; do
@@ -594,6 +598,10 @@ cmd_sdd_run() {
                 ;;
             --direct)
                 mode="direct"
+                shift
+                ;;
+            --auto-merge)
+                auto_merge=true
                 shift
                 ;;
             *)
@@ -669,7 +677,12 @@ cmd_sdd_run() {
 
     local spec_count=${#spec_dirs[@]}
     log_header "SDD AUTOPILOT: $spec_count spec(s)"
-    echo "  Pipeline: gate -> tasks -> setup -> start -> monitor"
+    if $auto_merge; then
+        echo "  Pipeline: gate -> tasks -> setup -> start -> monitor -> merge -> archive"
+    else
+        echo "  Pipeline: gate -> tasks -> setup -> start -> monitor"
+    fi
+    echo "  Autopilot: SDD_AUTOPILOT=1 (hooks bypassed)"
     echo ""
 
     # List specs being processed
@@ -905,16 +918,71 @@ cmd_sdd_run() {
     fi
 
     echo ""
-    log_separator
-    echo ""
-    echo "  Next steps:"
-    echo "    orchestrate.sh verify-all    # Review agent output"
-    echo "    orchestrate.sh merge         # Merge all worktrees"
-    echo "    orchestrate.sh update-memory --full"
-    echo ""
+
+    # =========================================
+    # POST-RUN AUTOMATION
+    # =========================================
+
+    # Always run update-memory after agents complete (REQ-3)
+    if [[ $done_count -gt 0 ]]; then
+        log_step "Running update-memory --full..."
+        cmd_update_memory --full 2>/dev/null || log_warn "update-memory failed (non-fatal)"
+    fi
+
+    # Auto-merge flow (REQ-5, REQ-4, REQ-6)
+    if [[ $done_count -eq $total ]] && [[ $total -gt 0 ]]; then
+        if $auto_merge; then
+            # --auto-merge: merge + learn extract + archive without intervention
+            echo ""
+            log_step "Auto-merge: merging all worktrees..."
+            if FORCE=true cmd_merge --cleanup; then
+                log_success "Merge completed successfully"
+
+                # Learn extract after successful merge (REQ-4)
+                log_step "Extracting learnings..."
+                cmd_learn extract 2>/dev/null || log_warn "learn extract failed (non-fatal)"
+
+                # Archive is already handled by _auto_archive_completed_specs inside cmd_merge
+                # but run explicit archive for each spec as a safety net (REQ-6)
+                for spec_dir in "${spec_dirs[@]}"; do
+                    local sname=$(basename "$spec_dir")
+                    if [[ -d "$spec_dir" ]]; then
+                        _cleanup_spec_artifacts "$sname"
+                        ensure_dir "$SPECS_ARCHIVE"
+                        mv "$spec_dir" "$SPECS_ARCHIVE/" 2>/dev/null || true
+                        log_success "Spec archived: $sname"
+                    fi
+                done
+            else
+                log_error "Auto-merge failed — resolve conflicts manually"
+                log_info "Run: orchestrate.sh merge"
+            fi
+        else
+            # Default: pause before merge (AC-6)
+            echo ""
+            log_separator
+            echo ""
+            echo "  Next steps:"
+            echo "    orchestrate.sh verify-all    # Review agent output"
+            echo "    orchestrate.sh merge         # Merge all worktrees"
+            echo ""
+            echo "  Or re-run with --auto-merge for unattended merge:"
+            echo "    orchestrate.sh sdd run ${spec_number:-} --auto-merge"
+            echo ""
+        fi
+    else
+        echo ""
+        log_separator
+        echo ""
+        echo "  Next steps:"
+        echo "    orchestrate.sh verify-all    # Review agent output"
+        echo "    orchestrate.sh merge         # Merge all worktrees"
+        echo "    orchestrate.sh update-memory --full"
+        echo ""
+    fi
 
     # Integration reminder when multiple worktrees were involved
-    if [[ $total -gt 1 ]]; then
+    if [[ $total -gt 1 ]] && ! $auto_merge; then
         echo -e "  ${YELLOW}NOTE: Each agent passed its own tests in isolation.${NC}"
         echo -e "  ${YELLOW}Before merging, run a full end-to-end integration walkthrough${NC}"
         echo -e "  ${YELLOW}to catch cross-module wiring issues.${NC}"
@@ -923,8 +991,13 @@ cmd_sdd_run() {
 
     # Log event
     if [[ -f "$EVENTS_FILE" ]]; then
-        echo "[$(date -u +"%Y-%m-%dT%H:%M:%SZ")] SDD_RUN_COMPLETE: $done_count/$total done" >> "$EVENTS_FILE"
+        local event_suffix=""
+        $auto_merge && event_suffix=" (auto-merged)"
+        echo "[$(date -u +"%Y-%m-%dT%H:%M:%SZ")] SDD_RUN_COMPLETE: $done_count/$total done${event_suffix}" >> "$EVENTS_FILE"
     fi
+
+    # Disable autopilot mode
+    export SDD_AUTOPILOT=0
 }
 
 # =============================================
@@ -949,6 +1022,7 @@ cmd_sdd_help() {
     echo -e "  ${CYAN}sdd plan <number>${NC}           Create implementation plan (requires research)"
     echo -e "  ${CYAN}sdd gate <number>${NC}           Check constitutional gates"
     echo -e "  ${CYAN}sdd run [number]${NC}            Autopilot: gate -> tasks -> setup -> start -> monitor"
+    echo -e "  ${CYAN}sdd run [number] --auto-merge${NC} Full autopilot: ... -> merge -> archive"
     echo -e "  ${CYAN}sdd tasks <number>${NC}          Generate orchestrator tasks from plan"
     echo -e "  ${CYAN}sdd status${NC}                  Show all active specs"
     echo -e "  ${CYAN}sdd archive <number>${NC}        Archive completed spec"
