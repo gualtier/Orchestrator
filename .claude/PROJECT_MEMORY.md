@@ -1,7 +1,7 @@
 # Project Memory - Claude Orchestrator
 
-> **Last update**: 2026-02-24 01:50
-> **Version**: 3.8
+> **Last update**: 2026-02-24 02:04
+> **Version**: 3.9
 
 ## Overview
 
@@ -210,7 +210,7 @@
 - [x] `/sdd-run` Claude Code skill
 - [x] Updated all consciousness layers (CAPABILITIES, PROJECT_MEMORY, CLAUDE.md, Skills)
 
-### v3.8 - Agent Teams Backend (CURRENT)
+### v3.8 - Agent Teams Backend
 
 - [x] `lib/teams.sh` — Agent Teams backend library (429 lines)
 - [x] `commands/team.sh` — Team management commands (191 lines)
@@ -227,6 +227,21 @@
 - [x] Hybrid monitoring: interactive team lead + background orchestrator dashboard
 - [x] SDD pipeline fully backend-agnostic (specify/research/plan/gate unchanged)
 - [x] Updated all consciousness layers (CAPABILITIES, PROJECT_MEMORY, CLAUDE.md, Skills)
+
+### v3.9 - Autonomous SDD Pipeline (CURRENT)
+
+- [x] `hooks/lib/hook-utils.sh` — Shared hook utilities (is_self_dev, is_autopilot, json_ok/fail)
+- [x] `hooks/memory-check.sh` — Command hook replacing prompt-based memory check
+- [x] Converted memory/merge stop hook from prompt to command (reliable env var + self-dev detection)
+- [x] `SDD_AUTOPILOT=1` env var — hooks pass through during autonomous pipeline execution
+- [x] `--auto-merge` flag on `sdd run` — full hands-off pipeline (gate→tasks→setup→start→merge→archive)
+- [x] Auto `update-memory --full` after agents complete
+- [x] Auto `learn extract` after successful merge
+- [x] Auto `sdd archive` after successful merge (via existing `_auto_archive_completed_specs`)
+- [x] Self-dev awareness — command hooks detect orchestrator repo and bypass client-facing guards
+- [x] Stale worktree cleanup on archive (`_cleanup_spec_artifacts`)
+- [x] 24 automated tests for hook bypass, self-dev, and backward compatibility
+- [x] Bash 3.x compatible (no `${var,,}` bashisms)
 
 ### v4.0 - Future
 

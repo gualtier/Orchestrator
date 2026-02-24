@@ -1,6 +1,15 @@
 # Changelog
 
 
+## [2026-02-24]
+
+- chore: remove worktree artifacts from autonomous-pipeline merge (7c207a5)
+- feat(autonomous-pipeline): finalize with DONE.md and PROGRESS.md (b1c98c8)
+- feat(autonomous-pipeline): add tests, fix case-insensitive self-dev detection (90f7c9a)
+- feat(autonomous-pipeline): add --auto-merge flag and post-run automation to sdd run (b5988b6)
+- feat(autonomous-pipeline): convert memory hook to command, add shared hook utils (1ce1fca)
+
+
 ## [v3.8] - 2026-02-13
 
 ### Agent Teams Backend
