@@ -279,18 +279,15 @@ _show_whats_new() {
     if _version_lt "$old_minor" "3.9"; then
         echo ""
         echo -e "  ${GREEN}v3.9 - Autonomous SDD Pipeline${NC}"
-        echo "    - sdd run --auto-merge: fully autonomous gate->tasks->setup->start->merge->archive"
-        echo "    - SDD_AUTOPILOT=1 env var: hooks pass through during autonomous execution"
-        echo "    - Shared hook utilities: hooks/lib/hook-utils.sh (is_self_dev, is_autopilot)"
-        echo "    - Command hook for memory check (replaces prompt-based, no LLM latency)"
-        echo "    - Self-dev awareness: hooks detect orchestrator repo and bypass client guards"
-        echo "    - Auto update-memory --full after agents complete"
-        echo "    - Auto learn extract after successful merge"
-        echo "    - Auto sdd archive after successful merge"
-        echo "    - Stale worktree/task cleanup on spec archive (_cleanup_spec_artifacts)"
-        echo "    - Self-dev docs check hook (CAPABILITIES, CHANGELOG, README staleness)"
-        echo "    - 24 automated tests for hook bypass and backward compatibility"
-        echo "    - Bash 3.x compatible (no bashisms)"
+        echo "    - sdd run --auto-merge: zero-touch pipeline (run → merge → archive)"
+        echo "    - Hooks auto-bypass during autopilot (no more manual approvals)"
+        echo "    - Auto update-memory, learn, and archive after agents complete"
+        echo "    - Stale worktrees cleaned up automatically on spec archive"
+        echo "    - Smarter hooks: command-based (faster, no LLM latency)"
+        echo "    - Self-dev docs check prevents stale README/CAPABILITIES"
+        echo ""
+        echo -e "  ${YELLOW}Quick start:${NC}"
+        echo "    /sdd-run 001 --auto-merge   # Fully hands-off"
     fi
 
     echo ""
@@ -511,6 +508,10 @@ cmd_update() {
     echo ""
     log_success "Orchestrator updated successfully!"
     log_info "v$local_version -> v$remote_version"
+
+    # Reload from the newly downloaded file so _show_whats_new
+    # includes release notes for versions the OLD script didn't know about
+    source "$SCRIPT_DIR/commands/update.sh"
 
     _show_whats_new "$local_version" "$remote_version"
 
