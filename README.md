@@ -1,6 +1,6 @@
-# Claude Orchestrator v3.8
+# Claude Orchestrator v3.9
 
-Claude agent orchestration system with **Spec-Driven Development**, **Agent Teams**, **active error monitoring**, and **specialized agents**.
+Claude agent orchestration system with **Spec-Driven Development**, **autonomous pipeline**, **Agent Teams**, **active error monitoring**, and **specialized agents**.
 
 ## How It Works in Practice
 
@@ -80,9 +80,20 @@ Claude: → Specifies, researches, plans, generates tasks
         → Notifies you when done and ready to merge
 ```
 
-Claude decides when to use SDD (multi-module features) vs direct execution (small tasks). You only intervene for destructive actions like `/orch-merge` and `/sdd-archive`.
+Claude decides when to use SDD (multi-module features) vs direct execution (small tasks). With `--auto-merge`, the entire pipeline runs hands-off.
 
 ## What's New
+
+### v3.9 - Autonomous SDD Pipeline
+
+- **`--auto-merge` flag** — `sdd run 001 --auto-merge` runs the full pipeline without intervention: gate → tasks → setup → start → merge → archive
+- **Command-based memory hook** — Replaced prompt-based stop hook with `memory-check.sh` for reliable env var and self-dev detection (no LLM latency)
+- **`SDD_AUTOPILOT=1`** — Hooks automatically pass through during autonomous pipeline execution
+- **Shared hook utilities** — `hooks/lib/hook-utils.sh` with `is_self_dev()`, `is_autopilot()`, `json_ok/fail()`
+- **Auto post-merge steps** — `update-memory --full` and `learn extract` run automatically after agents complete
+- **Self-dev awareness** — Command hooks detect orchestrator repo and bypass client-facing guards
+- **Stale worktree cleanup** — Worktrees, tasks, PIDs, and logs cleaned up when specs are archived
+- **24 automated tests** — Hook bypass, self-dev detection, backward compatibility
 
 ### v3.8 - Agent Teams Backend
 

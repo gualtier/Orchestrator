@@ -1,4 +1,4 @@
-# Orchestrator Capabilities v3.8
+# Orchestrator Capabilities v3.9
 
 > This file is auto-updated by `orch update`. Do NOT edit manually.
 > Read this file at the start of every session to know what tools are available.
@@ -27,7 +27,7 @@ Supports two execution backends:
 | `/sdd-research 001` | Research libraries, patterns, security for a spec |
 | `/sdd-plan 001` | Create technical implementation plan |
 | `/sdd-gate 001` | Validate plan against constitutional gates |
-| `/sdd-run [001]` | Autopilot: gate -> tasks -> setup -> start -> monitor (single or all specs) |
+| `/sdd-run [001]` | Autopilot: gate -> tasks -> setup -> start -> monitor. Add `--auto-merge` for full hands-off |
 | `/sdd-tasks 001` | Generate orchestrator task files from plan (manual mode) |
 | `/sdd-status` | Show status of all active specs |
 | `/sdd-archive 001` | Archive a completed spec |
@@ -88,10 +88,11 @@ orch start             # Start agents in all worktrees
 orch stop              # Stop running agents
 orch restart           # Restart agents
 
-# SDD Autopilot (v3.7)
+# SDD Autopilot (v3.7, enhanced v3.9)
 orch sdd run [number]  # Autopilot: gate -> tasks -> setup -> start -> monitor
                        # No number = all planned specs
-orch sdd run 001 --mode teams  # Use Agent Teams backend instead of worktrees (v3.8)
+orch sdd run 001 --auto-merge   # Full hands-off: gate -> ... -> merge -> archive (v3.9)
+orch sdd run 001 --mode teams   # Use Agent Teams backend instead of worktrees (v3.8)
 
 # Agent Teams (v3.8)
 orch team start <spec-number>  # Start Agent Team from SDD spec
@@ -137,16 +138,28 @@ orch update-check      # Check for updates
 orch help              # Show all commands
 ```
 
-### SDD Autopilot (v3.7)
+### SDD Autopilot (v3.7, enhanced v3.9)
 
 End-to-end pipeline execution after plan approval:
 
-- `sdd run 001` — single spec autopilot
+- `sdd run 001` — single spec autopilot (pauses before merge)
 - `sdd run` — all planned specs at once
+- `sdd run 001 --auto-merge` — fully autonomous: gate → tasks → setup → start → merge → archive (v3.9)
 - `sdd run 001 --mode teams` — use Agent Teams backend (v3.8)
 - Fail-fast on gate failure, task errors, or setup errors
-- Integration reminder for multi-agent runs before merge
-- Pauses before merge for review
+- Auto `update-memory --full` and `learn extract` after agents complete (v3.9)
+- `SDD_AUTOPILOT=1` env var bypasses stop hooks during autonomous execution (v3.9)
+
+### Autonomous Pipeline (v3.9)
+
+Hooks and self-dev awareness for fully autonomous SDD execution:
+
+- **`hooks/lib/hook-utils.sh`**: Shared utilities — `is_self_dev()`, `is_autopilot()`, `json_ok/fail()`
+- **`hooks/memory-check.sh`**: Command hook replacing prompt-based memory check (reliable, no LLM latency)
+- **Self-dev detection**: Command hooks detect orchestrator repo (origin URL contains "orchestrator") and bypass client-facing guards
+- **`SDD_AUTOPILOT=1`**: Set automatically during `sdd run`, hooks pass through without blocking
+- **`--auto-merge`**: Full pipeline without intervention — merge, learn extract, archive all automatic
+- **Backward compatible**: Without `--auto-merge`, behavior is unchanged (pauses before merge)
 
 ### Agent Teams Backend (v3.8)
 

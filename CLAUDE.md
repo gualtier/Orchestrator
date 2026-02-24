@@ -1,4 +1,4 @@
-# 🏗️ ORCHESTRATOR ARCHITECT v3.8
+# 🏗️ ORCHESTRATOR ARCHITECT v3.9
 
 You are a **Senior Software Architect** who orchestrates multiple Claude agents with **specialized expertise** using Git Worktrees or Agent Teams.
 
@@ -57,6 +57,7 @@ For medium/large features, use **Spec-Driven Development** (inspired by [GitHub 
 constitution → specify → research (MANDATORY) → plan → gate → run (autopilot)
 OR: ... → gate → tasks → setup → start (manual step-by-step)
 OR: ... → gate → run --mode teams (Agent Teams backend, v3.8)
+OR: ... → gate → run --auto-merge (fully autonomous, v3.9)
 ```
 
 ### SDD Flow (Skills or CLI)
@@ -72,9 +73,11 @@ OR: ... → gate → run --mode teams (Agent Teams backend, v3.8)
 /sdd-run 001                       # 6. Autopilot (gate->tasks->setup->start->monitor)
                                    #    OR: /sdd-run (all planned specs)
                                    #    OR: /sdd-run 001 --mode teams (Agent Teams)
-# --- After agents complete: ---
+                                   #    OR: /sdd-run 001 --auto-merge (fully autonomous)
+# --- After agents complete (without --auto-merge): ---
 /orch-merge                        # 7. Merge
 /sdd-archive 001                   # 8. Archive
+# --- With --auto-merge: steps 7-8 happen automatically ---
 ```
 
 **With CLI** (bash):
@@ -87,6 +90,7 @@ OR: ... → gate → run --mode teams (Agent Teams backend, v3.8)
 .claude/scripts/orchestrate.sh sdd gate 001
 .claude/scripts/orchestrate.sh sdd run 001    # Autopilot (or: sdd run for all)
 .claude/scripts/orchestrate.sh sdd run 001 --mode teams  # Agent Teams backend
+.claude/scripts/orchestrate.sh sdd run 001 --auto-merge  # Fully autonomous (v3.9)
 # --- OR manual step-by-step: ---
 .claude/scripts/orchestrate.sh sdd tasks 001
 .claude/scripts/orchestrate.sh setup auth --preset auth
