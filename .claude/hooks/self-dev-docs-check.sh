@@ -7,6 +7,7 @@
 #   1. Scripts/skills/hooks modified → CAPABILITIES.md needs update
 #   2. Version bumped → CHANGELOG needs update
 #   3. Commands/skills committed → README.md may be stale
+#   4. PROJECT_MEMORY.md version ≠ orchestrate.sh version → update.sh will show wrong version
 
 PROJECT_DIR="${CLAUDE_PROJECT_DIR:-.}"
 
@@ -69,6 +70,14 @@ if [[ "${last_cmd_ts:-0}" -gt "${last_readme_ts:-0}" ]]; then
   if [[ -n "$recent" ]]; then
     issues+=("README.md may be stale (commands/skills were updated more recently)")
   fi
+fi
+
+# === Check 4: PROJECT_MEMORY.md version vs orchestrate.sh header version ===
+memory_version=$(grep -oE 'Version.*: [0-9]+\.[0-9]+' "$PROJECT_DIR/.claude/PROJECT_MEMORY.md" 2>/dev/null | grep -oE '[0-9]+\.[0-9]+' | head -1)
+script_version=$(grep -oE 'v[0-9]+\.[0-9]+' "$PROJECT_DIR/.claude/scripts/orchestrate.sh" 2>/dev/null | head -1 | tr -d 'v')
+
+if [[ -n "$memory_version" ]] && [[ -n "$script_version" ]] && [[ "$memory_version" != "$script_version" ]]; then
+  issues+=("orchestrate.sh header says v${script_version} but PROJECT_MEMORY.md says v${memory_version}. Update the version in orchestrate.sh and the WHAT'S NEW section in update.sh")
 fi
 
 # === Output ===
