@@ -13,7 +13,10 @@ HOOK_PROJECT_DIR="${CLAUDE_PROJECT_DIR:-.}"
 is_self_dev() {
   local origin_url
   origin_url=$(git -C "$HOOK_PROJECT_DIR" remote get-url origin 2>/dev/null)
-  [[ "$origin_url" == *"orchestrator"* ]]
+  # Case-insensitive match (origin URL may have "Orchestrator" or "orchestrator")
+  local lower_url
+  lower_url=$(echo "$origin_url" | tr '[:upper:]' '[:lower:]')
+  [[ "$lower_url" == *"orchestrator"* ]]
 }
 
 # === Autopilot detection ===
