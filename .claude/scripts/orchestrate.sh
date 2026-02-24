@@ -1,7 +1,7 @@
 #!/bin/bash
 # ===========================================
-# ORQUESTRADOR DE AGENTES CLAUDE v3.8
-#   Autopilot Edition + Agent Teams
+# ORQUESTRADOR DE AGENTES CLAUDE v3.9
+#   Autonomous Pipeline + Agent Teams
 # ===========================================
 
 # Note: set -e deliberately omitted — ((counter++)) returns 1 when counter=0,
