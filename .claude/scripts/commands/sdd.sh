@@ -558,6 +558,9 @@ cmd_sdd_archive() {
         return 0
     fi
 
+    # Clean up stale tasks, worktrees, PIDs, and logs for this spec
+    _cleanup_spec_artifacts "$spec_name"
+
     ensure_dir "$SPECS_ARCHIVE"
     mv "$spec_dir" "$SPECS_ARCHIVE/"
 

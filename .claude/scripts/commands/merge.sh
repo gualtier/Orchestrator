@@ -253,6 +253,50 @@ _merge_dry_run() {
     return 0
 }
 
+# Clean up orchestrator artifacts (tasks, worktrees, PIDs, logs) belonging to a spec.
+# Called when a spec is archived so stale worktrees don't pollute status output.
+_cleanup_spec_artifacts() {
+    local spec_name=$1   # e.g. "006-feature-name"
+    local spec_num=${spec_name%%-*}
+    local cleaned=0
+
+    for task_file in "$ORCHESTRATION_DIR/tasks"/*.md; do
+        [[ -f "$task_file" ]] || continue
+
+        # Match tasks belonging to this spec (via spec-ref line or task name prefix)
+        if grep -q "spec-ref:.*${spec_num}" "$task_file" 2>/dev/null || \
+           [[ "$(basename "$task_file" .md)" == "${spec_name}" ]]; then
+
+            local task_name=$(basename "$task_file" .md)
+            local worktree_path=$(get_worktree_path "$task_name")
+
+            # Stop agent if still running
+            stop_agent_process "$task_name" true 2>/dev/null || true
+
+            # Remove worktree
+            if dir_exists "$worktree_path"; then
+                git worktree remove "$worktree_path" --force 2>/dev/null || true
+            fi
+
+            # Clean up PID, start-time, and log files
+            rm -f "$(get_pid_file "$task_name")" 2>/dev/null
+            rm -f "$(get_start_time_file "$task_name")" 2>/dev/null
+            rm -f "$(get_log_file "$task_name")" 2>/dev/null
+
+            # Remove the task file itself
+            rm -f "$task_file"
+            ((cleaned++)) || true
+        fi
+    done
+
+    # Prune any orphaned worktree references
+    git worktree prune 2>/dev/null || true
+
+    if [[ $cleaned -gt 0 ]]; then
+        log_info "Cleaned $cleaned stale task(s)/worktree(s) for spec $spec_name"
+    fi
+}
+
 # Auto-archive specs when all their task branches have been merged
 _auto_archive_completed_specs() {
     [[ -d "$SPECS_ACTIVE" ]] || return 0
@@ -283,6 +327,7 @@ _auto_archive_completed_specs() {
 
         # If all tasks merged, auto-archive
         if [[ $task_count -gt 0 ]] && [[ $merged_count -eq $task_count ]]; then
+            _cleanup_spec_artifacts "$spec_name"
             ensure_dir "$SPECS_ARCHIVE"
             mv "$spec_dir" "$SPECS_ARCHIVE/"
             log_success "Spec auto-archived: $spec_name ($task_count/$task_count tasks merged)"

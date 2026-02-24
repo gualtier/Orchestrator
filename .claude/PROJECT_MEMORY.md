@@ -294,6 +294,7 @@
 | Gate counts all `\|` lines      | 3.6   | Simplicity gate counts ALL table rows in plan.md, not just Worktree Mapping. Use lists instead of tables for non-module sections |
 | No native agent coordination     | 3.8   | Add Agent Teams as alternative backend with native messaging, shared tasks, delegate mode |
 | File conflicts without worktrees | 3.8   | Branch-per-teammate + prompt-based file ownership + plan approval mode |
+| Stale worktrees after spec archive | 3.8 | `_cleanup_spec_artifacts()` removes tasks, worktrees, PIDs, and logs when a spec is archived (manual or auto) |
 
 ## Lessons Learned
 
