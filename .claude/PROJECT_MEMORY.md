@@ -1,7 +1,7 @@
 # Project Memory - Claude Orchestrator
 
-> **Last update**: 2026-02-26
-> **Version**: 3.9.1
+> **Last update**: 2026-02-26 01:04
+> **Version**: 3.9.2
 
 ## Overview
 
@@ -253,6 +253,15 @@
 - [x] Updated CAPABILITIES.md: async-first annotations, removed blocking commands from defaults
 - [x] Correct/wrong pattern examples in CLAUDE.md for agent behavioral guidance
 - [x] Enables fast reaction to agent failures (~30s detection vs minutes)
+
+### v3.9.2 - Agent Behavioral Rules
+
+- [x] **RULE #3: AGENT BEHAVIOR** — behavioral rules in CLAUDE.md
+- [x] Plan Before Building — plan mode for non-trivial tasks, stop and re-plan on failure
+- [x] Verify Before Done — prove it works before marking complete
+- [x] Autonomous Bug Fixing — just fix it, zero hand-holding from user
+- [x] Real-Time Lesson Capture — update lessons immediately on correction, not just post-merge
+- [x] Core Principles — simplicity first, no laziness, minimal impact
 
 ### v4.0 - Future
 

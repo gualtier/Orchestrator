@@ -1,6 +1,21 @@
 # Changelog
 
 
+## [v3.9.2] - 2026-02-26
+
+### Agent Behavioral Rules
+
+- feat(rules): RULE #3: AGENT BEHAVIOR — plan-before-build, verify-before-done, autonomous bug fixing
+- feat(rules): real-time lesson capture on user corrections (not just post-merge)
+- feat(rules): core principles — simplicity first, no laziness, minimal impact
+- fix(version): bump patch versions correctly (3.9.1 → 3.9.2 not 3.10) (72cbb7d)
+- feat(v3.9.1): async-first execution — RULE #2 for non-blocking agent monitoring (b2a41ee)
+- fix(update): reload functions after apply so WHAT'S NEW actually shows (685720c)
+- feat(hooks): add version mismatch check to self-dev-docs-check (6cd7555)
+- fix(v3.9): update version string and WHAT'S NEW in update.sh (a4e3132)
+- docs(v3.9): update all consciousness layers for autonomous pipeline (5aeaadd)
+
+
 ## [2026-02-24]
 
 - chore: remove worktree artifacts from autonomous-pipeline merge (7c207a5)

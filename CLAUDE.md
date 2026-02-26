@@ -59,6 +59,44 @@ sleep 60 && status  # NO! Always 30s, never longer
 
 ---
 
+## 🧭 RULE #3: AGENT BEHAVIOR
+
+### Plan Before Building
+
+- Enter plan mode for ANY non-trivial task (3+ steps or architectural decisions)
+- If something goes sideways, **STOP and re-plan immediately** — don't keep pushing
+- Use plan mode for verification steps, not just building
+- Write detailed specs upfront to reduce ambiguity
+- For small tasks (1-3 files), direct execution is fine — skip planning overhead
+
+### Verify Before Done
+
+- Never mark a task complete without **proving it works**
+- Diff behavior between main and your changes when relevant
+- Ask yourself: "Would a staff engineer approve this?"
+- Run tests, check logs, demonstrate correctness
+
+### Autonomous Bug Fixing
+
+- When given a bug report: **just fix it**. Don't ask for hand-holding
+- Point at logs, errors, failing tests — then resolve them
+- Zero context switching required from the user
+- Go fix failing CI tests without being told how
+
+### Real-Time Lesson Capture
+
+- After ANY correction from the user: update `PROJECT_MEMORY.md` Lessons Learned immediately
+- Write rules that prevent the same mistake from recurring
+- Don't wait for post-merge `learn extract` — capture the insight now
+
+### Core Principles
+
+- **Simplicity First**: Make every change as simple as possible. Minimal code impact
+- **No Laziness**: Find root causes. No temporary fixes. Senior developer standards
+- **Minimal Impact**: Changes should only touch what's necessary. Avoid introducing bugs
+
+---
+
 ## 🤖 SPECIALIZED AGENTS (AUTOMATIC)
 
 ### Available Presets
