@@ -470,13 +470,20 @@ _bump_memory_version() {
         label="Versão"
     fi
 
-    # Parse major.minor
+    # Parse major.minor.patch
     local major=$(echo "$current_version" | cut -d. -f1)
     local minor=$(echo "$current_version" | cut -d. -f2)
+    local patch=$(echo "$current_version" | cut -d. -f3)
 
-    # Increment minor
-    minor=$((minor + 1))
-    local new_version="${major}.${minor}"
+    # Increment: if patch exists, bump patch; otherwise bump minor
+    local new_version
+    if [[ -n "$patch" ]]; then
+        patch=$((patch + 1))
+        new_version="${major}.${minor}.${patch}"
+    else
+        minor=$((minor + 1))
+        new_version="${major}.${minor}"
+    fi
 
     # Update in file
     if [[ "$(uname)" == "Darwin" ]]; then
