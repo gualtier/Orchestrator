@@ -7,12 +7,11 @@ allowed-tools: Bash, Read
 
 Run the SDD autopilot pipeline.
 
-```bash
-# Single spec (worktree mode - default)
-.claude/scripts/orchestrate.sh sdd run $ARGUMENTS
+**IMPORTANT (Rule #2 — Async-First):** Run this command in background (`run_in_background: true`), then poll `status` + `errors` every 30s. NEVER block waiting for it to finish.
 
-# All planned specs (if no number given)
-.claude/scripts/orchestrate.sh sdd run
+```bash
+# Single spec (run in background!)
+.claude/scripts/orchestrate.sh sdd run $ARGUMENTS
 
 # Fully autonomous (v3.9) - merge + archive happen automatically
 .claude/scripts/orchestrate.sh sdd run 001 --auto-merge
@@ -20,6 +19,18 @@ Run the SDD autopilot pipeline.
 # Agent Teams mode (v3.8)
 .claude/scripts/orchestrate.sh sdd run 001 --mode teams
 ```
+
+## Async Monitoring Pattern
+
+After launching `sdd run` in background, poll every 30s:
+
+```bash
+# Poll these every 30s (NEVER increase interval)
+.claude/scripts/orchestrate.sh status    # Agent progress
+.claude/scripts/orchestrate.sh errors    # Catch failures fast
+```
+
+React immediately to errors — don't wait for the pipeline to finish.
 
 ## What It Does
 
@@ -41,13 +52,6 @@ With `--auto-merge` (v3.9), additional steps run automatically:
 
 - **Worktree mode** (default): Git worktrees with isolated directories per agent
 - **Teams mode** (`--mode teams`): Claude Code Agent Teams with native coordination, shared tasks, messaging, and delegate mode. Requires `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`
-
-## Modes
-
-- `sdd run 001` — Autopilot for a single spec (pauses before merge)
-- `sdd run 001 --auto-merge` — Fully autonomous (merge + archive automatic)
-- `sdd run` — Autopilot for ALL active specs that have a plan.md
-- `sdd run 001 --mode teams` — Use Agent Teams backend
 
 ## Prerequisites
 

@@ -1,4 +1,4 @@
-# Orchestrator Capabilities v3.9
+# Orchestrator Capabilities v3.9.1
 
 > This file is auto-updated by `orch update`. Do NOT edit manually.
 > Read this file at the start of every session to know what tools are available.
@@ -38,6 +38,7 @@ Parallel execution with specialized agents. Two backends available:
 
 - **Worktree mode** (default): Git worktrees with isolated directories per agent
 - **Teams mode** (v3.8): Claude Code Agent Teams with native coordination
+- **Async-first** (v3.9.1): ALWAYS launch with `--no-monitor`, poll every 30s, NEVER block
 
 **Skills:**
 
@@ -45,9 +46,9 @@ Parallel execution with specialized agents. Two backends available:
 |-------|-------------|
 | `/orch` | Orchestrator hub - shows commands and status |
 | `/orch-setup <name> --preset <preset>` | Create worktree with agent preset |
-| `/orch-start` | Start agents in all worktrees |
-| `/orch-status` | Monitor agent progress |
-| `/orch-errors` | Error monitoring dashboard (severity, suggestions, watch mode) |
+| `/orch-start` | Start agents async (`--no-monitor`), poll every 30s |
+| `/orch-status` | Monitor agent progress (poll every 30s, NEVER `--watch`) |
+| `/orch-errors` | Error monitoring dashboard (poll every 30s, react to failures) |
 | `/orch-merge` | Merge completed worktrees + post-merge routines |
 | `/orch-team-start` | Start Agent Team from SDD spec (teams mode) |
 | `/orch-team-status` | Monitor Agent Team progress |
@@ -83,8 +84,8 @@ orch uninstall-cli     # Remove global shortcut
 orch setup <n> --preset <p>  # Create worktree with agents
 orch agents            # List available agents
 
-# Execution
-orch start             # Start agents in all worktrees
+# Execution (ASYNC — Rule #2: NEVER block)
+orch start --no-monitor  # Start agents async (ALWAYS use --no-monitor)
 orch stop              # Stop running agents
 orch restart           # Restart agents
 
@@ -99,20 +100,18 @@ orch team start <spec-number>  # Start Agent Team from SDD spec
 orch team status               # Show team status (teammates, tasks, progress)
 orch team stop                 # Stop running team
 
-# Monitoring
-orch status            # Check progress (standard view)
+# Monitoring (poll every 30s — NEVER block, NEVER increase interval)
+orch status            # Check progress (poll every 30s)
 orch status --enhanced # Detailed view with progress bars, activity, errors
 orch status --compact  # One-line-per-agent view
-orch status --watch    # Live updates with error notifications
 orch status --json     # Machine-readable output
-orch errors            # Error monitoring dashboard
-orch errors --watch    # Live error monitoring (auto-refresh)
+orch errors            # Error monitoring dashboard (poll every 30s)
 orch errors --agent X  # Filter errors by agent
 orch errors --recent   # Show last 50 errors with details
 orch errors --clear    # Clear error tracking
-orch wait              # Wait for completion (with inline error notifications)
 orch logs <name>       # Show recent log output for an agent
 orch follow <name>     # Follow log output in real-time (tail -f)
+# NOTE: --watch and wait are available but NEVER use them (they block)
 
 # Verification & Merge
 orch verify            # Verify a specific worktree

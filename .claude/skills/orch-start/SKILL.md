@@ -5,18 +5,27 @@ argument-hint: [agent names (optional)]
 allowed-tools: Bash
 ---
 
-Start agents in worktrees.
+Start agents in worktrees (ASYNC — Rule #2).
+
+**ALWAYS launch async with `--no-monitor`**, then poll every 30s:
 
 ```bash
-# Start all agents
-.claude/scripts/orchestrate.sh start
+# Start all agents (async — returns immediately)
+.claude/scripts/orchestrate.sh start --no-monitor
 
-# Start specific agents
-.claude/scripts/orchestrate.sh start $ARGUMENTS
+# Start specific agents (async)
+.claude/scripts/orchestrate.sh start --no-monitor $ARGUMENTS
 ```
 
-After starting, monitor with `/orch-status` or wait for completion:
+After starting, poll status and errors every 30 seconds (NEVER block, NEVER increase interval):
 
 ```bash
-.claude/scripts/orchestrate.sh wait
+# Quick status check (run every 30s)
+.claude/scripts/orchestrate.sh status
+
+# Error check (run every 30s alongside status)
+.claude/scripts/orchestrate.sh errors
 ```
+
+**NEVER** use `wait` or `start` without `--no-monitor` — these block the orchestrator.
+React immediately to failures detected in error polls.

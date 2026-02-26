@@ -202,25 +202,21 @@ _show_whats_new() {
     echo -e "${BOLD}  WHAT'S NEW in v${new_version}${NC}"
     log_separator
 
-    # Compare major.minor to decide which notes to show
-    local old_minor=$(echo "$old_version" | cut -d. -f1-2)
-    local new_minor=$(echo "$new_version" | cut -d. -f1-2)
-
     # Show release notes for versions between old and new
-    if _version_lt "$old_minor" "3.2"; then
+    if _version_lt "$old_version" "3.2"; then
         echo ""
         echo -e "  ${GREEN}v3.2 - Memory Management${NC}"
         echo "    - update-memory --full: auto-increment version + changelog"
     fi
 
-    if _version_lt "$old_minor" "3.3"; then
+    if _version_lt "$old_version" "3.3"; then
         echo ""
         echo -e "  ${GREEN}v3.3 - Auto-Update & CLI${NC}"
         echo "    - update command with automatic backup"
         echo "    - install-cli: global 'orch' shortcut"
     fi
 
-    if _version_lt "$old_minor" "3.4"; then
+    if _version_lt "$old_version" "3.4"; then
         echo ""
         echo -e "  ${GREEN}v3.4 - Learning & Monitoring${NC}"
         echo "    - learn command: extract insights from completed tasks"
@@ -228,7 +224,7 @@ _show_whats_new() {
         echo "    - Watch mode: live auto-refreshing status"
     fi
 
-    if _version_lt "$old_minor" "3.5"; then
+    if _version_lt "$old_version" "3.5"; then
         echo ""
         echo -e "  ${GREEN}v3.5 - Spec-Driven Development & Skills${NC}"
         echo "    - SDD pipeline: specify -> research -> plan -> gate -> tasks"
@@ -242,7 +238,7 @@ _show_whats_new() {
         echo "    /sdd-specify \"desc\"    # Or just describe your feature"
     fi
 
-    if _version_lt "$old_minor" "3.6"; then
+    if _version_lt "$old_version" "3.6"; then
         echo ""
         echo -e "  ${GREEN}v3.6 - Active Error Monitoring${NC}"
         echo "    - Error detection engine: incremental log polling (~5-25ms/agent)"
@@ -254,7 +250,7 @@ _show_whats_new() {
         echo "    - 15 Claude Code Skills total"
     fi
 
-    if _version_lt "$old_minor" "3.7"; then
+    if _version_lt "$old_version" "3.7"; then
         echo ""
         echo -e "  ${GREEN}v3.7 - SDD Autopilot${NC}"
         echo "    - sdd run [number]: end-to-end pipeline execution after plan approval"
@@ -264,7 +260,7 @@ _show_whats_new() {
         echo "    - /sdd-run Claude Code skill"
     fi
 
-    if _version_lt "$old_minor" "3.8"; then
+    if _version_lt "$old_version" "3.8"; then
         echo ""
         echo -e "  ${GREEN}v3.8 - Agent Teams Backend${NC}"
         echo "    - Dual execution: --mode teams|worktree on sdd run"
@@ -276,7 +272,7 @@ _show_whats_new() {
         echo "    - /orch-team-start and /orch-team-status skills"
     fi
 
-    if _version_lt "$old_minor" "3.9"; then
+    if _version_lt "$old_version" "3.9"; then
         echo ""
         echo -e "  ${GREEN}v3.9 - Autonomous SDD Pipeline${NC}"
         echo "    - sdd run --auto-merge: zero-touch pipeline (run → merge → archive)"
@@ -290,6 +286,16 @@ _show_whats_new() {
         echo "    /sdd-run 001 --auto-merge   # Fully hands-off"
     fi
 
+    if _version_lt "$old_version" "3.9.1"; then
+        echo ""
+        echo -e "  ${GREEN}v3.9.1 - Async-First Execution${NC}"
+        echo "    - RULE #2: ASYNC-FIRST — NEVER block waiting for agents"
+        echo "    - All starts use --no-monitor (non-blocking launch)"
+        echo "    - 30s polling loops for status + errors (fast failure detection)"
+        echo "    - Updated skills: orch-start, sdd-run, orch-status, orch-errors"
+        echo "    - Correct/wrong pattern examples in CLAUDE.md"
+    fi
+
     echo ""
     log_separator
     echo ""
@@ -297,22 +303,30 @@ _show_whats_new() {
     log_info "Run 'orch help' for the full command list"
 }
 
-# Simple version comparison: returns 0 if $1 < $2
+# Version comparison: returns 0 if $1 < $2 (supports major.minor.patch)
 _version_lt() {
     local v1_major=$(echo "$1" | cut -d. -f1)
     local v1_minor=$(echo "$1" | cut -d. -f2)
+    local v1_patch=$(echo "$1" | cut -d. -f3)
     local v2_major=$(echo "$2" | cut -d. -f1)
     local v2_minor=$(echo "$2" | cut -d. -f2)
+    local v2_patch=$(echo "$2" | cut -d. -f3)
 
     v1_major=${v1_major:-0}
     v1_minor=${v1_minor:-0}
+    v1_patch=${v1_patch:-0}
     v2_major=${v2_major:-0}
     v2_minor=${v2_minor:-0}
+    v2_patch=${v2_patch:-0}
 
     if [[ $v1_major -lt $v2_major ]]; then
         return 0
-    elif [[ $v1_major -eq $v2_major ]] && [[ $v1_minor -lt $v2_minor ]]; then
-        return 0
+    elif [[ $v1_major -eq $v2_major ]]; then
+        if [[ $v1_minor -lt $v2_minor ]]; then
+            return 0
+        elif [[ $v1_minor -eq $v2_minor ]] && [[ $v1_patch -lt $v2_patch ]]; then
+            return 0
+        fi
     fi
     return 1
 }

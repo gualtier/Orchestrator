@@ -1,7 +1,7 @@
 # Project Memory - Claude Orchestrator
 
-> **Last update**: 2026-02-24 02:04
-> **Version**: 3.9
+> **Last update**: 2026-02-26
+> **Version**: 3.9.1
 
 ## Overview
 
@@ -242,6 +242,17 @@
 - [x] Stale worktree cleanup on archive (`_cleanup_spec_artifacts`)
 - [x] 24 automated tests for hook bypass, self-dev, and backward compatibility
 - [x] Bash 3.x compatible (no `${var,,}` bashisms)
+
+### v3.9.1 - Async-First Execution
+
+- [x] **RULE #2: ASYNC-FIRST EXECUTION** — behavioral rule in CLAUDE.md
+- [x] All agent starts use `--no-monitor` (non-blocking)
+- [x] Monitoring via 30s polling loops (status + errors), NEVER blocking `--watch` or `wait`
+- [x] `sdd run` launched in background with `run_in_background: true`
+- [x] Updated skills: `orch-start`, `sdd-run`, `orch-status`, `orch-errors`
+- [x] Updated CAPABILITIES.md: async-first annotations, removed blocking commands from defaults
+- [x] Correct/wrong pattern examples in CLAUDE.md for agent behavioral guidance
+- [x] Enables fast reaction to agent failures (~30s detection vs minutes)
 
 ### v4.0 - Future
 

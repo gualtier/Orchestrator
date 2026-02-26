@@ -10,14 +10,16 @@ Show current orchestration status.
 
 !`.claude/scripts/orchestrate.sh status --compact 2>&1 || echo "No active orchestration. Use /orch-setup to create worktrees."`
 
-## Options
+## Monitoring Pattern (Rule #2)
+
+Poll this every **30 seconds** alongside `/orch-errors`. NEVER use `--watch` (it blocks).
 
 ```bash
-# Enhanced status with details (includes error counts)
-.claude/scripts/orchestrate.sh status --enhanced
+# Quick status (run every 30s, non-blocking)
+.claude/scripts/orchestrate.sh status
 
-# Live updates (every 5 seconds, with error notifications)
-.claude/scripts/orchestrate.sh status --watch
+# Enhanced with details (includes error counts)
+.claude/scripts/orchestrate.sh status --enhanced
 
 # JSON format (for automation)
 .claude/scripts/orchestrate.sh status --json

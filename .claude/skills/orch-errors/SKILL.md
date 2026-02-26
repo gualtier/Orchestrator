@@ -10,11 +10,13 @@ Show the error monitoring dashboard for orchestrator agents.
 
 !`.claude/scripts/orchestrate.sh errors 2>&1 || echo "No errors detected or no active orchestration."`
 
-## Options
+## Monitoring Pattern (Rule #2)
+
+Poll this every **30 seconds** alongside `/orch-status`. NEVER use `--watch` (it blocks). React immediately to CRITICAL errors.
 
 ```bash
-# Watch mode (auto-refresh every 5s)
-.claude/scripts/orchestrate.sh errors --watch
+# One-shot error check (run every 30s, non-blocking)
+.claude/scripts/orchestrate.sh errors
 
 # Filter by agent
 .claude/scripts/orchestrate.sh errors --agent <name>
@@ -28,7 +30,7 @@ Show the error monitoring dashboard for orchestrator agents.
 
 ## When to Use
 
-- After `/orch-start` — check if agents are hitting errors
-- During `/orch-status` — if an agent shows slow progress
+- After `/orch-start` — check every 30s if agents are hitting errors
+- During monitoring loop — catch failures fast, react immediately
 - Before `/orch-merge` — verify no critical errors remain
 - When an agent status shows "stalled" — diagnose why
