@@ -336,6 +336,29 @@ _auto_archive_completed_specs() {
                 echo "[$(timestamp)] SDD_AUTO_ARCHIVE: ${spec_name}" >> "$EVENTS_FILE"
             fi
         fi
+
+        # If task files were already cleaned up but no active worktrees remain,
+        # the spec is stale — archive it too
+        if [[ $task_count -eq 0 ]]; then
+            local has_worktree=false
+            while IFS= read -r wt_line; do
+                if [[ "$wt_line" == *"$spec_name"* ]] || [[ "$wt_line" == *"${spec_num}-"* ]]; then
+                    has_worktree=true
+                    break
+                fi
+            done < <(git worktree list 2>/dev/null)
+
+            if [[ "$has_worktree" == false ]]; then
+                _cleanup_spec_artifacts "$spec_name"
+                ensure_dir "$SPECS_ARCHIVE"
+                mv "$spec_dir" "$SPECS_ARCHIVE/"
+                log_success "Spec auto-archived (stale): $spec_name (no tasks or worktrees remaining)"
+
+                if [[ -f "$EVENTS_FILE" ]]; then
+                    echo "[$(timestamp)] SDD_AUTO_ARCHIVE: ${spec_name} (stale)" >> "$EVENTS_FILE"
+                fi
+            fi
+        fi
     done
 }
 
