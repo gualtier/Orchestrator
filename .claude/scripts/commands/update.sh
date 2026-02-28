@@ -538,16 +538,22 @@ cmd_update() {
     # Log event
     echo "[$(timestamp)] UPDATE: v$local_version -> v$remote_version" >> "$EVENTS_FILE"
 
+    # Reload from the newly downloaded file so _show_whats_new
+    # includes release notes for versions the OLD script didn't know about,
+    # and _get_local_version uses the updated header pattern
+    source "$SCRIPT_DIR/commands/update.sh"
+
+    # Re-read version from the now-updated orchestrate.sh (fixes empty
+    # version when upgrading across the i18n header rename)
+    local actual_version=$(_get_local_version)
+    actual_version=${actual_version:-$remote_version}
+
     # Success + What's New
     echo ""
     log_success "Orchestrator updated successfully!"
-    log_info "v$local_version -> v$remote_version"
+    log_info "v$local_version -> v$actual_version"
 
-    # Reload from the newly downloaded file so _show_whats_new
-    # includes release notes for versions the OLD script didn't know about
-    source "$SCRIPT_DIR/commands/update.sh"
-
-    _show_whats_new "$local_version" "$remote_version"
+    _show_whats_new "$local_version" "$actual_version"
 
     return 0
 }
