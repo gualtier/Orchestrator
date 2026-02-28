@@ -7,7 +7,7 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 LIB_DIR="$SCRIPT_DIR/lib"
 
-# Carregar logging primeiro
+# Load logging first
 source "$LIB_DIR/logging.sh"
 
 # =============================================
@@ -51,7 +51,7 @@ init_config() {
     # When set to 1, hooks pass through without blocking
     SDD_AUTOPILOT=${SDD_AUTOPILOT:-"0"}
 
-    # Exportar para subshells
+    # Export for subshells
     export PROJECT_ROOT PROJECT_NAME CLAUDE_DIR ORCHESTRATION_DIR
     export AGENTS_DIR MEMORY_FILE STATE_FILE EVENTS_FILE AGENTS_SCRIPT
     export LEARNINGS_DIR LEARNINGS_PENDING LEARNINGS_ROLES LEARNINGS_ARCHIVE
@@ -83,10 +83,10 @@ get_worktree_path() {
 # =============================================
 
 confirm() {
-    local msg=${1:-"Continuar?"}
+    local msg=${1:-"Continue?"}
     local default=${2:-"n"}
 
-    # Se --force, retorna true
+    # If --force, return true
     [[ "${FORCE:-}" == "true" ]] && return 0
 
     # If not interactive, use default
@@ -96,9 +96,9 @@ confirm() {
 
     local prompt
     if [[ "$default" == "y" ]]; then
-        prompt="$msg [S/n] "
+        prompt="$msg [Y/n] "
     else
-        prompt="$msg [s/N] "
+        prompt="$msg [y/N] "
     fi
 
     read -p "$prompt" -n 1 -r
@@ -107,12 +107,12 @@ confirm() {
     if [[ "$default" == "y" ]]; then
         [[ ! $REPLY =~ ^[Nn]$ ]]
     else
-        [[ $REPLY =~ ^[Ss]$ ]]
+        [[ $REPLY =~ ^[YySs]$ ]]
     fi
 }
 
 # =============================================
-# TRATAMENTO DE ERROS
+# ERROR HANDLING
 # =============================================
 
 # Variable to track necessary cleanup

@@ -1,7 +1,7 @@
 #!/bin/bash
 # ===========================================
-# CLAUDE AGENT ORCHESTRATOR v3.9.1
-#   Async-First Execution
+# CLAUDE AGENT ORCHESTRATOR v3.9.3
+#   Distribution Ready
 # ===========================================
 
 # Note: set -e deliberately omitted — ((counter++)) returns 1 when counter=0,

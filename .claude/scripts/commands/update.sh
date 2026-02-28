@@ -77,7 +77,8 @@ _get_remote_default_branch() {
 }
 
 _get_local_version() {
-    local version_line=$(grep -o "ORQUESTRADOR DE AGENTES CLAUDE v[0-9.]*" "$SCRIPT_DIR/orchestrate.sh" 2>/dev/null)
+    # Support both old Portuguese and new English header
+    local version_line=$(grep -o "CLAUDE AGENT ORCHESTRATOR v[0-9.]*\|ORQUESTRADOR DE AGENTES CLAUDE v[0-9.]*" "$SCRIPT_DIR/orchestrate.sh" 2>/dev/null | head -1)
     echo "${version_line##*v}"
 }
 
@@ -85,7 +86,8 @@ _get_remote_version() {
     local remote=$(_resolve_remote)
     local branch=$(_get_remote_default_branch)
     local remote_content=$(git show "$remote/$branch:$ORCHESTRATOR_SCRIPTS_PATH/orchestrate.sh" 2>/dev/null)
-    local version_line=$(echo "$remote_content" | grep -o "ORQUESTRADOR DE AGENTES CLAUDE v[0-9.]*")
+    # Support both old Portuguese and new English header
+    local version_line=$(echo "$remote_content" | grep -o "CLAUDE AGENT ORCHESTRATOR v[0-9.]*\|ORQUESTRADOR DE AGENTES CLAUDE v[0-9.]*" | head -1)
     echo "${version_line##*v}"
 }
 
@@ -294,6 +296,24 @@ _show_whats_new() {
         echo "    - 30s polling loops for status + errors (fast failure detection)"
         echo "    - Updated skills: orch-start, sdd-run, orch-status, orch-errors"
         echo "    - Correct/wrong pattern examples in CLAUDE.md"
+    fi
+
+    if _version_lt "$old_version" "3.9.2"; then
+        echo ""
+        echo -e "  ${GREEN}v3.9.2 - Agent Behavioral Rules${NC}"
+        echo "    - RULE #3: AGENT BEHAVIOR — plan, verify, fix, learn"
+        echo "    - Plan before building, verify before done"
+        echo "    - Autonomous bug fixing, real-time lesson capture"
+    fi
+
+    if _version_lt "$old_version" "3.9.3"; then
+        echo ""
+        echo -e "  ${GREEN}v3.9.3 - Distribution Ready${NC}"
+        echo "    - All strings translated to English (330+ instances)"
+        echo "    - Complete .gitignore for runtime/personal files"
+        echo "    - PROJECT_MEMORY.template.md for clean new-user setup"
+        echo "    - Post-compact state injection (agents, errors, SDD phase)"
+        echo "    - Version detection supports old and new header formats"
     fi
 
     echo ""
