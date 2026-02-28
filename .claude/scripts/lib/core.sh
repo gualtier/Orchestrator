@@ -124,7 +124,7 @@ cleanup_on_exit() {
     local exit_code=$?
 
     if [[ "$CLEANUP_NEEDED" == "true" ]] && [[ -n "$CLEANUP_WORKTREE" ]]; then
-        log_warn "Limpando worktree após erro: $CLEANUP_WORKTREE"
+        log_warn "Cleaning up worktree after error: $CLEANUP_WORKTREE"
         git worktree remove "$CLEANUP_WORKTREE" --force 2>/dev/null || true
     fi
 
@@ -133,14 +133,14 @@ cleanup_on_exit() {
 
 setup_traps() {
     trap cleanup_on_exit EXIT
-    trap 'log_error "Interrompido pelo usuário"; exit 130' INT
-    trap 'log_error "Terminado"; exit 143' TERM
+    trap 'log_error "Interrupted by user"; exit 130' INT
+    trap 'log_error "Terminated"; exit 143' TERM
 }
 
-# Executar comando com tratamento de erro
+# Execute command with error handling
 run_or_fail() {
     local cmd="$1"
-    local error_msg="${2:-Comando falhou: $cmd}"
+    local error_msg="${2:-Command failed: $cmd}"
 
     if ! eval "$cmd"; then
         log_error "$error_msg"
@@ -149,7 +149,7 @@ run_or_fail() {
 }
 
 # =============================================
-# PRESETS DE AGENTES
+# AGENT PRESETS
 # =============================================
 
 get_preset_agents() {

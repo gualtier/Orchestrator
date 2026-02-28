@@ -1,6 +1,6 @@
 #!/bin/bash
 # =============================================
-# COMMAND: start/stop/restart - Controle de agentes
+# COMMAND: start/stop/restart - Agent control
 # =============================================
 
 cmd_start() {
@@ -19,7 +19,7 @@ cmd_start() {
         esac
     done
 
-    # Se nenhum nome especificado, iniciar todos
+    # If no name specified, start all
     if [[ ${#names[@]} -eq 0 ]]; then
         for task_file in "$ORCHESTRATION_DIR/tasks"/*.md; do
             [[ -f "$task_file" ]] || continue
@@ -28,17 +28,17 @@ cmd_start() {
     fi
 
     if [[ ${#names[@]} -eq 0 ]]; then
-        log_error "Nenhuma tarefa encontrada em $ORCHESTRATION_DIR/tasks/"
+        log_error "No tasks found in $ORCHESTRATION_DIR/tasks/"
         return 1
     fi
 
-    log_step "Iniciando ${#names[@]} agente(s)..."
+    log_step "Starting ${#names[@]} agent(s)..."
 
     local failed=0
     local started=0
     for name in "${names[@]}"; do
         if ! start_single_agent "$name"; then
-            log_warn "Agente $name falhou ao iniciar, continuando com os demais..."
+            log_warn "Agent $name failed to start, continuing with the rest..."
             ((failed++)) || true
         else
             ((started++)) || true
@@ -47,7 +47,7 @@ cmd_start() {
     done
 
     if [[ $failed -gt 0 ]]; then
-        log_warn "$failed agente(s) falharam ao iniciar"
+        log_warn "$failed agent(s) failed to start"
     fi
 
     # If no agents started or monitoring disabled, stop here
@@ -153,37 +153,37 @@ start_single_agent() {
     local task_file="$ORCHESTRATION_DIR/tasks/$name.md"
 
     # Validations
-    validate_name "$name" "agente" || return 1
+    validate_name "$name" "agent" || return 1
 
     if ! dir_exists "$worktree_path"; then
-        log_error "Worktree não encontrada: $name"
-        log_info "Crie com: $0 setup $name --preset <preset>"
+        log_error "Worktree not found: $name"
+        log_info "Create with: $0 setup $name --preset <preset>"
         return 1
     fi
 
     if ! file_exists "$task_file"; then
-        log_error "Tarefa não encontrada: $task_file"
+        log_error "Task not found: $task_file"
         return 1
     fi
 
     validate_task_file "$task_file" || return 1
 
-    # Ler agentes especializados
+    # Read specialized agents
     local specialized_agents=""
     if file_exists "$worktree_path/.claude/AGENTS_USED"; then
         specialized_agents=$(cat "$worktree_path/.claude/AGENTS_USED")
     fi
 
-    # Ler tarefa
+    # Read task
     local task=$(cat "$task_file")
 
-    # Ler contexto do projeto
+    # Read project context
     local project_context=""
     if file_exists "$MEMORY_FILE"; then
         project_context=$(head -50 "$MEMORY_FILE")
     fi
 
-    # Extrair contexto SDD se a task tiver spec-ref
+    # Extract SDD context if task has spec-ref
     local sdd_context=""
     if grep -q "spec-ref:" "$task_file" 2>/dev/null; then
         local spec_ref=$(grep "spec-ref:" "$task_file" | head -1 | sed 's/.*spec-ref: *//')
@@ -225,10 +225,10 @@ $(cat "$spec_dir/plan.md")
         fi
     fi
 
-    # Construir prompt
-    local full_prompt="# CONTEXTO
+    # Build prompt
+    local full_prompt="# CONTEXT
 
-Você é um agente executor com expertise em: $specialized_agents
+You are an executor agent with expertise in: $specialized_agents
 
 ⚠️ CRITICAL REQUIREMENT: When you finish your task, you MUST create a DONE.md file in the root of this worktree. This is NOT optional. The orchestrator depends on DONE.md to detect completion. Without it, your work will be considered incomplete even if you made commits.
 
@@ -246,7 +246,7 @@ $project_rules
 
     full_prompt+="
 
-## Expertise Especializada
+## Specialized Expertise
 "
 
     # Add agent content
@@ -261,7 +261,7 @@ $(cat "$agent_file")
     done
 
     full_prompt+="
-## Contexto do Projeto
+## Project Context
 $project_context
 "
 
@@ -275,7 +275,7 @@ $sdd_context
     fi
 
     full_prompt+="
-## SUA TAREFA
+## YOUR TASK
 $task
 
 ---
@@ -294,7 +294,7 @@ MANDATORY STEPS (follow in order):
 
 START NOW!"
 
-    # Registrar evento
+    # Record event
     echo "[$(timestamp)] STARTING: $name [agents: $specialized_agents]" >> "$EVENTS_FILE"
 
     # Initialize error tracking for this agent
@@ -317,13 +317,13 @@ cmd_stop() {
     done
 
     if [[ -z "$name" ]]; then
-        log_error "Uso: $0 stop <agente> [--force]"
+        log_error "Usage: $0 stop <agent> [--force]"
         return 1
     fi
 
     stop_agent_process "$name" "$force"
 
-    # Registrar evento
+    # Record event
     echo "[$(timestamp)] STOPPED: $name" >> "$EVENTS_FILE"
 }
 
@@ -331,7 +331,7 @@ cmd_restart() {
     local name=$1
 
     if [[ -z "$name" ]]; then
-        log_error "Uso: $0 restart <agente>"
+        log_error "Usage: $0 restart <agent>"
         return 1
     fi
 
@@ -345,7 +345,7 @@ cmd_logs() {
     local lines=${2:-50}
 
     if [[ -z "$name" ]]; then
-        log_error "Uso: $0 logs <agente> [linhas]"
+        log_error "Usage: $0 logs <agent> [lines]"
         return 1
     fi
 
@@ -356,7 +356,7 @@ cmd_follow() {
     local name=$1
 
     if [[ -z "$name" ]]; then
-        log_error "Uso: $0 follow <agente>"
+        log_error "Usage: $0 follow <agent>"
         return 1
     fi
 

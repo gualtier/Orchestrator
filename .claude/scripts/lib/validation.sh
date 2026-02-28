@@ -10,21 +10,21 @@
 # Validate worktree/branch name (only a-z, A-Z, 0-9, _, -)
 validate_name() {
     local name=$1
-    local type=${2:-"nome"}
+    local type=${2:-"name"}
 
     if [[ -z "$name" ]]; then
-        log_error "$type não pode ser vazio"
+        log_error "$type cannot be empty"
         return 1
     fi
 
     if [[ ! $name =~ ^[a-zA-Z][a-zA-Z0-9_-]*$ ]]; then
-        log_error "$type inválido: '$name'"
-        log_info "Use apenas: a-z, A-Z, 0-9, _, - (deve começar com letra)"
+        log_error "Invalid $type: '$name'"
+        log_info "Use only: a-z, A-Z, 0-9, _, - (must start with a letter)"
         return 1
     fi
 
     if [[ ${#name} -gt 50 ]]; then
-        log_error "$type muito longo: máximo 50 caracteres"
+        log_error "$type too long: maximum 50 characters"
         return 1
     fi
 
@@ -37,13 +37,13 @@ validate_preset() {
     local valid_presets=$(list_presets)
 
     if [[ -z "$preset" ]]; then
-        log_error "Preset não especificado"
+        log_error "Preset not specified"
         return 1
     fi
 
     if [[ ! " $valid_presets " =~ " $preset " ]]; then
-        log_error "Preset desconhecido: '$preset'"
-        log_info "Presets válidos: $valid_presets"
+        log_error "Unknown preset: '$preset'"
+        log_info "Valid presets: $valid_presets"
         return 1
     fi
 
@@ -55,14 +55,14 @@ validate_agents_list() {
     local agents=$1
 
     if [[ -z "$agents" ]]; then
-        log_error "Lista de agentes vazia"
+        log_error "Agent list is empty"
         return 1
     fi
 
     # Check format (comma or space separated)
     local agent
     for agent in ${agents//,/ }; do
-        if ! validate_name "$agent" "agente"; then
+        if ! validate_name "$agent" "agent"; then
             return 1
         fi
     done
@@ -79,25 +79,25 @@ validate_task_file() {
     local file=$1
 
     if ! file_exists "$file"; then
-        log_error "Arquivo de tarefa não encontrado: $file"
+        log_error "Task file not found: $file"
         return 1
     fi
 
     # Check if not empty
     if [[ ! -s "$file" ]]; then
-        log_error "Arquivo de tarefa vazio: $file"
+        log_error "Task file is empty: $file"
         return 1
     fi
 
     # Check required sections
     local has_title=$(grep -c "^# " "$file" 2>/dev/null || echo 0)
     if [[ $has_title -eq 0 ]]; then
-        log_warn "Arquivo de tarefa sem título (# ...): $file"
+        log_warn "Task file has no title (# ...): $file"
     fi
 
-    local has_objective=$(grep -ci "objetivo\|objective\|goal" "$file" 2>/dev/null || echo 0)
+    local has_objective=$(grep -ci "objective\|goal" "$file" 2>/dev/null || echo 0)
     if [[ $has_objective -eq 0 ]]; then
-        log_warn "Arquivo de tarefa sem seção de objetivo: $file"
+        log_warn "Task file has no objective section: $file"
     fi
 
     return 0
@@ -113,9 +113,9 @@ validate_done_file() {
     fi
 
     # Check recommended sections
-    local has_summary=$(grep -ci "## resumo\|## summary" "$file" 2>/dev/null || echo 0)
-    local has_files=$(grep -ci "## arquivos\|## files" "$file" 2>/dev/null || echo 0)
-    local has_test=$(grep -ci "## como testar\|## test\|## testing" "$file" 2>/dev/null || echo 0)
+    local has_summary=$(grep -ci "## summary" "$file" 2>/dev/null || echo 0)
+    local has_files=$(grep -ci "## files" "$file" 2>/dev/null || echo 0)
+    local has_test=$(grep -ci "## test\|## testing" "$file" 2>/dev/null || echo 0)
 
     [[ $has_summary -eq 0 ]] && ((errors++))
     [[ $has_files -eq 0 ]] && ((errors++))
@@ -131,7 +131,7 @@ validate_done_file() {
 # Check if it's a git repository
 validate_git_repo() {
     if ! git rev-parse --is-inside-work-tree &>/dev/null; then
-        log_error "Não é um repositório Git"
+        log_error "Not a Git repository"
         return 1
     fi
     return 0
@@ -140,8 +140,8 @@ validate_git_repo() {
 # Check if Claude CLI is installed
 validate_claude_cli() {
     if ! command -v claude &>/dev/null; then
-        log_error "Claude CLI não encontrado"
-        log_info "Instale em: https://claude.ai/download"
+        log_error "Claude CLI not found"
+        log_info "Install from: https://claude.ai/download"
         return 1
     fi
     return 0
@@ -154,7 +154,7 @@ check_orphan_worktrees() {
     while IFS= read -r line; do
         local path=$(echo "$line" | awk '{print $1}')
         if [[ ! -d "$path" ]]; then
-            log_warn "Worktree órfã: $path"
+            log_warn "Orphaned worktree: $path"
             ((orphans++))
         fi
     done < <(git worktree list 2>/dev/null | tail -n +2)
@@ -166,19 +166,19 @@ check_orphan_worktrees() {
 # SANITIZATION
 # =============================================
 
-# Escapa string para uso seguro em sed
+# Escape string for safe use in sed
 escape_sed() {
     local str=$1
     printf '%s' "$str" | sed 's/[&/\]/\\&/g'
 }
 
-# Escapa string para uso seguro em JSON
+# Escape string for safe use in JSON
 escape_json() {
     local str=$1
     printf '%s' "$str" | sed 's/\\/\\\\/g; s/"/\\"/g; s/\n/\\n/g'
 }
 
-# Remove caracteres perigosos de string
+# Remove dangerous characters from string
 sanitize_string() {
     local str=$1
     printf '%s' "$str" | tr -cd '[:alnum:][:space:]._-'

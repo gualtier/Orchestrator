@@ -1,6 +1,6 @@
 #!/bin/bash
 # ===========================================
-# ORQUESTRADOR DE AGENTES CLAUDE v3.9.1
+# CLAUDE AGENT ORCHESTRATOR v3.9.1
 #   Async-First Execution
 # ===========================================
 
@@ -21,7 +21,7 @@ while [ -L "$SCRIPT_PATH" ]; do
 done
 SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
 
-# Bibliotecas
+# Libraries
 source "$SCRIPT_DIR/lib/core.sh"
 source "$SCRIPT_DIR/lib/validation.sh"
 source "$SCRIPT_DIR/lib/git.sh"
@@ -32,7 +32,7 @@ source "$SCRIPT_DIR/lib/error_detection.sh"
 source "$SCRIPT_DIR/lib/sdd.sh"
 source "$SCRIPT_DIR/lib/teams.sh"
 
-# Comandos
+# Commands
 source "$SCRIPT_DIR/commands/init.sh"
 source "$SCRIPT_DIR/commands/doctor.sh"
 source "$SCRIPT_DIR/commands/setup.sh"
@@ -62,7 +62,7 @@ main() {
     shift || true
 
     case "$cmd" in
-        # Agentes
+        # Agents
         agents) cmd_agents "$@" ;;
 
         # Initialization
@@ -84,7 +84,7 @@ main() {
         stop) cmd_stop "$@" ;;
         restart) cmd_restart "$@" ;;
 
-        # Monitoramento
+        # Monitoring
         status) cmd_status "$@" ;;
         wait) cmd_wait "$@" ;;
         logs) cmd_logs "$@" ;;
@@ -122,9 +122,9 @@ main() {
         # Help
         help|--help|-h) cmd_help ;;
 
-        # Desconhecido
+        # Unknown
         *)
-            log_error "Comando desconhecido: $cmd"
+            log_error "Unknown command: $cmd"
             echo ""
             cmd_help
             exit 1

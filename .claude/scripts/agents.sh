@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ===========================================
-# 🤖 GERENCIADOR DE AGENTES ESPECIALIZADOS
+# 🤖 SPECIALIZED AGENT MANAGER
 #    Integration with VoltAgent/awesome-claude-code-subagents
 # ===========================================
 
@@ -11,7 +11,7 @@ CLAUDE_DIR=".claude"
 AGENTS_DIR="$CLAUDE_DIR/agents"
 AGENTS_REPO="https://raw.githubusercontent.com/VoltAgent/awesome-claude-code-subagents/main"
 
-# Cores
+# Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -162,7 +162,7 @@ download_agent() {
     local path=$(get_agent_path "$name")
     
     if [[ -z "$path" ]]; then
-        log_error "Agente não encontrado: $name"
+        log_error "Agent not found: $name"
         return 1
     fi
     
@@ -171,19 +171,19 @@ download_agent() {
     
     ensure_dir "$AGENTS_DIR"
     
-    log_info "Baixando: $name"
+    log_info "Downloading: $name"
     
     if curl -sL "$url" -o "$dest" 2>/dev/null; then
         if [[ -s "$dest" ]]; then
-            log_success "Agente instalado: $dest"
+            log_success "Agent installed: $dest"
             return 0
         else
-            log_error "Arquivo vazio - agente pode não existir: $name"
+            log_error "Empty file - agent may not exist: $name"
             rm -f "$dest"
             return 1
         fi
     else
-        log_error "Falha ao baixar: $name"
+        log_error "Failed to download: $name"
         return 1
     fi
 }
@@ -193,15 +193,15 @@ download_preset() {
     local agents=$(get_preset_agents "$preset")
     
     if [[ -z "$agents" ]]; then
-        log_error "Preset não encontrado: $preset"
+        log_error "Preset not found: $preset"
         echo ""
-        echo "Presets disponíveis:"
+        echo "Available presets:"
         echo "  auth, api, frontend, fullstack, mobile"
         echo "  devops, data, ml, security, review"
         return 1
     fi
     
-    log_info "Instalando preset '$preset': $agents"
+    log_info "Installing preset '$preset': $agents"
     
     for agent in $agents; do
         download_agent "$agent"
@@ -211,11 +211,11 @@ download_preset() {
 list_agents() {
     echo ""
     echo -e "${CYAN}╔══════════════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${CYAN}║              AGENTES ESPECIALIZADOS DISPONÍVEIS                  ║${NC}"
+    echo -e "${CYAN}║              AVAILABLE SPECIALIZED AGENTS                        ║${NC}"
     echo -e "${CYAN}╚══════════════════════════════════════════════════════════════════╝${NC}"
     
     echo ""
-    echo -e "${YELLOW}📦 PRESETS (conjuntos prontos):${NC}"
+    echo -e "${YELLOW}📦 PRESETS (ready-made bundles):${NC}"
     echo ""
     echo -e "  ${GREEN}auth${NC}      → backend-developer, security-auditor, typescript-pro"
     echo -e "  ${GREEN}api${NC}       → api-designer, backend-developer, test-automator"
@@ -229,7 +229,7 @@ list_agents() {
     echo -e "  ${GREEN}review${NC}    → code-reviewer, architect-reviewer, security-auditor"
     
     echo ""
-    echo -e "${YELLOW}🤖 AGENTES POR CATEGORIA:${NC}"
+    echo -e "${YELLOW}🤖 AGENTS BY CATEGORY:${NC}"
     
     echo ""
     echo -e "${BLUE}[core] Core Development:${NC}"
@@ -268,14 +268,14 @@ list_agents() {
     echo "  fintech-engineer, payment-integration"
     
     echo ""
-    echo -e "${YELLOW}Uso:${NC}"
+    echo -e "${YELLOW}Usage:${NC}"
     echo "  $0 install <agent>              # Install specific agent"
-    echo "  $0 install-preset <preset>    # Instalar preset"
+    echo "  $0 install-preset <preset>      # Install preset"
 }
 
 list_installed() {
     echo ""
-    echo -e "${CYAN}Agentes instalados:${NC}"
+    echo -e "${CYAN}Installed agents:${NC}"
     echo ""
     
     if [[ -d "$AGENTS_DIR" ]]; then
@@ -288,13 +288,13 @@ list_installed() {
         done
         
         if [[ $count -eq 0 ]]; then
-            echo "  Nenhum agente instalado"
+            echo "  No agents installed"
         else
             echo ""
-            echo "  Total: $count agentes"
+            echo "  Total: $count agents"
         fi
     else
-        echo "  Nenhum agente instalado"
+        echo "  No agents installed"
     fi
 }
 
@@ -310,9 +310,9 @@ copy_agents_to_worktree() {
         local src="$AGENTS_DIR/$agent.md"
         if [[ -f "$src" ]]; then
             cp "$src" "$dest/"
-            log_info "Copiado $agent para $worktree_path"
+            log_info "Copied $agent to $worktree_path"
         else
-            log_warn "Agente não instalado: $agent (instale com: $0 install $agent)"
+            log_warn "Agent not installed: $agent (install with: $0 install $agent)"
         fi
     done
 }
@@ -320,20 +320,20 @@ copy_agents_to_worktree() {
 show_help() {
     cat << 'EOF'
 
-🤖 GERENCIADOR DE AGENTES ESPECIALIZADOS
+🤖 SPECIALIZED AGENT MANAGER
 
-Integração com VoltAgent/awesome-claude-code-subagents
+Integration with VoltAgent/awesome-claude-code-subagents
 
-Uso: agents.sh <comando> [argumentos]
+Usage: agents.sh <command> [arguments]
 
-COMANDOS:
-  list                      Listar agentes disponíveis
-  installed                 Listar agentes instalados
-  install <agente>          Instalar agente específico
-  install-preset <preset>   Instalar preset de agentes
-  copy <worktree> <agents>  Copiar agentes para worktree
+COMMANDS:
+  list                      List available agents
+  installed                 List installed agents
+  install <agent>           Install specific agent
+  install-preset <preset>   Install agent preset
+  copy <worktree> <agents>  Copy agents to worktree
 
-PRESETS DISPONÍVEIS:
+AVAILABLE PRESETS:
   auth        → backend-developer, security-auditor, typescript-pro
   api         → api-designer, backend-developer, test-automator
   frontend    → frontend-developer, react-specialist, ui-designer
@@ -345,7 +345,7 @@ PRESETS DISPONÍVEIS:
   security    → security-auditor, penetration-tester, security-engineer
   review      → code-reviewer, architect-reviewer, security-auditor
 
-EXEMPLOS:
+EXAMPLES:
   # Install preset for authentication module
   ./agents.sh install-preset auth
 
@@ -353,8 +353,8 @@ EXEMPLOS:
   ./agents.sh install typescript-pro
   ./agents.sh install react-specialist
 
-  # Copiar para worktree
-  ./agents.sh copy ../meu-projeto-auth typescript-pro security-auditor
+  # Copy to worktree
+  ./agents.sh copy ../my-auth-project typescript-pro security-auditor
 
 EOF
 }
@@ -376,7 +376,7 @@ main() {
             ;;
         install)
             if [[ -z "${1:-}" ]]; then
-                log_error "Especifique o agente"
+                log_error "Specify the agent"
                 exit 1
             fi
             for agent in "$@"; do
@@ -385,7 +385,7 @@ main() {
             ;;
         install-preset)
             if [[ -z "${1:-}" ]]; then
-                log_error "Especifique o preset"
+                log_error "Specify the preset"
                 exit 1
             fi
             download_preset "$1"
@@ -394,11 +394,11 @@ main() {
             local worktree=${1:-""}
             shift || true
             if [[ -z "$worktree" ]]; then
-                log_error "Especifique o worktree"
+                log_error "Specify the worktree"
                 exit 1
             fi
             if [[ $# -eq 0 ]]; then
-                log_error "Especifique os agentes"
+                log_error "Specify the agents"
                 exit 1
             fi
             copy_agents_to_worktree "$worktree" "$@"
@@ -407,7 +407,7 @@ main() {
             show_help
             ;;
         *)
-            log_error "Comando desconhecido: $cmd"
+            log_error "Unknown command: $cmd"
             show_help
             exit 1
             ;;

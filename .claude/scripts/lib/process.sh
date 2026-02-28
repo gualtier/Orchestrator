@@ -61,7 +61,7 @@ get_process_runtime() {
         local secs=$((diff % 60))
         echo "${mins}m ${secs}s"
     else
-        echo "desconhecido"
+        echo "unknown"
     fi
 }
 
@@ -81,7 +81,7 @@ start_agent_process() {
     # Check if already running
     if is_process_running "$name"; then
         local pid=$(get_process_pid "$name")
-        log_warn "Agente $name já está rodando (PID: $pid)"
+        log_warn "Agent $name is already running (PID: $pid)"
         return 0
     fi
 
@@ -100,7 +100,7 @@ start_agent_process() {
             sleep "$delay"
         fi
 
-        log_info "Iniciando agente: $name${retry:+ (attempt $((retry + 1))/$max_retries)}"
+        log_info "Starting agent: $name${retry:+ (attempt $((retry + 1))/$max_retries)}"
 
         (set +e; unset CLAUDECODE; cd "$worktree_path" || { echo "ERROR: Failed to cd to $worktree_path" > "$logfile"; exit 1; }; nohup claude --dangerously-skip-permissions --verbose --output-format stream-json -p "$prompt" > "$logfile" 2>&1) &
 
@@ -113,7 +113,7 @@ start_agent_process() {
         # Wait to confirm process is alive
         sleep 3
         if kill -0 "$pid" 2>/dev/null; then
-            log_success "Agente $name iniciado (PID: $pid)"
+            log_success "Agent $name started (PID: $pid)"
             return 0
         fi
 
@@ -130,7 +130,7 @@ start_agent_process() {
         ((retry++)) || true
     done
 
-    log_error "Falha ao iniciar agente $name após $max_retries tentativas"
+    log_error "Failed to start agent $name after $max_retries attempts"
 
     # Create BLOCKED.md to signal failure
     local blocked_file="$worktree_path/BLOCKED.md"
@@ -157,13 +157,13 @@ stop_agent_process() {
     local start_time_file=$(get_start_time_file "$name")
 
     if ! is_process_running "$name"; then
-        log_warn "Agente $name não está rodando"
+        log_warn "Agent $name is not running"
         rm -f "$pidfile" "$start_time_file"
         return 0
     fi
 
     local pid=$(get_process_pid "$name")
-    log_info "Parando agente $name (PID: $pid)..."
+    log_info "Stopping agent $name (PID: $pid)..."
 
     # Try SIGTERM first
     kill "$pid" 2>/dev/null
@@ -175,20 +175,20 @@ stop_agent_process() {
         ((count++))
     done
 
-    # Se ainda rodando e force, usar SIGKILL
+    # If still running and force is set, use SIGKILL
     if kill -0 "$pid" 2>/dev/null; then
         if [[ "$force" == "true" ]]; then
-            log_warn "Forçando término com SIGKILL..."
+            log_warn "Forcing termination with SIGKILL..."
             kill -9 "$pid" 2>/dev/null
             sleep 1
         else
-            log_error "Processo não terminou. Use --force para forçar."
+            log_error "Process did not terminate. Use --force to force."
             return 1
         fi
     fi
 
     rm -f "$pidfile" "$start_time_file"
-    log_success "Agente $name parado"
+    log_success "Agent $name stopped"
     return 0
 }
 
@@ -204,7 +204,7 @@ show_agent_logs() {
     if file_exists "$logfile"; then
         tail -"$lines" "$logfile"
     else
-        log_error "Log não encontrado: $logfile"
+        log_error "Log not found: $logfile"
         return 1
     fi
 }
@@ -216,7 +216,7 @@ follow_agent_logs() {
     if file_exists "$logfile"; then
         tail -f "$logfile"
     else
-        log_error "Log não encontrado: $logfile"
+        log_error "Log not found: $logfile"
         return 1
     fi
 }
@@ -231,13 +231,13 @@ rotate_logs() {
 
         local size=$(stat -f%z "$logfile" 2>/dev/null || stat -c%s "$logfile" 2>/dev/null)
         if [[ $size -gt $max_size ]]; then
-            # Rotacionar
+            # Rotate
             for i in $(seq $((max_files - 1)) -1 1); do
                 [[ -f "${logfile}.$i" ]] && mv "${logfile}.$i" "${logfile}.$((i + 1))"
             done
             mv "$logfile" "${logfile}.1"
             touch "$logfile"
-            log_info "Log rotacionado: $(basename "$logfile")"
+            log_info "Log rotated: $(basename "$logfile")"
         fi
     done
 }

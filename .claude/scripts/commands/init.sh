@@ -4,7 +4,7 @@
 # =============================================
 
 cmd_init() {
-    log_step "Inicializando orquestrador v3.3..."
+    log_step "Initializing orchestrator v3.3..."
 
     # Validate git repository
     validate_git_repo || return 1
@@ -20,7 +20,7 @@ cmd_init() {
     # Create or reset PROJECT_MEMORY.md
     _init_project_memory
 
-    # Configurar .gitignore
+    # Configure .gitignore
     _init_gitignore
 
     # Create examples if they do not exist
@@ -30,25 +30,25 @@ cmd_init() {
     # Initialize files
     touch "$EVENTS_FILE"
 
-    log_success "Estrutura criada!"
+    log_success "Structure created!"
 
     # Show next steps
     echo ""
-    echo -e "${CYAN}Próximos passos:${NC}"
+    echo -e "${CYAN}Next steps:${NC}"
     echo ""
-    echo "  1. Instalar CLI global (opcional):"
+    echo "  1. Install global CLI (optional):"
     echo "     ${GREEN}$0 install-cli${NC}"
     echo ""
-    echo "  2. Ver agentes disponíveis:"
+    echo "  2. View available agents:"
     echo "     ${GREEN}$0 agents list${NC}"
     echo ""
-    echo "  3. Criar worktrees com agentes:"
+    echo "  3. Create worktrees with agents:"
     echo "     ${GREEN}$0 setup auth --preset auth${NC}"
     echo ""
-    echo "  4. Ou copiar um exemplo de tarefa:"
+    echo "  4. Or copy an example task:"
     echo "     ${GREEN}$0 init-sample${NC}"
     echo ""
-    echo "  5. Verificar instalação:"
+    echo "  5. Verify installation:"
     echo "     ${GREEN}$0 doctor${NC}"
 }
 
@@ -58,11 +58,11 @@ cmd_install_cli() {
     local script_path="$SCRIPT_DIR/orchestrate.sh"
     local link_path="$install_dir/$cli_name"
 
-    log_header "INSTALAR CLI"
+    log_header "INSTALL CLI"
 
     # Check if script exists
     if [[ ! -f "$script_path" ]]; then
-        log_error "Script não encontrado: $script_path"
+        log_error "Script not found: $script_path"
         return 1
     fi
 
@@ -70,19 +70,19 @@ cmd_install_cli() {
     if [[ -L "$link_path" ]]; then
         local existing_target=$(readlink "$link_path")
         if [[ "$existing_target" == "$script_path" ]]; then
-            log_success "CLI '$cli_name' já está instalado e aponta para o local correto"
+            log_success "CLI '$cli_name' is already installed and points to the correct location"
             return 0
         else
-            log_warn "CLI '$cli_name' já existe mas aponta para: $existing_target"
-            if ! confirm "Deseja sobrescrever?"; then
-                log_info "Operação cancelada"
+            log_warn "CLI '$cli_name' already exists but points to: $existing_target"
+            if ! confirm "Do you want to overwrite?"; then
+                log_info "Operation cancelled"
                 return 0
             fi
             sudo rm "$link_path"
         fi
     elif [[ -f "$link_path" ]]; then
-        log_error "'$link_path' já existe e não é um symlink"
-        log_info "Remova manualmente ou escolha outro nome"
+        log_error "'$link_path' already exists and is not a symlink"
+        log_info "Remove it manually or choose another name"
         return 1
     fi
 
@@ -90,20 +90,20 @@ cmd_install_cli() {
     chmod +x "$script_path"
 
     # Create symlink
-    log_step "Criando symlink em $install_dir..."
+    log_step "Creating symlink in $install_dir..."
 
     if sudo ln -sf "$script_path" "$link_path"; then
-        log_success "CLI instalado com sucesso!"
+        log_success "CLI installed successfully!"
         echo ""
-        log_info "Agora você pode usar:"
+        log_info "You can now use:"
         echo ""
         echo "  ${GREEN}$cli_name help${NC}"
         echo "  ${GREEN}$cli_name status${NC}"
         echo "  ${GREEN}$cli_name update-check${NC}"
         echo ""
     else
-        log_error "Falha ao criar symlink"
-        log_info "Verifique se você tem permissões sudo"
+        log_error "Failed to create symlink"
+        log_info "Check if you have sudo permissions"
         return 1
     fi
 
@@ -114,27 +114,27 @@ cmd_uninstall_cli() {
     local cli_name=${1:-"orch"}
     local link_path="/usr/local/bin/$cli_name"
 
-    log_header "DESINSTALAR CLI"
+    log_header "UNINSTALL CLI"
 
     if [[ ! -L "$link_path" ]]; then
         if [[ -f "$link_path" ]]; then
-            log_error "'$link_path' existe mas não é um symlink"
+            log_error "'$link_path' exists but is not a symlink"
             return 1
         else
-            log_warn "CLI '$cli_name' não está instalado"
+            log_warn "CLI '$cli_name' is not installed"
             return 0
         fi
     fi
 
-    if ! confirm "Remover CLI '$cli_name'?"; then
-        log_info "Operação cancelada"
+    if ! confirm "Remove CLI '$cli_name'?"; then
+        log_info "Operation cancelled"
         return 0
     fi
 
     if sudo rm "$link_path"; then
-        log_success "CLI '$cli_name' removido com sucesso"
+        log_success "CLI '$cli_name' removed successfully"
     else
-        log_error "Falha ao remover CLI"
+        log_error "Failed to remove CLI"
         return 1
     fi
 
@@ -142,7 +142,7 @@ cmd_uninstall_cli() {
 }
 
 cmd_init_sample() {
-    log_step "Copiando exemplos de tarefas..."
+    log_step "Copying example tasks..."
 
     local examples_dir="$ORCHESTRATION_DIR/examples"
     local tasks_dir="$ORCHESTRATION_DIR/tasks"
@@ -156,14 +156,14 @@ cmd_init_sample() {
         local name=$(basename "$example")
         if [[ ! -f "$tasks_dir/$name" ]]; then
             cp "$example" "$tasks_dir/$name"
-            log_success "Copiado: $name"
+            log_success "Copied: $name"
         else
-            log_warn "Já existe: $name (pulando)"
+            log_warn "Already exists: $name (skipping)"
         fi
     done
 
-    log_success "Exemplos copiados para $tasks_dir"
-    log_info "Edite as tarefas conforme necessário"
+    log_success "Examples copied to $tasks_dir"
+    log_info "Edit the tasks as needed"
 }
 
 # =============================================
@@ -190,32 +190,32 @@ _init_gitignore() {
 
     # If marker already exists, do not add again
     if [[ -f "$gitignore" ]] && grep -q "$marker" "$gitignore" 2>/dev/null; then
-        log_info ".gitignore já configurado (mantendo)"
+        log_info ".gitignore already configured (keeping)"
         return 0
     fi
 
-    log_step "Configurando .gitignore..."
+    log_step "Configuring .gitignore..."
 
-    # Adicionar entradas ao .gitignore
+    # Add entries to .gitignore
     for entry in "${entries[@]}"; do
         echo "$entry" >> "$gitignore"
     done
 
-    log_success ".gitignore atualizado"
+    log_success ".gitignore updated"
 }
 
 _init_project_memory() {
     # If does not exist, create new
     if ! file_exists "$MEMORY_FILE"; then
-        log_step "Criando PROJECT_MEMORY.md..."
+        log_step "Creating PROJECT_MEMORY.md..."
         create_initial_memory
         return 0
     fi
 
     # Check if it is the orchestrator memory (repo template)
-    if grep -q "Nome.*claude-orchestrator" "$MEMORY_FILE" 2>/dev/null; then
-        log_warn "Detectado PROJECT_MEMORY.md do repositório do orquestrador"
-        log_info "Criando memória limpa para seu projeto..."
+    if grep -q "Nome.*claude-orchestrator\|Name.*claude-orchestrator" "$MEMORY_FILE" 2>/dev/null; then
+        log_warn "Detected PROJECT_MEMORY.md from the orchestrator repository"
+        log_info "Creating clean memory for your project..."
 
         # Backup of original (for reference)
         cp "$MEMORY_FILE" "$MEMORY_FILE.orchestrator-backup"
@@ -223,13 +223,13 @@ _init_project_memory() {
         # Create clean memory
         create_initial_memory
 
-        log_success "Nova memória criada!"
-        log_info "Backup salvo em: PROJECT_MEMORY.md.orchestrator-backup"
+        log_success "New memory created!"
+        log_info "Backup saved at: PROJECT_MEMORY.md.orchestrator-backup"
         return 0
     fi
 
     # Memory already exists and is from another project
-    log_info "PROJECT_MEMORY.md já existe (mantendo)"
+    log_info "PROJECT_MEMORY.md already exists (keeping)"
 }
 
 # =============================================
@@ -238,101 +238,112 @@ _init_project_memory() {
 
 create_agent_claude_base() {
     cat > "$CLAUDE_DIR/AGENT_CLAUDE.md" << 'EOF'
-# AGENTE EXECUTOR
+# EXECUTOR AGENT
 
-**VOCÊ NÃO É UM ORQUESTRADOR**
+**YOU ARE NOT AN ORCHESTRATOR**
 
-## Identidade
-Você é um AGENTE EXECUTOR com uma tarefa específica.
-Você possui expertise especializada conforme os agentes carregados.
+## Identity
+You are an EXECUTOR AGENT with a specific task.
+You have specialized expertise according to the loaded agents.
 
-## Regras Absolutas
-1. **NUNCA** crie worktrees ou outros agentes
-2. **NUNCA** execute orchestrate.sh
-3. **NUNCA** modifique PROJECT_MEMORY.md
-4. **FOQUE** exclusivamente na sua tarefa
+## Absolute Rules
+1. **NEVER** create worktrees or other agents
+2. **NEVER** run orchestrate.sh
+3. **NEVER** modify PROJECT_MEMORY.md
+4. **FOCUS** exclusively on your task
 
-## Seu Fluxo
-1. Criar PROGRESS.md inicial
-2. Executar tarefa passo a passo
-3. Atualizar PROGRESS.md frequentemente
-4. Fazer commits descritivos
-5. Criar DONE.md quando terminar
+## Your Workflow
+1. Create initial PROGRESS.md
+2. Execute task step by step
+3. Update PROGRESS.md frequently
+4. Make descriptive commits
+5. Create DONE.md when finished
 
-## Arquivos de Status
+## Status Files
 
 ### PROGRESS.md
 ```markdown
-# Progresso: [tarefa]
-## Status: EM ANDAMENTO
+# Progress: [task]
+## Status: IN PROGRESS
 ## Completed
 - [x] Item
-## Pendente
+## Pending
 - [ ] Item
 ## Last Update
-[DATA]: [descrição]
+[DATE]: [description]
 ```
 
-### DONE.md (ao finalizar)
+### DONE.md (when finished)
 ```markdown
 # Completed: [task]
-## Resumo
-[O que foi feito]
-## Arquivos
-- path/file.ts - [mudança]
-## Como Testar
-[Instruções de teste]
+## Summary
+[What was done]
+## Files
+- path/file.ts - [change]
+## How to Test
+[Test instructions]
 ```
 
 ### BLOCKED.md (if necessary)
 ```markdown
-# Bloqueado: [tarefa]
-## Problema
-[Descrição]
-## Preciso
-[O que desbloqueia]
+# Blocked: [task]
+## Problem
+[Description]
+## Need
+[What unblocks it]
 ```
 
 ## Commits
 ```
-feat(escopo): descrição
-fix(escopo): descrição
-refactor(escopo): descrição
-test(escopo): descrição
+feat(scope): description
+fix(scope): description
+refactor(scope): description
+test(scope): description
 ```
 EOF
 }
 
 create_initial_memory() {
+    local template_file="$CLAUDE_DIR/PROJECT_MEMORY.template.md"
     local current_date=$(date '+%Y-%m-%d %H:%M')
+    local start_date=$(date '+%Y-%m-%d')
     local repo_url=$(git remote get-url origin 2>/dev/null || echo "[local]")
 
-    cat > "$MEMORY_FILE" << EOF
+    if file_exists "$template_file"; then
+        # Copy from template and fill in project-specific values
+        sed -e "s|\[PROJECT_NAME\]|$PROJECT_NAME|g" \
+            -e "s|\[DATE\]|$start_date|g" \
+            -e "s|\[REPO_URL\]|$repo_url|g" \
+            -e "s|> \*\*Last update\*\*: TEMPLATE|> **Last update**: $current_date|" \
+            "$template_file" > "$MEMORY_FILE"
+    else
+        # Fallback: generate inline if template is missing
+        cat > "$MEMORY_FILE" << EOF
 # Project Memory
 
-> **Última atualização**: $current_date
-> **Versão**: 0.1
+> **Last update**: $current_date
+> **Version**: 0.1
 
 ## Overview
 
-### Projeto
+### Project
 
-- **Nome**: $PROJECT_NAME
-- **Descrição**: [Descreva seu projeto aqui]
-- **Início**: $(date '+%Y-%m-%d')
+- **Name**: $PROJECT_NAME
+- **Description**: [Describe your project here]
+- **Started**: $start_date
 - **Repo**: $repo_url
 
 ### Stack
 
-| Camada | Tecnologia |
-|--------|------------|
-| Linguagem | [DEFINIR] |
-| Framework | [DEFINIR] |
-| Database | [DEFINIR] |
+| Layer     | Technology |
+|-----------|------------|
+| Language  | [DEFINE]   |
+| Framework | [DEFINE]   |
+| Database  | [DEFINE]   |
 
-## Arquitetura
+## Architecture
 
-[Descreva a arquitetura do seu projeto]
+[Describe your project architecture]
 
 ## Roadmap
 
@@ -341,159 +352,155 @@ create_initial_memory() {
 - [ ] Feature 1
 - [ ] Feature 2
 
-### v0.2 - Melhorias
-
-- [ ] Feature 3
-- [ ] Feature 4
-
 ## Architecture Decisions
 
 ### ADR-001: [Decision Title]
 
-- **Decisão**: [O que foi decidido]
-- **Motivo**: [Por que foi decidido]
-- **Trade-off**: [Prós e contras]
+- **Decision**: [What was decided]
+- **Reason**: [Why it was decided]
+- **Trade-off**: [Pros and cons]
 
-## Problemas Resolvidos
+## Resolved Problems
 
-| Problema | Versão | Solução |
-|----------|--------|---------|
-| - | - | - |
+| Problem | Version | Solution |
+|---------|---------|----------|
+| -       | -       | -        |
 
 ## Lessons Learned
 
-1. [Adicione lições aprendidas durante o desenvolvimento]
+1. [Add lessons learned during development]
 
 ## Next Session
 
-### Em Progresso
+### In Progress
 
-- [ ] [Tarefas em andamento]
+- [ ] [Tasks in progress]
 
-### Ideias Futuras
+### Future Ideas
 
-- [Ideias para implementar depois]
+- [Ideas to implement later]
 
 ---
-> Atualize com: \`orch update-memory\` ou \`.claude/scripts/orchestrate.sh update-memory\`
+> Update with: \`orch update-memory\` or \`.claude/scripts/orchestrate.sh update-memory\`
 EOF
+    fi
 }
 
 create_example_tasks() {
     local examples_dir="$ORCHESTRATION_DIR/examples"
     ensure_dir "$examples_dir"
 
-    # Exemplo: Auth
+    # Example: Auth
     cat > "$examples_dir/auth.md" << 'EOF'
 # Task: Authentication System
 
-## Objetivo
-Implementar sistema de autenticação com JWT.
+## Objective
+Implement authentication system with JWT.
 
-## Requisitos
-- [ ] Login com email/senha
-- [ ] Registro de usuário
+## Requirements
+- [ ] Login with email/password
+- [ ] User registration
 - [ ] Refresh token
 - [ ] Logout
 
-## Escopo
+## Scope
 
-### FAZER
-- [ ] Modelo de usuário
-- [ ] Rotas de auth (/login, /register, /logout)
-- [ ] Middleware de autenticação
-- [ ] Testes
+### DO
+- [ ] User model
+- [ ] Auth routes (/login, /register, /logout)
+- [ ] Authentication middleware
+- [ ] Tests
 
 ### DO NOT DO
-- OAuth/Social login (próxima fase)
-- 2FA (próxima fase)
+- OAuth/Social login (next phase)
+- 2FA (next phase)
 
-## Arquivos
-Criar:
+## Files
+Create:
 - src/auth/
 - src/auth/routes.ts
 - src/auth/middleware.ts
 - src/auth/models/user.ts
 
 ## Completion Criteria
-- [ ] Testes passando
-- [ ] Documentação da API
-- [ ] DONE.md criado
+- [ ] Tests passing
+- [ ] API documentation
+- [ ] DONE.md created
 EOF
 
-    # Exemplo: API
+    # Example: API
     cat > "$examples_dir/api-crud.md" << 'EOF'
-# Tarefa: API CRUD
+# Task: API CRUD
 
-## Objetivo
-Criar API REST para gerenciamento de recursos.
+## Objective
+Create REST API for resource management.
 
-## Requisitos
-- [ ] Endpoints CRUD (Create, Read, Update, Delete)
-- [ ] Validação de entrada
-- [ ] Paginação
-- [ ] Tratamento de erros
+## Requirements
+- [ ] CRUD endpoints (Create, Read, Update, Delete)
+- [ ] Input validation
+- [ ] Pagination
+- [ ] Error handling
 
-## Escopo
+## Scope
 
-### FAZER
-- [ ] Rotas REST
-- [ ] Validadores
+### DO
+- [ ] REST routes
+- [ ] Validators
 - [ ] Controllers
-- [ ] Testes
+- [ ] Tests
 
 ### DO NOT DO
-- Autenticação (outro worktree)
+- Authentication (other worktree)
 - Frontend
 
-## Arquivos
-Criar:
+## Files
+Create:
 - src/api/
 - src/api/routes.ts
 - src/api/controllers/
 - src/api/validators/
 
 ## Completion Criteria
-- [ ] Endpoints funcionando
-- [ ] Testes passando
-- [ ] DONE.md criado
+- [ ] Endpoints working
+- [ ] Tests passing
+- [ ] DONE.md created
 EOF
 
-    # Exemplo: Frontend
+    # Example: Frontend
     cat > "$examples_dir/frontend.md" << 'EOF'
-# Tarefa: Interface Frontend
+# Task: Frontend Interface
 
-## Objetivo
-Criar interface de usuário responsiva.
+## Objective
+Create responsive user interface.
 
-## Requisitos
-- [ ] Layout responsivo
-- [ ] Componentes reutilizáveis
-- [ ] Integração com API
-- [ ] Estados de loading/erro
+## Requirements
+- [ ] Responsive layout
+- [ ] Reusable components
+- [ ] API integration
+- [ ] Loading/error states
 
-## Escopo
+## Scope
 
-### FAZER
-- [ ] Estrutura de componentes
-- [ ] Páginas principais
-- [ ] Integração com API
-- [ ] Estilos
+### DO
+- [ ] Component structure
+- [ ] Main pages
+- [ ] API integration
+- [ ] Styles
 
 ### DO NOT DO
-- Testes E2E (próxima fase)
-- Animações complexas
+- E2E Tests (next phase)
+- Complex animations
 
-## Arquivos
-Criar:
+## Files
+Create:
 - src/components/
 - src/pages/
 - src/hooks/
 - src/styles/
 
 ## Completion Criteria
-- [ ] UI funcionando
-- [ ] Responsivo
-- [ ] DONE.md criado
+- [ ] UI working
+- [ ] Responsive
+- [ ] DONE.md created
 EOF
 }

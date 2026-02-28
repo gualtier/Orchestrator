@@ -6,75 +6,75 @@
 cmd_help() {
     cat << 'EOF'
 
-ORQUESTRADOR DE AGENTES CLAUDE v3.1
-   Com Agentes Especializados
+CLAUDE AGENT ORCHESTRATOR v3.1
+   With Specialized Agents
 
-Uso: orchestrate.sh <comando> [argumentos]
+Usage: orchestrate.sh <command> [arguments]
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-AGENTES:
-  agents list               Listar agentes disponíveis
-  agents install <agente>   Instalar agente
-  agents install-preset <p> Instalar preset de agentes
-  agents installed          Ver agentes instalados
+AGENTS:
+  agents list               List available agents
+  agents install <agent>    Install agent
+  agents install-preset <p> Install agent preset
+  agents installed          View installed agents
 
-INICIALIZAÇÃO:
-  init                      Criar estrutura
-  init-sample               Copiar exemplos de tarefas
-  install-cli [nome]        Instalar comando global (default: orch)
-  uninstall-cli [nome]      Remover comando global
-  doctor                    Diagnosticar problemas
-  doctor --fix              Corrigir problemas automaticamente
+INITIALIZATION:
+  init                      Create structure
+  init-sample               Copy example tasks
+  install-cli [name]        Install global command (default: orch)
+  uninstall-cli [name]      Remove global command
+  doctor                    Diagnose problems
+  doctor --fix              Fix problems automatically
 
-EXECUÇÃO:
-  setup <nome> [opções]     Criar worktree com agentes
-    --preset <preset>       Usar preset de agentes
-    --agents <a1,a2,a3>     Especificar agentes
-    --from <branch>         Branch de origem
+EXECUTION:
+  setup <name> [options]    Create worktree with agents
+    --preset <preset>       Use agent preset
+    --agents <a1,a2,a3>     Specify agents
+    --from <branch>         Source branch
 
-  start [agentes]           Iniciar agentes
-  stop <agente> [--force]   Parar agente
-  restart <agente>          Reiniciar agente
+  start [agents]            Start agents
+  stop <agent> [--force]    Stop agent
+  restart <agent>           Restart agent
 
-MONITORAMENTO:
-  status                    Ver status (formato texto padrão)
-  status --enhanced|-e      Ver status com detalhes avançados
-  status --watch|-w [N]     Atualização ao vivo (intervalo N segundos)
-  status --compact|-c       Formato compacto (uma linha por agente)
-  status --json             Ver status (formato JSON)
-  wait [intervalo]          Aguardar conclusão (com modo watch)
-  logs <agente> [n]         Ver últimas n linhas de log
-  follow <agente>           Seguir logs em tempo real
+MONITORING:
+  status                    Show status (standard text format)
+  status --enhanced|-e      Show status with advanced details
+  status --watch|-w [N]     Live update (interval N seconds)
+  status --compact|-c       Compact format (one line per agent)
+  status --json             Show status (JSON format)
+  wait [interval]           Wait for completion (with watch mode)
+  logs <agent> [n]          Show last n log lines
+  follow <agent>            Follow logs in real time
 
-VERIFICAÇÃO E QUALIDADE:
-  verify <worktree>         Verificar worktree
-  verify-all                Verificar todas as worktrees
-  review <worktree>         Criar worktree de review
-  pre-merge                 Verificar antes do merge
-  report                    Gerar relatório consolidado
+VERIFICATION AND QUALITY:
+  verify <worktree>         Verify worktree
+  verify-all                Verify all worktrees
+  review <worktree>         Create review worktree
+  pre-merge                 Check before merge
+  report                    Generate consolidated report
 
-FINALIZAÇÃO:
-  merge [branch]            Fazer merge (default: main)
-  cleanup                   Limpar worktrees (arquiva artefatos)
+FINALIZATION:
+  merge [branch]            Merge (default: main)
+  cleanup                   Clean up worktrees (archives artifacts)
 
-MEMÓRIA:
-  show-memory               Ver memória do projeto
-  update-memory [opções]    Atualizar memória do projeto
-    --bump                  Incrementar versão (X.Y → X.Y+1)
-    --changelog             Gerar changelog dos commits recentes
-    --commits <n>           Número de commits no changelog (default: 5)
-    --full                  Equivalente a --bump --changelog
+MEMORY:
+  show-memory               View project memory
+  update-memory [options]   Update project memory
+    --bump                  Increment version (X.Y → X.Y+1)
+    --changelog             Generate changelog from recent commits
+    --commits <n>           Number of commits in changelog (default: 5)
+    --full                  Equivalent to --bump --changelog
 
 LEARNING:
-  learn extract [opções]    Extrair insights de tarefas completas
-    --last N                Extrair das últimas N tarefas (default: 5)
-    --all                   Extrair de todas as tarefas arquivadas
-    --apply                 Aplicar automaticamente sem revisão
-  learn review              Revisar learnings pendentes
-  learn add-role <arquivo>  Adicionar papel de agente ao CLAUDE.md
-    --name "Nome"           Nome para o papel externo
-  learn show                Mostrar seção de learnings atual
+  learn extract [options]   Extract insights from completed tasks
+    --last N                Extract from last N tasks (default: 5)
+    --all                   Extract from all archived tasks
+    --apply                 Apply automatically without review
+  learn review              Review pending learnings
+  learn add-role <file>     Add agent role to CLAUDE.md
+    --name "Name"           Name for the external role
+  learn show                Show current learnings section
 
 SDD (SPEC-DRIVEN DEVELOPMENT):
   sdd init                  Initialize SDD structure with templates
@@ -89,13 +89,13 @@ SDD (SPEC-DRIVEN DEVELOPMENT):
   sdd archive <number>      Archive completed spec
   sdd help                  Show SDD help
 
-ATUALIZAÇÃO:
-  update                    Atualizar orquestrador do remote
-  update-check              Verificar se há atualizações disponíveis
+UPDATE:
+  update                    Update orchestrator from remote
+  update-check              Check if updates are available
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-PRESETS DE AGENTES:
+AGENT PRESETS:
   auth      → backend-developer, security-auditor, typescript-pro
   api       → api-designer, backend-developer, test-automator
   frontend  → frontend-developer, react-specialist, ui-designer

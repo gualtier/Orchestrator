@@ -1,12 +1,12 @@
 #!/bin/bash
 # =============================================
-# AGENTS - Gerenciamento de agentes
+# AGENTS - Agent Management
 # =============================================
 
 AGENTS_REPO="https://raw.githubusercontent.com/VoltAgent/awesome-claude-code-subagents/main"
 
 # =============================================
-# MAPEAMENTO DE AGENTES
+# AGENT PATH MAPPING
 # =============================================
 
 get_agent_path() {
@@ -86,7 +86,7 @@ get_agent_path() {
 }
 
 # =============================================
-# DOWNLOAD DE AGENTES
+# AGENT DOWNLOAD
 # =============================================
 
 download_agent() {
@@ -94,7 +94,7 @@ download_agent() {
     local path=$(get_agent_path "$name")
 
     if [[ -z "$path" ]]; then
-        log_warn "Agente desconhecido: $name"
+        log_warn "Unknown agent: $name"
         return 1
     fi
 
@@ -104,10 +104,10 @@ download_agent() {
     ensure_dir "$AGENTS_DIR"
 
     if curl -sL "$url" -o "$dest" 2>/dev/null && [[ -s "$dest" ]]; then
-        log_success "Agente baixado: $name"
+        log_success "Agent downloaded: $name"
         return 0
     else
-        log_warn "Falha ao baixar: $name"
+        log_warn "Failed to download: $name"
         rm -f "$dest"
         return 1
     fi
@@ -119,14 +119,14 @@ ensure_agents_installed() {
     local failed=0
 
     for agent in $agents; do
-        if ! validate_name "$agent" "agente"; then
+        if ! validate_name "$agent" "agent"; then
             ((failed++))
             continue
         fi
 
         local src="$AGENTS_DIR/$agent.md"
         if [[ ! -f "$src" ]] || [[ ! -s "$src" ]]; then
-            log_info "Baixando agente: $agent"
+            log_info "Downloading agent: $agent"
             if ! download_agent "$agent"; then
                 ((failed++))
             fi
@@ -149,7 +149,7 @@ list_installed_agents() {
     done
 }
 
-# Copiar agentes para worktree
+# Copy agents to worktree
 copy_agents_to_worktree() {
     local worktree_path=$1
     local agents=$2
@@ -169,7 +169,7 @@ copy_agents_to_worktree() {
     # Save list of used agents
     echo "$agents" > "$worktree_path/.claude/AGENTS_USED"
 
-    # Copiar AGENT_CLAUDE.md base
+    # Copy base AGENT_CLAUDE.md
     if file_exists "$CLAUDE_DIR/AGENT_CLAUDE.md"; then
         cp "$CLAUDE_DIR/AGENT_CLAUDE.md" "$worktree_path/.claude/CLAUDE.md"
     fi
@@ -178,7 +178,7 @@ copy_agents_to_worktree() {
 }
 
 # =============================================
-# CLI DE AGENTES
+# AGENTS CLI
 # =============================================
 
 cmd_agents() {
@@ -187,7 +187,7 @@ cmd_agents() {
 
     case "$subcmd" in
         list)
-            echo "Agentes disponíveis (VoltAgent):"
+            echo "Available agents (VoltAgent):"
             echo ""
             echo "Core Development:"
             echo "  api-designer, backend-developer, frontend-developer"
@@ -210,7 +210,7 @@ cmd_agents() {
             ;;
 
         installed)
-            echo "Agentes instalados:"
+            echo "Installed agents:"
             list_installed_agents | while read -r agent; do
                 echo "  - $agent"
             done
@@ -219,7 +219,7 @@ cmd_agents() {
         install)
             local agent=$1
             if [[ -z "$agent" ]]; then
-                log_error "Especifique o agente: $0 agents install <nome>"
+                log_error "Specify the agent: $0 agents install <name>"
                 return 1
             fi
             download_agent "$agent"
@@ -231,13 +231,13 @@ cmd_agents() {
                 return 1
             fi
             local agents=$(get_preset_agents "$preset")
-            log_info "Instalando preset '$preset': $agents"
+            log_info "Installing preset '$preset': $agents"
             ensure_agents_installed "$agents"
             ;;
 
         *)
-            log_error "Subcomando desconhecido: $subcmd"
-            echo "Uso: $0 agents [list|installed|install|install-preset]"
+            log_error "Unknown subcommand: $subcmd"
+            echo "Usage: $0 agents [list|installed|install|install-preset]"
             return 1
             ;;
     esac

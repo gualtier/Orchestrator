@@ -9,19 +9,19 @@ _orchestrate() {
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
-    # Comandos principais
+    # Main commands
     local commands="init init-sample install-cli uninstall-cli doctor agents setup start stop restart status wait logs follow verify verify-all review pre-merge report merge cleanup show-memory update-memory learn sdd update update-check help"
 
     # Presets
     local presets="auth api frontend fullstack mobile devops data ml security review backend database"
 
-    # Subcomandos de agents
+    # agents subcommands
     local agents_subcmds="list installed install install-preset"
 
-    # Subcomandos de sdd
+    # sdd subcommands
     local sdd_subcmds="init constitution specify research plan tasks status gate archive help"
 
-    # Subcomandos de learn
+    # learn subcommands
     local learn_subcmds="extract review add-role show"
 
     case "$prev" in
@@ -42,7 +42,7 @@ _orchestrate() {
             return 0
             ;;
         research|plan|tasks|gate|archive)
-            # Completar com números de spec existentes
+            # Complete with existing spec numbers
             local spec_numbers=""
             if [[ -d ".claude/specs/active" ]]; then
                 spec_numbers=$(ls -d .claude/specs/active/*/ 2>/dev/null | xargs -I{} basename {} | sed 's/-.*//')
@@ -55,7 +55,7 @@ _orchestrate() {
             return 0
             ;;
         setup|start|stop|restart|logs|follow|verify|review)
-            # Listar worktrees existentes
+            # List existing worktrees
             local worktrees=""
             if [[ -d ".claude/orchestration/tasks" ]]; then
                 worktrees=$(ls .claude/orchestration/tasks/*.md 2>/dev/null | xargs -I{} basename {} .md)
@@ -64,7 +64,7 @@ _orchestrate() {
             return 0
             ;;
         --agents)
-            # Listar agentes instalados
+            # List installed agents
             local agents=""
             if [[ -d ".claude/agents" ]]; then
                 agents=$(ls .claude/agents/*.md 2>/dev/null | xargs -I{} basename {} .md)
@@ -73,14 +73,14 @@ _orchestrate() {
             return 0
             ;;
         --from|merge)
-            # Listar branches
+            # List branches
             local branches=$(git branch 2>/dev/null | sed 's/^\*//;s/^ *//')
             COMPREPLY=( $(compgen -W "$branches" -- "$cur") )
             return 0
             ;;
     esac
 
-    # Opções para setup
+    # Options for setup
     if [[ "${COMP_WORDS[1]}" == "setup" ]]; then
         case "$cur" in
             -*)
@@ -90,7 +90,7 @@ _orchestrate() {
         esac
     fi
 
-    # Opções para status
+    # Options for status
     if [[ "${COMP_WORDS[1]}" == "status" ]]; then
         case "$cur" in
             -*)
@@ -100,7 +100,7 @@ _orchestrate() {
         esac
     fi
 
-    # Opções para doctor
+    # Options for doctor
     if [[ "${COMP_WORDS[1]}" == "doctor" ]]; then
         case "$cur" in
             -*)
@@ -110,7 +110,7 @@ _orchestrate() {
         esac
     fi
 
-    # Opções para stop
+    # Options for stop
     if [[ "${COMP_WORDS[1]}" == "stop" ]]; then
         case "$cur" in
             -*)
@@ -120,7 +120,7 @@ _orchestrate() {
         esac
     fi
 
-    # Opções para learn extract
+    # Options for learn extract
     if [[ "${COMP_WORDS[1]}" == "learn" ]] && [[ "${COMP_WORDS[2]}" == "extract" ]]; then
         case "$cur" in
             -*)
@@ -130,7 +130,7 @@ _orchestrate() {
         esac
     fi
 
-    # Opções para update-memory
+    # Options for update-memory
     if [[ "${COMP_WORDS[1]}" == "update-memory" ]]; then
         case "$cur" in
             -*)
@@ -141,7 +141,7 @@ _orchestrate() {
     fi
 }
 
-# Registrar completion
+# Register completion
 complete -F _orchestrate orchestrate.sh
 complete -F _orchestrate ./orchestrate.sh
 complete -F _orchestrate .claude/scripts/orchestrate.sh

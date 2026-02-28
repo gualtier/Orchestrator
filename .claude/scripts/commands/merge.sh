@@ -37,7 +37,7 @@ cmd_merge() {
         return $?
     fi
 
-    log_step "Iniciando merge para: $target"
+    log_step "Starting merge to: $target"
 
     # Check completion of all tasks
     for task_file in "$ORCHESTRATION_DIR/tasks"/*.md; do
@@ -45,7 +45,7 @@ cmd_merge() {
         local name=$(basename "$task_file" .md)
         local worktree_path=$(get_worktree_path "$name")
 
-        # Pular reviews
+        # Skip reviews
         [[ "$name" == review-* ]] && continue
 
         # Check for uncommitted changes (excluding orchestrator artifacts)
@@ -84,9 +84,9 @@ cmd_merge() {
     # Save original branch to restore on failure
     local original_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "main")
 
-    # Mudar para branch alvo
+    # Switch to target branch
     git checkout "$target" || {
-        log_error "Falha ao mudar para $target"
+        log_error "Failed to switch to $target"
         return 1
     }
 
@@ -100,7 +100,7 @@ cmd_merge() {
         local name=$(basename "$task_file" .md)
         local branch="feature/$name"
 
-        # Pular reviews
+        # Skip reviews
         [[ "$name" == review-* ]] && continue
 
         log_info "Merging $branch..."
@@ -124,10 +124,10 @@ cmd_merge() {
             git merge --abort 2>/dev/null || true
             ((failed++)) || true
 
-            log_error "Conflito em $branch (merge abortado automaticamente)"
-            log_info "Após o merge, resolva manualmente com: git merge $branch"
+            log_error "Conflict in $branch (merge automatically aborted)"
+            log_info "After the merge, resolve manually with: git merge $branch"
 
-            if ! confirm "Continuar com próximo merge?"; then
+            if ! confirm "Continue with next merge?"; then
                 git checkout "$original_branch" 2>/dev/null || true
                 return 1
             fi
@@ -135,16 +135,16 @@ cmd_merge() {
     done
 
     if [[ $failed -eq 0 ]]; then
-        log_success "Merge completo! ($merged branches)"
+        log_success "Merge complete! ($merged branches)"
         log_info "💡 Tip: Extract learnings with: $0 learn extract"
 
         # Auto-archive specs whose tasks are all merged
         _auto_archive_completed_specs
     else
-        log_warn "Merge parcial: $merged OK, $failed com conflitos"
+        log_warn "Partial merge: $merged OK, $failed with conflicts"
     fi
 
-    # Registrar evento
+    # Record event
     echo "[$(timestamp)] MERGED: $merged branches to $target" >> "$EVENTS_FILE"
 
     # Auto-cleanup if requested
@@ -363,11 +363,11 @@ _auto_archive_completed_specs() {
 }
 
 cmd_cleanup() {
-    log_step "Limpando worktrees..."
+    log_step "Cleaning up worktrees..."
 
     # Confirm destructive operation
-    if ! confirm "Remover todas as worktrees? Dados não commitados serão perdidos."; then
-        log_info "Operação cancelada"
+    if ! confirm "Remove all worktrees? Uncommitted data will be lost."; then
+        log_info "Operation cancelled"
         return 0
     fi
 
@@ -385,35 +385,35 @@ cmd_cleanup() {
         # Stop agent if running
         stop_agent_process "$name" true 2>/dev/null || true
 
-        # Arquivar artefatos
+        # Archive artifacts
         cp "$worktree_path/DONE.md" "$archive_dir/${name}_DONE.md" 2>/dev/null || true
         cp "$worktree_path/PROGRESS.md" "$archive_dir/${name}_PROGRESS.md" 2>/dev/null || true
         cp "$worktree_path/BLOCKED.md" "$archive_dir/${name}_BLOCKED.md" 2>/dev/null || true
         cp "$worktree_path/.claude/AGENTS_USED" "$archive_dir/${name}_AGENTS.txt" 2>/dev/null || true
 
-        # Remover worktree
+        # Remove worktree
         if git worktree remove "$worktree_path" --force 2>/dev/null; then
-            log_success "Removido: $name"
+            log_success "Removed: $name"
             ((removed++))
         else
-            log_warn "Falha ao remover: $name"
+            log_warn "Failed to remove: $name"
         fi
 
         # Move task to file
         mv "$task_file" "$archive_dir/"
     done
 
-    # Limpar logs e PIDs
+    # Clean logs and PIDs
     rm -f "$ORCHESTRATION_DIR/logs"/*.log
     rm -f "$ORCHESTRATION_DIR/pids"/*
 
     # Clean orphaned worktrees
     git worktree prune 2>/dev/null
 
-    log_success "Cleanup completo! ($removed worktrees removidas)"
-    log_info "Artefatos arquivados em: $archive_dir"
+    log_success "Cleanup complete! ($removed worktrees removed)"
+    log_info "Artifacts archived at: $archive_dir"
 
-    # Registrar evento
+    # Record event
     echo "[$(timestamp)] CLEANUP: $removed worktrees archived" >> "$EVENTS_FILE"
 }
 
@@ -421,7 +421,7 @@ cmd_show_memory() {
     if file_exists "$MEMORY_FILE"; then
         cat "$MEMORY_FILE"
     else
-        log_error "PROJECT_MEMORY.md não encontrado"
+        log_error "PROJECT_MEMORY.md not found"
         return 1
     fi
 }
@@ -431,7 +431,7 @@ cmd_update_memory() {
     local generate_changelog=false
     local commits_count=5
 
-    # Parse argumentos
+    # Parse arguments
     while [[ $# -gt 0 ]]; do
         case "$1" in
             --bump|--version) bump_version=true; shift ;;
@@ -442,10 +442,10 @@ cmd_update_memory() {
         esac
     done
 
-    log_step "Atualizando memória..."
+    log_step "Updating memory..."
 
     if ! file_exists "$MEMORY_FILE"; then
-        log_error "PROJECT_MEMORY.md não encontrado"
+        log_error "PROJECT_MEMORY.md not found"
         return 1
     fi
 
@@ -474,7 +474,7 @@ cmd_update_memory() {
         _generate_changelog "$commits_count"
     fi
 
-    log_success "Memória atualizada"
+    log_success "Memory updated"
 }
 
 # Increment version in X.Y format
@@ -524,13 +524,13 @@ _generate_changelog() {
     local changelog_file="$ORCHESTRATION_DIR/CHANGELOG.md"
     local today=$(date '+%Y-%m-%d')
 
-    log_info "Gerando changelog (últimos $count commits)..."
+    log_info "Generating changelog (last $count commits)..."
 
     # Get recent commits
     local commits=$(git log --oneline -n "$count" --pretty=format:"- %s (%h)" 2>/dev/null)
 
     if [[ -z "$commits" ]]; then
-        log_warn "Nenhum commit encontrado"
+        log_warn "No commits found"
         return 0
     fi
 
@@ -559,8 +559,8 @@ $entry
 EOF
     fi
 
-    log_info "Changelog atualizado: $changelog_file"
+    log_info "Changelog updated: $changelog_file"
 
-    # Registrar evento
-    echo "[$(timestamp)] CHANGELOG: $count commits adicionados" >> "$EVENTS_FILE"
+    # Record event
+    echo "[$(timestamp)] CHANGELOG: $count commits added" >> "$EVENTS_FILE"
 }

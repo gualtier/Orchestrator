@@ -1,1 +1,23 @@
 .DS_Store
+
+# Project memory (personal per-user, not shared)
+.claude/PROJECT_MEMORY.md
+.claude/PROJECT_MEMORY.md.orchestrator-backup
+
+# Orchestrator runtime (auto-generated)
+.claude/orchestration/logs/
+.claude/orchestration/pids/
+.claude/orchestration/status/
+.claude/orchestration/archive/
+.claude/orchestration/checkpoints/
+.claude/orchestration/.recovery/
+.claude/orchestration/.backups/
+.claude/orchestration/EVENTS.md
+.claude/orchestration/errors.log
+
+# Downloaded agents (auto-installed via setup)
+.claude/agents/
+
+# Personal dev artifacts
+.claude/PRESETS_CUSTOMIZADOS.md
+.claude/specs/archive/

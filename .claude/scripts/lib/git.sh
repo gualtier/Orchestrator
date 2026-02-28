@@ -62,17 +62,17 @@ create_git_worktree() {
 
     # Check if already exists
     if worktree_exists "$name"; then
-        log_warn "Worktree já existe: $name"
+        log_warn "Worktree already exists: $name"
         return 0
     fi
 
     # Check source branch
     if ! branch_exists "$from_branch"; then
-        log_error "Branch de origem não existe: $from_branch"
+        log_error "Source branch does not exist: $from_branch"
         return 1
     fi
 
-    log_info "Criando worktree: $name (de $from_branch)"
+    log_info "Creating worktree: $name (from $from_branch)"
 
     # Mark for cleanup in case of error
     CLEANUP_NEEDED=true
@@ -80,23 +80,23 @@ create_git_worktree() {
 
     # Create branch and worktree
     if branch_exists "$branch"; then
-        log_info "Branch $branch já existe, usando existente"
+        log_info "Branch $branch already exists, using existing"
         git worktree add "$worktree_path" "$branch" || {
-            log_error "Falha ao criar worktree"
+            log_error "Failed to create worktree"
             return 1
         }
     else
         git worktree add -b "$branch" "$worktree_path" "$from_branch" || {
-            log_error "Falha ao criar worktree"
+            log_error "Failed to create worktree"
             return 1
         }
     fi
 
-    # Desmarcar cleanup
+    # Clear cleanup flag
     CLEANUP_NEEDED=false
     CLEANUP_WORKTREE=""
 
-    log_success "Worktree criada: $worktree_path"
+    log_success "Worktree created: $worktree_path"
     return 0
 }
 
@@ -107,7 +107,7 @@ remove_git_worktree() {
     local worktree_path=$(get_worktree_path "$name")
 
     if ! worktree_exists "$name"; then
-        log_warn "Worktree não existe: $name"
+        log_warn "Worktree does not exist: $name"
         return 0
     fi
 
@@ -115,21 +115,21 @@ remove_git_worktree() {
     if [[ "$force" != "true" ]]; then
         local uncommitted=$(cd "$worktree_path" && git status --porcelain 2>/dev/null | wc -l | tr -d ' ')
         if [[ $uncommitted -gt 0 ]]; then
-            log_warn "Worktree tem $uncommitted arquivo(s) não commitado(s)"
-            if ! confirm "Remover mesmo assim? Mudanças serão perdidas."; then
+            log_warn "Worktree has $uncommitted uncommitted file(s)"
+            if ! confirm "Remove anyway? Changes will be lost."; then
                 return 1
             fi
         fi
     fi
 
-    log_info "Removendo worktree: $name"
+    log_info "Removing worktree: $name"
 
     git worktree remove "$worktree_path" --force 2>/dev/null || {
-        log_error "Falha ao remover worktree"
+        log_error "Failed to remove worktree"
         return 1
     }
 
-    log_success "Worktree removida: $name"
+    log_success "Worktree removed: $name"
     return 0
 }
 
@@ -137,13 +137,13 @@ remove_git_worktree() {
 # MERGE OPERATIONS
 # =============================================
 
-# Simula merge para verificar conflitos
+# Simulate merge to check for conflicts
 simulate_merge() {
     local branch=$1
     local target=${2:-main}
 
     if ! branch_exists "$branch"; then
-        log_error "Branch não existe: $branch"
+        log_error "Branch does not exist: $branch"
         return 1
     fi
 
@@ -165,29 +165,29 @@ simulate_merge() {
     fi
 }
 
-# Faz merge de branch
+# Merge a branch
 merge_branch() {
     local branch=$1
     local target=${2:-main}
     local message=${3:-"Merge $branch into $target"}
 
     if ! branch_exists "$branch"; then
-        log_error "Branch não existe: $branch"
+        log_error "Branch does not exist: $branch"
         return 1
     fi
 
     log_info "Merging $branch into $target..."
 
     git checkout "$target" 2>/dev/null || {
-        log_error "Falha ao mudar para $target"
+        log_error "Failed to switch to $target"
         return 1
     }
 
     if git merge "$branch" -m "$message"; then
-        log_success "Merge concluído: $branch"
+        log_success "Merge completed: $branch"
         return 0
     else
-        log_error "Conflito no merge de $branch"
+        log_error "Merge conflict for $branch"
         return 1
     fi
 }
@@ -196,7 +196,7 @@ merge_branch() {
 # COMMIT INFORMATION
 # =============================================
 
-# Conta commits desde branch
+# Count commits since branch
 count_commits_since() {
     local branch=${1:-main}
     git rev-list --count HEAD ^"$branch" 2>/dev/null || echo 0
@@ -210,5 +210,5 @@ files_changed_since() {
 
 # Last commit
 last_commit() {
-    git log --oneline -1 2>/dev/null || echo "nenhum"
+    git log --oneline -1 2>/dev/null || echo "none"
 }
