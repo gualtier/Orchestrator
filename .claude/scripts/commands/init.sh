@@ -184,7 +184,9 @@ _init_gitignore() {
         ".claude/orchestration/.recovery/"
         ".claude/orchestration/.backups/"
         ".claude/orchestration/EVENTS.md"
+        ".claude/orchestration/errors.log"
         ".claude/agents/"
+        ".claude/PROJECT_MEMORY.md"
         ".claude/PROJECT_MEMORY.md.orchestrator-backup"
     )
 

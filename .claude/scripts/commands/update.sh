@@ -13,10 +13,12 @@ MAX_BACKUPS=5
 ORCHESTRATOR_UPDATE_PATHS=(
     ".claude/scripts"
     ".claude/skills"
+    ".claude/hooks"
     ".claude/specs/constitution.md"
     ".claude/specs/templates"
     ".claude/AGENT_CLAUDE_BASE.md"
     ".claude/CAPABILITIES.md"
+    ".claude/PROJECT_MEMORY.template.md"
 )
 
 # =============================================
@@ -531,6 +533,9 @@ cmd_update() {
     # Ensure new directories exist
     ensure_dir "$CLAUDE_DIR/specs/active" 2>/dev/null || true
     ensure_dir "$CLAUDE_DIR/specs/archive" 2>/dev/null || true
+
+    # Ensure .gitignore has orchestrator entries (idempotent)
+    _init_gitignore 2>/dev/null || true
 
     # Clean old backups
     _cleanup_old_backups
