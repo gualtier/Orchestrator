@@ -619,7 +619,7 @@ cmd_sdd_run() {
     local spec_number=""
     local mode="${EXECUTION_MODE:-worktree}"
     local auto_merge=false
-    local ralph_mode=false
+    local ralph_mode=true
     local ralph_max_iterations=""
     local spec_dirs=()
 
@@ -647,6 +647,10 @@ cmd_sdd_run() {
                 ;;
             --ralph)
                 ralph_mode=true
+                shift
+                ;;
+            --no-ralph)
+                ralph_mode=false
                 shift
                 ;;
             --max-iterations)
@@ -1136,8 +1140,8 @@ cmd_sdd_help() {
     echo -e "  ${CYAN}sdd research <number>${NC}       Create research doc (MANDATORY)"
     echo -e "  ${CYAN}sdd plan <number>${NC}           Create implementation plan (requires research)"
     echo -e "  ${CYAN}sdd gate <number>${NC}           Check constitutional gates"
-    echo -e "  ${CYAN}sdd run [number]${NC}            Autopilot: gate -> tasks -> setup -> start -> monitor"
-    echo -e "  ${CYAN}sdd run [number] --ralph${NC}     Autopilot with iterative self-correcting loops"
+    echo -e "  ${CYAN}sdd run [number]${NC}            Autopilot with ralph loops (default)"
+    echo -e "  ${CYAN}sdd run [number] --no-ralph${NC}  Autopilot without ralph loops (single-shot)"
     echo -e "  ${CYAN}sdd run [number] --auto-merge${NC} Full autopilot: ... -> merge -> archive"
     echo -e "  ${CYAN}sdd tasks <number>${NC}          Generate orchestrator tasks from plan"
     echo -e "  ${CYAN}sdd status${NC}                  Show all active specs"

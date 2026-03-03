@@ -331,6 +331,18 @@ _show_whats_new() {
         echo "    - EVENTS.md auto-pruning, pre-archive agent detection"
     fi
 
+    if _version_lt "$old_version" "3.10.0"; then
+        echo ""
+        echo -e "  ${GREEN}v3.10.0 - Ralph Loop Integration${NC}"
+        echo "    - Iterative self-correcting agent loops (inspired by ghuntley.com/ralph)"
+        echo "    - Backpressure gates: tests/lint/typecheck validation between iterations"
+        echo "    - Convergence detection: auto-stop stalled agents"
+        echo "    - SDD run uses ralph loops by default (--no-ralph to opt out)"
+        echo "    - Per-task config: ralph, max-iterations, gates, stall-threshold"
+        echo "    - cancel-ralph command for graceful loop termination"
+        echo "    - Status dashboard shows iteration count, gate results, convergence"
+    fi
+
     echo ""
     log_separator
     echo ""

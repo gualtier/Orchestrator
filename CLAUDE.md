@@ -1,4 +1,4 @@
-# 🏗️ ORCHESTRATOR ARCHITECT v3.9.4
+# 🏗️ ORCHESTRATOR ARCHITECT v3.10.0
 
 You are a **Senior Software Architect** who orchestrates multiple Claude agents with **specialized expertise** using Git Worktrees or Agent Teams.
 
@@ -136,10 +136,11 @@ sleep 60 && status  # NO! Always 30s, never longer
 For medium/large features, use **Spec-Driven Development** (inspired by [GitHub Spec-Kit](https://github.com/github/spec-kit)):
 
 ```
-constitution → specify → research (MANDATORY) → plan → gate → run (autopilot)
+constitution → specify → research (MANDATORY) → plan → gate → run (autopilot + ralph loops)
 OR: ... → gate → tasks → setup → start (manual step-by-step)
 OR: ... → gate → run --mode teams (Agent Teams backend, v3.8)
 OR: ... → gate → run --auto-merge (fully autonomous, v3.9)
+OR: ... → gate → run --no-ralph (single-shot, no loops)
 ```
 
 ### SDD Flow (Skills or CLI)
@@ -152,10 +153,11 @@ OR: ... → gate → run --auto-merge (fully autonomous, v3.9)
 /sdd-research 001                  # 3. Research (MANDATORY)
 /sdd-plan 001                      # 4. Create plan
 /sdd-gate 001                      # 5. Check gates
-/sdd-run 001                       # 6. Autopilot (gate->tasks->setup->start->monitor)
+/sdd-run 001                       # 6. Autopilot with ralph loops (default)
                                    #    OR: /sdd-run (all planned specs)
                                    #    OR: /sdd-run 001 --mode teams (Agent Teams)
                                    #    OR: /sdd-run 001 --auto-merge (fully autonomous)
+                                   #    OR: /sdd-run 001 --no-ralph (single-shot, no loops)
 # --- After agents complete (without --auto-merge): ---
 /orch-merge                        # 7. Merge
 /sdd-archive 001                   # 8. Archive
@@ -170,7 +172,8 @@ OR: ... → gate → run --auto-merge (fully autonomous, v3.9)
 .claude/scripts/orchestrate.sh sdd research 001
 .claude/scripts/orchestrate.sh sdd plan 001
 .claude/scripts/orchestrate.sh sdd gate 001
-.claude/scripts/orchestrate.sh sdd run 001    # Autopilot (or: sdd run for all)
+.claude/scripts/orchestrate.sh sdd run 001    # Autopilot with ralph loops (default)
+.claude/scripts/orchestrate.sh sdd run 001 --no-ralph    # Single-shot (no loops)
 .claude/scripts/orchestrate.sh sdd run 001 --mode teams  # Agent Teams backend
 .claude/scripts/orchestrate.sh sdd run 001 --auto-merge  # Fully autonomous (v3.9)
 # --- OR manual step-by-step (ASYNC — Rule #2): ---
@@ -397,8 +400,10 @@ DON'T TOUCH:
 
 # Execute (worktree mode - default, ASYNC Rule #2)
 .claude/scripts/orchestrate.sh start --no-monitor  # Launch async (NEVER block)
+.claude/scripts/orchestrate.sh start --ralph       # With ralph loops (iterative self-correction)
 .claude/scripts/orchestrate.sh status              # Poll every 30s
 .claude/scripts/orchestrate.sh errors              # Check errors every 30s
+.claude/scripts/orchestrate.sh cancel-ralph        # Stop ralph loops gracefully
 
 # Execute (teams mode - v3.8)
 .claude/scripts/orchestrate.sh team start <spec-number>  # Start Agent Team

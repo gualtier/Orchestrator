@@ -1,7 +1,7 @@
 #!/bin/bash
 # ===========================================
-# CLAUDE AGENT ORCHESTRATOR v3.9.4
-#   Hardened SDD Lifecycle
+# CLAUDE AGENT ORCHESTRATOR v3.10.0
+#   Ralph Loop Integration
 # ===========================================
 
 # Note: set -e deliberately omitted — ((counter++)) returns 1 when counter=0,
