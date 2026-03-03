@@ -476,18 +476,21 @@ cmd_status_json() {
         echo "      \"status\": \"$status\","
         echo "      \"progress\": $progress,"
         echo "      \"process_running\": $process_running,"
-        echo "      \"agents\": \"$agents\""
-
         # Ralph loop data
         if is_ralph_agent "$name" 2>/dev/null; then
             local ralph_iter=$(get_ralph_iteration "$name" 2>/dev/null || echo "0")
             local ralph_max=$(get_ralph_max_iterations "$name" 2>/dev/null || echo "0")
             local ralph_gates=$(get_ralph_gate_summary "$name" 2>/dev/null || echo "")
-            echo "      ,\"ralph\": {"
+            local ralph_conv=$(get_ralph_convergence "$name" 2>/dev/null || echo "")
+            echo "      \"agents\": \"$agents\","
+            echo "      \"ralph\": {"
             echo "        \"iteration\": $ralph_iter,"
             echo "        \"max_iterations\": $ralph_max,"
-            echo "        \"gates\": \"$ralph_gates\""
+            echo "        \"gates\": \"$ralph_gates\","
+            echo "        \"convergence\": \"$ralph_conv\""
             echo "      }"
+        else
+            echo "      \"agents\": \"$agents\""
         fi
 
         echo -n "    }"

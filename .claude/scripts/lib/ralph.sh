@@ -235,6 +235,7 @@ run_gates() {
         if [[ -n "$detected_runner" ]]; then
             gates="$detected_runner"
             log_info "  TDD auto-gate: $detected_runner"
+            echo "AUTO_DETECTED:$detected_runner" > "$gates_file"
         else
             # No gates and no test runner detected
             echo "NO_GATES" > "$gates_file"
@@ -413,7 +414,7 @@ ralph_loop() {
     local ralph_loop_pid_file="$ORCHESTRATION_DIR/pids/$name.ralph_pid"
 
     # Store the ralph loop PID for cancel-ralph
-    echo $$ > "$ralph_loop_pid_file"
+    echo "$$" > "$ralph_loop_pid_file"
 
     # Initialize state files
     ensure_dir "$ORCHESTRATION_DIR/pids"
@@ -474,6 +475,17 @@ You MUST also create DONE.md as the final step.
         # Log iteration end
         echo "[$(timestamp)] RALPH_ITER_END: $name [iter=$iteration]" >> "$EVENTS_FILE"
 
+        # Check if worktree still exists (user may have deleted it)
+        if [[ ! -d "$worktree_path" ]]; then
+            log_error "Worktree deleted during ralph iteration $iteration: $worktree_path"
+            echo "[$(timestamp)] RALPH_ERROR: $name [worktree deleted]" >> "$EVENTS_FILE"
+            rm -f "$ralph_loop_pid_file" "$stall_file" "$iteration_file"
+            rm -f "$ORCHESTRATION_DIR/pids/$name.ralph_config"
+            rm -f "$ORCHESTRATION_DIR/pids/$name.stall_count.last_hash"
+            rm -f "$ORCHESTRATION_DIR/pids/$name.gates"
+            return 1
+        fi
+
         # Check for completion signals
         local signal_found=false
         local done_md_found=false
@@ -510,6 +522,7 @@ You MUST also create DONE.md as the final step.
                 rm -f "$ralph_loop_pid_file" "$stall_file" "$iteration_file"
                 rm -f "$ORCHESTRATION_DIR/pids/$name.ralph_config"
                 rm -f "$ORCHESTRATION_DIR/pids/$name.stall_count.last_hash"
+                rm -f "$ORCHESTRATION_DIR/pids/$name.gates"
                 return 0
             else
                 # Gates failed — continue loop with feedback
@@ -556,6 +569,7 @@ STALLEOF
                     rm -f "$ralph_loop_pid_file" "$stall_file" "$iteration_file"
                     rm -f "$ORCHESTRATION_DIR/pids/$name.ralph_config"
                     rm -f "$ORCHESTRATION_DIR/pids/$name.stall_count.last_hash"
+                    rm -f "$ORCHESTRATION_DIR/pids/$name.gates"
                     return 1
                 fi
             fi
@@ -596,6 +610,7 @@ MAXEOF
     rm -f "$ralph_loop_pid_file" "$stall_file" "$iteration_file"
     rm -f "$ORCHESTRATION_DIR/pids/$name.ralph_config"
     rm -f "$ORCHESTRATION_DIR/pids/$name.stall_count.last_hash"
+    rm -f "$ORCHESTRATION_DIR/pids/$name.gates"
     return 1
 }
 
@@ -660,6 +675,7 @@ _cancel_single_ralph() {
     rm -f "$ORCHESTRATION_DIR/pids/$name.iteration"
     rm -f "$ORCHESTRATION_DIR/pids/$name.ralph_config"
     rm -f "$ORCHESTRATION_DIR/pids/$name.stall_count.last_hash"
+    rm -f "$ORCHESTRATION_DIR/pids/$name.gates"
 
     echo "[$(timestamp)] RALPH_CANCEL: $name" >> "$EVENTS_FILE"
     log_success "Ralph loop cancelled for $name"

@@ -28,8 +28,9 @@ is_process_running() {
     local pidfile=$(get_pid_file "$name")
 
     if file_exists "$pidfile"; then
-        local pid=$(cat "$pidfile")
-        if kill -0 "$pid" 2>/dev/null; then
+        local pid
+        pid=$(cat "$pidfile" 2>/dev/null || echo "")
+        if [[ -n "$pid" ]] && [[ "$pid" =~ ^[0-9]+$ ]] && kill -0 "$pid" 2>/dev/null; then
             return 0
         fi
     fi
@@ -107,8 +108,8 @@ start_agent_process() {
         local pid=$!
 
         # Save PID and timestamp
-        echo $pid > "$pidfile"
-        echo $(date '+%s') > "$start_time_file"
+        echo "$pid" > "$pidfile"
+        echo "$(date '+%s')" > "$start_time_file"
 
         # Wait to confirm process is alive
         sleep 3
@@ -261,7 +262,7 @@ get_agent_status() {
         if [[ -f "$ralph_pid_file" ]]; then
             local ralph_pid
             ralph_pid=$(cat "$ralph_pid_file" 2>/dev/null || echo "")
-            if [[ -n "$ralph_pid" ]] && kill -0 "$ralph_pid" 2>/dev/null; then
+            if [[ -n "$ralph_pid" ]] && [[ "$ralph_pid" =~ ^[0-9]+$ ]] && kill -0 "$ralph_pid" 2>/dev/null; then
                 echo "running"
                 return
             fi

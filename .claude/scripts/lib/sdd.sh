@@ -388,6 +388,11 @@ generate_tasks_from_plan() {
 # Task: ${feature_name}
 
 > spec-ref: .claude/specs/active/${spec_name}/spec.md
+> ralph: true
+> max-iterations: 20
+> stall-threshold: 3
+> gates:
+> completion-signal: RALPH_COMPLETE
 
 ## Objective
 Implement the feature as described in the specification.
@@ -429,6 +434,11 @@ TASKEOF
 
 > spec-ref: .claude/specs/active/${spec_name}/spec.md
 > preset: ${preset}
+> ralph: true
+> max-iterations: 20
+> stall-threshold: 3
+> gates:
+> completion-signal: RALPH_COMPLETE
 
 ## Objective
 Implement the **${module}** module as described in the specification.
