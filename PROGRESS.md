@@ -21,9 +21,9 @@
 - [x] Modify commands/sdd.sh — add --ralph passthrough
   - [x] Add --ralph flag parsing in cmd_sdd_run()
   - [x] Pass --ralph through to cmd_start()
-- [ ] Modify orchestrate.sh — add source and cancel-ralph command
-  - [ ] Add source lib/ralph.sh
-  - [ ] Add cancel-ralph command routing
+- [x] Modify orchestrate.sh — add source and cancel-ralph command
+  - [x] Add source lib/ralph.sh
+  - [x] Add cancel-ralph command routing
 - [ ] Add ralph-aware task template
   - [ ] Update task template with ralph frontmatter section
 - [ ] Test backward compatibility and ralph functionality

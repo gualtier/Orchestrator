@@ -31,6 +31,7 @@ source "$SCRIPT_DIR/lib/monitoring.sh"
 source "$SCRIPT_DIR/lib/error_detection.sh"
 source "$SCRIPT_DIR/lib/sdd.sh"
 source "$SCRIPT_DIR/lib/teams.sh"
+source "$SCRIPT_DIR/lib/ralph.sh"
 
 # Commands
 source "$SCRIPT_DIR/commands/init.sh"
@@ -90,6 +91,9 @@ main() {
         logs) cmd_logs "$@" ;;
         follow) cmd_follow "$@" ;;
         errors) cmd_errors "$@" ;;
+
+        # Ralph loop control
+        cancel-ralph) cmd_cancel_ralph "$@" ;;
 
         # Verification
         verify) cmd_verify "$@" ;;
