@@ -318,6 +318,19 @@ _show_whats_new() {
         echo "    - Version detection supports old and new header formats"
     fi
 
+    if _version_lt "$old_version" "3.9.4"; then
+        echo ""
+        echo -e "  ${GREEN}v3.9.4 - Hardened SDD Lifecycle${NC}"
+        echo "    - Auto-archive completed specs on sdd run (no more 27 worktrees)"
+        echo "    - 17 bugs fixed across full spec lifecycle (audit)"
+        echo "    - Data loss prevention: move-first-cleanup-after on archive"
+        echo "    - Spec-ref regex anchored (no more cross-spec task deletion)"
+        echo "    - Worktree name validation (blocks path traversal)"
+        echo "    - Teams mode fails clearly instead of silent fallback"
+        echo "    - Auto-merge preserves worktrees on failure"
+        echo "    - EVENTS.md auto-pruning, pre-archive agent detection"
+    fi
+
     echo ""
     log_separator
     echo ""
