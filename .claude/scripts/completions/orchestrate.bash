@@ -10,7 +10,7 @@ _orchestrate() {
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
     # Main commands
-    local commands="init init-sample install-cli uninstall-cli doctor agents setup start stop restart status wait logs follow verify verify-all review pre-merge report merge cleanup show-memory update-memory learn sdd update update-check help"
+    local commands="init init-sample install-cli uninstall-cli doctor agents setup start stop restart status wait logs follow errors cancel-ralph verify verify-all review pre-merge report merge cleanup show-memory update-memory learn sdd team update update-check help"
 
     # Presets
     local presets="auth api frontend fullstack mobile devops data ml security review backend database"
@@ -19,10 +19,13 @@ _orchestrate() {
     local agents_subcmds="list installed install install-preset"
 
     # sdd subcommands
-    local sdd_subcmds="init constitution specify research plan tasks status gate archive help"
+    local sdd_subcmds="init constitution specify research plan tasks status gate run archive help"
 
     # learn subcommands
     local learn_subcmds="extract review add-role show"
+
+    # team subcommands
+    local team_subcmds="start status stop"
 
     case "$prev" in
         orchestrate.sh|./orchestrate.sh)
@@ -41,7 +44,11 @@ _orchestrate() {
             COMPREPLY=( $(compgen -W "$learn_subcmds" -- "$cur") )
             return 0
             ;;
-        research|plan|tasks|gate|archive)
+        team)
+            COMPREPLY=( $(compgen -W "$team_subcmds" -- "$cur") )
+            return 0
+            ;;
+        research|plan|tasks|gate|archive|run)
             # Complete with existing spec numbers
             local spec_numbers=""
             if [[ -d ".claude/specs/active" ]]; then
@@ -54,7 +61,7 @@ _orchestrate() {
             COMPREPLY=( $(compgen -W "$presets" -- "$cur") )
             return 0
             ;;
-        setup|start|stop|restart|logs|follow|verify|review)
+        setup|stop|restart|logs|follow|verify|review|cancel-ralph)
             # List existing worktrees
             local worktrees=""
             if [[ -d ".claude/orchestration/tasks" ]]; then
@@ -90,11 +97,31 @@ _orchestrate() {
         esac
     fi
 
+    # Options for start
+    if [[ "${COMP_WORDS[1]}" == "start" ]]; then
+        case "$cur" in
+            -*)
+                COMPREPLY=( $(compgen -W "--no-monitor --ralph --no-ralph --max-iterations --timeout --interval" -- "$cur") )
+                return 0
+                ;;
+        esac
+    fi
+
     # Options for status
     if [[ "${COMP_WORDS[1]}" == "status" ]]; then
         case "$cur" in
             -*)
-                COMPREPLY=( $(compgen -W "--json" -- "$cur") )
+                COMPREPLY=( $(compgen -W "--json --enhanced -e --compact -c --watch -w" -- "$cur") )
+                return 0
+                ;;
+        esac
+    fi
+
+    # Options for errors
+    if [[ "${COMP_WORDS[1]}" == "errors" ]]; then
+        case "$cur" in
+            -*)
+                COMPREPLY=( $(compgen -W "--agent --recent --clear --watch" -- "$cur") )
                 return 0
                 ;;
         esac
@@ -135,6 +162,16 @@ _orchestrate() {
         case "$cur" in
             -*)
                 COMPREPLY=( $(compgen -W "--bump --changelog --commits --full" -- "$cur") )
+                return 0
+                ;;
+        esac
+    fi
+
+    # Options for sdd run
+    if [[ "${COMP_WORDS[1]}" == "sdd" ]] && [[ "${COMP_WORDS[2]}" == "run" ]]; then
+        case "$cur" in
+            -*)
+                COMPREPLY=( $(compgen -W "--auto-merge --mode --no-ralph --ralph --max-iterations" -- "$cur") )
                 return 0
                 ;;
         esac

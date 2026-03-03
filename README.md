@@ -1,4 +1,4 @@
-# Claude Orchestrator v3.10
+# Claude Orchestrator v3.10.1
 
 Claude agent orchestration system with **SDD + TDD + Ralph Loops** — the tri-methodology for AI-driven development. Spec-Driven Development (what to build), Test-Driven Development (prove it works), and Ralph Loops (self-correct until done).
 
@@ -199,7 +199,7 @@ cd ~/your-project
 
 ## Claude Code Skills
 
-The orchestrator integrates natively with Claude Code through **17 skills** (slash commands):
+The orchestrator integrates natively with Claude Code through **18 skills** (slash commands):
 
 ### SDD Skills
 
@@ -211,6 +211,7 @@ The orchestrator integrates natively with Claude Code through **17 skills** (sla
 | `/sdd-research 001` | Fill mandatory research document | Yes |
 | `/sdd-plan 001` | Create technical plan with worktree mapping | Yes |
 | `/sdd-gate 001` | Check constitutional gates | Yes |
+| `/sdd-run 001` | Autopilot: gate→tasks→setup→start→monitor | Yes |
 | `/sdd-tasks 001` | Generate orchestrator tasks from plan | Yes |
 | `/sdd-status` | Show spec lifecycle status | Yes |
 | `/sdd-archive 001` | Archive completed spec | No |
@@ -252,12 +253,16 @@ orch sdd research 001
 orch sdd plan 001
 orch sdd gate 001
 
-# 5. Generate tasks & execute
+# 5a. Autopilot (recommended — SDD + TDD + Ralph all automatic)
+orch sdd run 001              # Manual merge after completion
+orch sdd run 001 --auto-merge # Fully autonomous (merge + archive automatic)
+
+# 5b. OR manual step-by-step
 orch sdd tasks 001
 orch setup auth --preset auth
 orch setup api --preset api
-orch start
-orch wait
+orch start --no-monitor       # Async — don't block
+# Poll every 30s: orch status && orch errors
 
 # 6. Verify & merge
 orch verify-all
@@ -270,14 +275,15 @@ Or use Claude Code Skills directly:
 
 ```bash
 /sdd-specify "User authentication with OAuth and JWT"
+# Claude chains: specify → research → plan → gate → run (autopilot)
 ```
 
 ### Direct Workflow (Small tasks)
 
 ```bash
 orch setup auth --preset auth
-orch start
-orch wait
+orch start --no-monitor  # Async launch
+# Poll: orch status + orch errors every 30s
 orch merge
 orch update-memory --full
 ```
@@ -285,9 +291,11 @@ orch update-memory --full
 ## SDD Pipeline
 
 ```text
-Constitution → Specify → Research (MANDATORY) → Plan → Gate → Tasks
-                                                                 ↓
-                                    Setup → Start (ralph loops) → Wait → Merge → Archive
+SDD:   Constitution → Specify → Research (MANDATORY) → Plan → Gate → Tasks
+                                                                       ↓
+TDD:                                         Setup → Start → Write Tests FIRST → Implement
+                                                                       ↓
+Ralph:                              Loop: Run Gates (tests) → Pass? → Done : Self-Correct → Retry
 ```
 
 ### SDD Artifacts
@@ -354,7 +362,8 @@ orch sdd research <number>   # Create research doc (MANDATORY)
 orch sdd plan <number>       # Create plan (requires research)
 orch sdd gate <number>       # Check constitutional gates
 orch sdd tasks <number>      # Generate orchestrator tasks
-orch sdd run <number>        # Autopilot with ralph loops (default)
+orch sdd run <number>               # Autopilot with TDD + ralph loops (default)
+orch sdd run <number> --auto-merge  # Fully autonomous (merge + archive automatic)
 orch sdd run <number> --no-ralph    # Single-shot (no loops)
 orch sdd run <number> --mode teams  # Use Agent Teams backend
 orch sdd status              # Show active specs
@@ -376,8 +385,8 @@ orch agents install-preset <p> # Install preset
 # Worktree mode (default)
 orch setup <name> --preset <p>     # Create worktree
 orch setup <name> --agents a1,a2   # With specific agents
-orch start                         # Start all (single-shot)
-orch start --ralph                 # Start all with ralph loops
+orch start --no-monitor            # Start all async (recommended)
+orch start --ralph                 # Start all with ralph loops (default for SDD)
 orch start --ralph --max-iterations 30  # Custom iteration limit
 orch start <agent>                 # Start specific
 orch stop <agent>                  # Stop
@@ -486,9 +495,9 @@ project/
 │   ├── PROJECT_MEMORY.md              # Project memory
 │   ├── AGENT_CLAUDE_BASE.md           # Agent base instructions
 │   ├── agents/                        # Installed agents (VoltAgent)
-│   ├── skills/                        # Claude Code Skills
-│   │   ├── sdd*/SKILL.md             # SDD skills (9)
-│   │   ├── orch*/SKILL.md            # Orchestrator skills (7, incl. team-*)
+│   ├── skills/                        # Claude Code Skills (18)
+│   │   ├── sdd*/SKILL.md             # SDD skills (10, incl. sdd-run)
+│   │   ├── orch*/SKILL.md            # Orchestrator skills (8, incl. team-*)
 │   │   ├── sdd/SKILL.md              # SDD hub
 │   │   └── orch/SKILL.md             # Orchestrator hub
 │   ├── specs/                         # SDD specifications

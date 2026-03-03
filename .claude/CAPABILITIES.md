@@ -95,14 +95,19 @@ orch agents            # List available agents
 
 # Execution (ASYNC — Rule #2: NEVER block)
 orch start --no-monitor  # Start agents async (ALWAYS use --no-monitor)
-orch stop              # Stop running agents
+orch start --ralph       # Force ralph loops on all agents
+orch start --no-ralph    # Force single-shot mode (no loops)
+orch stop              # Stop running agents (cancels ralph if active)
 orch restart           # Restart agents
+orch cancel-ralph      # Cancel all ralph loops
+orch cancel-ralph <n>  # Cancel ralph loop for specific agent
 
-# SDD Autopilot (v3.7, enhanced v3.9)
+# SDD Autopilot (v3.7, enhanced v3.10)
 orch sdd run [number]  # Autopilot: gate -> tasks -> setup -> start -> monitor
-                       # No number = all planned specs
-orch sdd run 001 --auto-merge   # Full hands-off: gate -> ... -> merge -> archive (v3.9)
-orch sdd run 001 --mode teams   # Use Agent Teams backend instead of worktrees (v3.8)
+                       # No number = all planned specs. TDD + Ralph on by default
+orch sdd run 001 --auto-merge   # Full hands-off: gate -> ... -> merge -> archive
+orch sdd run 001 --mode teams   # Use Agent Teams backend instead of worktrees
+orch sdd run 001 --no-ralph     # Single-shot mode (no iterative loops)
 
 # Agent Teams (v3.8)
 orch team start <spec-number>  # Start Agent Team from SDD spec
@@ -146,16 +151,18 @@ orch update-check      # Check for updates
 orch help              # Show all commands
 ```
 
-### SDD Autopilot (v3.7, enhanced v3.9)
+### SDD Autopilot (v3.7, enhanced v3.10)
 
 End-to-end pipeline execution after plan approval:
 
 - `sdd run 001` — single spec autopilot (pauses before merge)
 - `sdd run` — all planned specs at once
-- `sdd run 001 --auto-merge` — fully autonomous: gate → tasks → setup → start → merge → archive (v3.9)
-- `sdd run 001 --mode teams` — use Agent Teams backend (v3.8)
+- `sdd run 001 --auto-merge` — fully autonomous: gate → tasks → setup → start → merge → archive
+- `sdd run 001 --mode teams` — use Agent Teams backend
+- `sdd run 001 --no-ralph` — single-shot mode (no iterative loops)
 - Fail-fast on gate failure, task errors, or setup errors
-- Auto `update-memory --full` and `learn extract` after agents complete (v3.9)
+- Auto `update-memory --full` and `learn extract` after agents complete
+- TDD + Ralph on by default: agents write tests first, ralph loops use tests as gates
 - `SDD_AUTOPILOT=1` env var bypasses stop hooks during autonomous execution (v3.9)
 
 ### Autonomous Pipeline (v3.9)
@@ -182,6 +189,17 @@ Alternative execution backend using Claude Code Agent Teams:
 - **Hybrid monitoring**: Interactive team lead session + background orchestrator dashboard
 - **`team start|status|stop`**: Dedicated team management commands
 - **`EXECUTION_MODE` env var**: Configure default backend (worktree or teams)
+
+### Ralph Loops (v3.10)
+
+Iterative self-correcting agent loops (inspired by ghuntley.com/ralph):
+
+- **On by default** — `sdd run` uses ralph loops. Opt out with `--no-ralph`
+- **Backpressure gates** — Quality checks (tests, lint, typecheck) run on completion signal. Failed gates feed back to agent
+- **Convergence detection** — Agents stalled for N iterations (default: 3) are auto-stopped
+- **Per-task config** — Task frontmatter: `ralph: true/false`, `max-iterations: 20`, `gates: cmd`, `stall-threshold: 3`
+- **Commands**: `start --ralph`, `start --no-ralph`, `cancel-ralph [agent]`
+- **Status dashboard** — Shows iteration count, gate results, convergence indicator
 
 ### TDD by Default (v3.10.1)
 

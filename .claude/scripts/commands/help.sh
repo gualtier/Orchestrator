@@ -6,8 +6,8 @@
 cmd_help() {
     cat << 'EOF'
 
-CLAUDE AGENT ORCHESTRATOR v3.1
-   With Specialized Agents
+CLAUDE AGENT ORCHESTRATOR v3.10.1
+   SDD + TDD + Ralph Loops
 
 Usage: orchestrate.sh <command> [arguments]
 
@@ -33,19 +33,32 @@ EXECUTION:
     --agents <a1,a2,a3>     Specify agents
     --from <branch>         Source branch
 
-  start [agents]            Start agents
-  stop <agent> [--force]    Stop agent
+  start [agents] [options]  Start agents (async by default)
+    --no-monitor            Don't block (RECOMMENDED — async-first)
+    --ralph                 Force ralph loops on all agents
+    --no-ralph              Force single-shot mode (no loops)
+    --max-iterations N      Override max iterations for ralph loops
+    --timeout N             Stop after N minutes
+  stop <agent> [--force]    Stop agent (cancels ralph loop if active)
   restart <agent>           Restart agent
+  cancel-ralph [agent]      Cancel ralph loop (single agent or all)
 
 MONITORING:
   status                    Show status (standard text format)
-  status --enhanced|-e      Show status with advanced details
-  status --watch|-w [N]     Live update (interval N seconds)
+  status --enhanced|-e      Show status with progress bars, activity, errors
   status --compact|-c       Compact format (one line per agent)
   status --json             Show status (JSON format)
-  wait [interval]           Wait for completion (with watch mode)
+  errors                    Error monitoring dashboard
+  errors --agent <name>     Filter errors by agent
+  errors --recent           Show last 50 errors with details
+  errors --clear            Clear error tracking
   logs <agent> [n]          Show last n log lines
   follow <agent>            Follow logs in real time
+
+AGENT TEAMS (v3.8):
+  team start <spec-number>  Start Agent Team from SDD spec
+  team status               Show team progress (teammates, tasks)
+  team stop                 Stop running team
 
 VERIFICATION AND QUALITY:
   verify <worktree>         Verify worktree
@@ -83,7 +96,10 @@ SDD (SPEC-DRIVEN DEVELOPMENT):
   sdd research <number>     Create research doc (MANDATORY before plan)
   sdd plan <number>         Create implementation plan (requires research)
   sdd gate <number>         Check constitutional gates
-  sdd run [number]          Autopilot: gate -> tasks -> setup -> start -> monitor
+  sdd run [number]          Autopilot: gate→tasks→setup→start→monitor
+    --auto-merge            Full hands-off (merge + archive automatic)
+    --mode teams            Use Agent Teams backend
+    --no-ralph              Single-shot mode (no iterative loops)
   sdd tasks <number>        Generate orchestrator tasks from plan
   sdd status                Show all active specs
   sdd archive <number>      Archive completed spec
@@ -106,49 +122,68 @@ AGENT PRESETS:
   ml        → ml-engineer, ai-engineer, mlops-engineer
   security  → security-auditor, penetration-tester, security-engineer
   review    → code-reviewer, architect-reviewer, security-auditor
+  backend   → backend-developer, api-designer, database-administrator
+  database  → database-administrator, postgres-pro, sql-pro
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-EXAMPLE (SDD-FIRST WORKFLOW - Recommended):
+TRI-METHODOLOGY (all on by default):
+  SDD    → What to build (spec → research → plan → gate)
+  TDD    → Prove it works (agents write tests FIRST, then implement)
+  Ralph  → Iterate until done (self-correcting loops with test gates)
 
-  # 1. Initialize
+  Flow: SDD defines requirements → agents write failing tests (TDD) →
+        implement to pass → ralph loop re-runs tests as gates →
+        self-correct on failure → converge to completion
+
+RALPH LOOPS:
+  Agents run in iterative self-correcting loops by default.
+  Each iteration: prompt → execute → check completion → run gates.
+  If gates fail, feedback is injected and agent tries again.
+
+  Per-task config in task frontmatter:
+    > ralph: true|false       Enable/disable per task
+    > max-iterations: 20      Max loop iterations
+    > stall-threshold: 3      Stop after N stalled iterations
+    > gates: npm test, lint   Quality checks (auto-detected if empty)
+    > completion-signal: RALPH_COMPLETE
+
+TDD (TEST-DRIVEN DEVELOPMENT):
+  Agents write failing tests before implementation by default.
+  Test runner auto-detected as ralph gate when no gates configured.
+  Supported: npm test, vitest, jest, pytest, go test, cargo test, make test
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+EXAMPLE (RECOMMENDED — SDD + TDD + Ralph):
+
+  # 1. Initialize and create spec
   ./orchestrate.sh sdd init
-
-  # 2. Create spec
   ./orchestrate.sh sdd specify "User authentication with OAuth"
-  # ... refine spec.md with Claude ...
 
-  # 3. Research (MANDATORY)
+  # 2. Research (MANDATORY) and plan
   ./orchestrate.sh sdd research 001
-  # ... fill research.md with Claude ...
-
-  # 4. Plan & verify
   ./orchestrate.sh sdd plan 001
-  # ... refine plan.md with Claude ...
   ./orchestrate.sh sdd gate 001
 
-  # 5a. Autopilot (gate -> tasks -> setup -> start -> monitor):
-  ./orchestrate.sh sdd run 001    # Single spec
-  ./orchestrate.sh sdd run        # All planned specs
+  # 3. Autopilot (agents write tests first, ralph loops self-correct)
+  ./orchestrate.sh sdd run 001              # Manual merge after
+  ./orchestrate.sh sdd run 001 --auto-merge # Fully autonomous
 
-  # 5b. OR manual step-by-step:
-  ./orchestrate.sh sdd tasks 001
-  ./orchestrate.sh setup auth --preset auth
-  ./orchestrate.sh start
-  ./orchestrate.sh wait
+  # 4. Monitor (async — poll every 30s)
+  ./orchestrate.sh status
+  ./orchestrate.sh errors
 
-  # 6. Verify & merge
-  ./orchestrate.sh verify-all
+  # 5. Finalize
   ./orchestrate.sh merge
-  ./orchestrate.sh sdd archive 001
   ./orchestrate.sh update-memory --full
 
-EXAMPLE (DIRECT MODE - Small tasks):
+EXAMPLE (DIRECT MODE — Small tasks):
 
   ./orchestrate.sh init
   ./orchestrate.sh setup auth --preset auth
-  ./orchestrate.sh start
-  ./orchestrate.sh wait
+  ./orchestrate.sh start --no-monitor
+  # poll: status + errors every 30s
   ./orchestrate.sh merge
   ./orchestrate.sh update-memory --full
 
