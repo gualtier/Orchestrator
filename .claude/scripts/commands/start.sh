@@ -8,6 +8,8 @@ cmd_start() {
     local monitor=true
     local monitor_interval=10
     local timeout_minutes=0  # 0 = no timeout
+    local ralph_global=false
+    local ralph_max_iterations=""
 
     # Parse flags and agent names
     while [[ $# -gt 0 ]]; do
@@ -15,9 +17,15 @@ cmd_start() {
             --no-monitor) monitor=false; shift ;;
             --interval) monitor_interval="$2"; shift 2 ;;
             --timeout) timeout_minutes="$2"; shift 2 ;;
+            --ralph) ralph_global=true; shift ;;
+            --max-iterations) ralph_max_iterations="$2"; shift 2 ;;
             *) names+=("$1"); shift ;;
         esac
     done
+
+    # Export ralph settings for start_single_agent to use
+    export RALPH_GLOBAL="$ralph_global"
+    export RALPH_GLOBAL_MAX_ITERATIONS="$ralph_max_iterations"
 
     # If no name specified, start all
     if [[ ${#names[@]} -eq 0 ]]; then
@@ -300,8 +308,31 @@ START NOW!"
     # Initialize error tracking for this agent
     init_error_tracking "$name"
 
-    # Start process
-    start_agent_process "$name" "$worktree_path" "$full_prompt"
+    # Determine if ralph mode is active for this agent (REQ-11, REQ-12, REQ-15)
+    parse_ralph_config "$task_file" "${RALPH_GLOBAL:-false}"
+
+    # Apply global max-iterations override if set
+    if [[ -n "${RALPH_GLOBAL_MAX_ITERATIONS:-}" ]]; then
+        RALPH_MAX_ITERATIONS="$RALPH_GLOBAL_MAX_ITERATIONS"
+    fi
+
+    if [[ "$RALPH_ENABLED" == "true" ]]; then
+        # Ralph mode — save config and launch loop
+        save_ralph_config "$name"
+        log_info "Ralph mode enabled for $name (max: $RALPH_MAX_ITERATIONS iterations)"
+
+        # Launch ralph loop in background subshell
+        (ralph_loop "$name" "$worktree_path" "$full_prompt" \
+            "$RALPH_MAX_ITERATIONS" "$RALPH_STALL_THRESHOLD" \
+            "$RALPH_GATES" "$RALPH_COMPLETION_SIGNAL") &
+
+        # The ralph_loop manages its own PIDs internally via start_agent_process
+        # We just need to let it run in the background
+        disown 2>/dev/null || true
+    else
+        # Standard single-shot mode (unchanged behavior)
+        start_agent_process "$name" "$worktree_path" "$full_prompt"
+    fi
 }
 
 cmd_stop() {

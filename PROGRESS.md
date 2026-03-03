@@ -10,10 +10,10 @@
   - [x] check_convergence() — detect stalled agents
   - [x] write_iteration_context() — build feedback for next iteration
   - [x] parse_ralph_config() — read ralph frontmatter from task file
-- [ ] Modify commands/start.sh — add --ralph flag and ralph detection
-  - [ ] Add --ralph and --max-iterations flag parsing to cmd_start()
-  - [ ] Add ralph detection in start_single_agent() to call ralph_loop()
-  - [ ] Add completion signal instruction to prompt when ralph mode active
+- [x] Modify commands/start.sh — add --ralph flag and ralph detection
+  - [x] Add --ralph and --max-iterations flag parsing to cmd_start()
+  - [x] Add ralph detection in start_single_agent() to call ralph_loop()
+  - [x] Add completion signal instruction to prompt when ralph mode active
 - [ ] Modify commands/status.sh — add iteration/gate display
   - [ ] Read .iteration and .gates files in cmd_status_enhanced()
   - [ ] Read .iteration and .gates files in cmd_status_standard()
