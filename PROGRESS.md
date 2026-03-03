@@ -24,8 +24,8 @@
 - [x] Modify orchestrate.sh — add source and cancel-ralph command
   - [x] Add source lib/ralph.sh
   - [x] Add cancel-ralph command routing
-- [ ] Add ralph-aware task template
-  - [ ] Update task template with ralph frontmatter section
+- [x] Add ralph-aware task template
+  - [x] Update task template with ralph frontmatter section
 - [ ] Test backward compatibility and ralph functionality
   - [ ] Verify script sources without errors
   - [ ] Verify start without --ralph works identically

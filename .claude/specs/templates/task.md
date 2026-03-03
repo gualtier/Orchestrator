@@ -2,6 +2,11 @@
 
 > spec-ref: {{SPEC_PATH}}
 > preset: {{PRESET}}
+> ralph: false
+> max-iterations: 20
+> stall-threshold: 3
+> gates:
+> completion-signal: RALPH_COMPLETE
 
 ## Objective
 [Clear description of what should be done]

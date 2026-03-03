@@ -1288,12 +1288,17 @@ TEOF
 TEOF
     log_success "Created template: plan.md"
 
-    # Task template (enhanced with spec-ref)
+    # Task template (enhanced with spec-ref and ralph frontmatter)
     cat > "$SPECS_TEMPLATES/task.md" << 'TEOF'
 # Task: {{TASK_NAME}}
 
 > spec-ref: {{SPEC_PATH}}
 > preset: {{PRESET}}
+> ralph: false
+> max-iterations: 20
+> stall-threshold: 3
+> gates:
+> completion-signal: RALPH_COMPLETE
 
 ## Objective
 [Clear description of what should be done]
