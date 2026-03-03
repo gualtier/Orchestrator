@@ -148,6 +148,74 @@ check_done_md() {
 }
 
 # =============================================
+# TDD — AUTO-DETECT TEST RUNNER
+# =============================================
+
+# Detect the test runner in a worktree directory
+# Returns the test command via stdout, empty if none found
+detect_test_runner() {
+    local worktree_path=$1
+
+    # Node.js — package.json with "test" script
+    if [[ -f "$worktree_path/package.json" ]]; then
+        if grep -q '"test"' "$worktree_path/package.json" 2>/dev/null; then
+            # Check for common runners
+            if [[ -f "$worktree_path/node_modules/.bin/vitest" ]]; then
+                echo "npx vitest run"
+            elif [[ -f "$worktree_path/node_modules/.bin/jest" ]]; then
+                echo "npx jest"
+            else
+                echo "npm test"
+            fi
+            return
+        fi
+    fi
+
+    # Python — pytest / unittest
+    if [[ -f "$worktree_path/pytest.ini" ]] || [[ -f "$worktree_path/pyproject.toml" ]] || \
+       [[ -f "$worktree_path/setup.cfg" ]]; then
+        if grep -q "pytest" "$worktree_path/pyproject.toml" 2>/dev/null || \
+           [[ -f "$worktree_path/pytest.ini" ]]; then
+            echo "python -m pytest"
+            return
+        fi
+    fi
+    if [[ -d "$worktree_path/tests" ]] && ls "$worktree_path/tests"/test_*.py 1>/dev/null 2>&1; then
+        echo "python -m pytest"
+        return
+    fi
+
+    # Go
+    if [[ -f "$worktree_path/go.mod" ]]; then
+        echo "go test ./..."
+        return
+    fi
+
+    # Rust
+    if [[ -f "$worktree_path/Cargo.toml" ]]; then
+        echo "cargo test"
+        return
+    fi
+
+    # Makefile with test target
+    if [[ -f "$worktree_path/Makefile" ]]; then
+        if grep -q "^test:" "$worktree_path/Makefile" 2>/dev/null; then
+            echo "make test"
+            return
+        fi
+    fi
+
+    # Bash tests in .claude/scripts/tests/
+    if [[ -f "$worktree_path/.claude/scripts/tests/test_runner.sh" ]]; then
+        echo "bash .claude/scripts/tests/test_runner.sh"
+        return
+    fi
+
+    # Nothing found
+    echo ""
+}
+
+# =============================================
 # BACKPRESSURE GATES
 # =============================================
 
@@ -160,11 +228,19 @@ run_gates() {
     local gates=$3  # newline-separated gate commands
     local gates_file="$ORCHESTRATION_DIR/pids/$name.gates"
 
+    # TDD integration: auto-detect test runner as default gate when none configured
     if [[ -z "$gates" ]]; then
-        # No gates configured — gate-less completion (REQ-9)
-        echo "NO_GATES" > "$gates_file"
-        RALPH_GATE_RESULTS=""
-        return 0
+        local detected_runner
+        detected_runner=$(detect_test_runner "$worktree_path")
+        if [[ -n "$detected_runner" ]]; then
+            gates="$detected_runner"
+            log_info "  TDD auto-gate: $detected_runner"
+        else
+            # No gates and no test runner detected
+            echo "NO_GATES" > "$gates_file"
+            RALPH_GATE_RESULTS=""
+            return 0
+        fi
     fi
 
     local total=0

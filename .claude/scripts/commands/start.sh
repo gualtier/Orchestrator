@@ -290,14 +290,21 @@ $task
 MANDATORY STEPS (follow in order):
 1. Read the task above carefully
 2. Create PROGRESS.md immediately with ALL planned steps as checkboxes (- [ ] Step name)
-3. Execute step by step — UPDATE PROGRESS.md after EACH completed step (change - [ ] to - [x])
-4. Make frequent commits: git commit -m 'feat($name): desc'
-5. LAST STEP (MANDATORY): Create DONE.md in the root directory with these sections:
+3. WRITE TESTS FIRST — Before ANY implementation code:
+   - Write failing tests for each requirement/acceptance criterion
+   - Commit the failing tests: git commit -m 'test($name): add failing tests for requirements'
+   - Only THEN proceed to implementation
+4. Implement step by step to make tests pass — UPDATE PROGRESS.md after EACH completed step (change - [ ] to - [x])
+5. Verify ALL tests pass before proceeding
+6. Make frequent commits: git commit -m 'feat($name): desc'
+7. LAST STEP (MANDATORY): Create DONE.md in the root directory with these sections:
    - # ✅ Completed: [task name]
    - ## Summary (what was done)
    - ## Modified Files (list of changed files)
+   - ## Test Results (test output proving it works)
    - ## How to Test (testing instructions)
 
+⚡ TDD FLOW: Red (failing tests) → Green (make them pass) → Refactor (clean up)
 ⛔ WITHOUT DONE.md YOUR WORK IS CONSIDERED INCOMPLETE. This is the LAST thing you must do before finishing.
 
 START NOW!"

@@ -1,7 +1,7 @@
 #!/bin/bash
 # ===========================================
-# CLAUDE AGENT ORCHESTRATOR v3.10.0
-#   Ralph Loop Integration
+# CLAUDE AGENT ORCHESTRATOR v3.10.1
+#   SDD + TDD + Ralph Loops
 # ===========================================
 
 # Note: set -e deliberately omitted — ((counter++)) returns 1 when counter=0,

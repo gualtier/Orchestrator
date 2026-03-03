@@ -343,6 +343,16 @@ _show_whats_new() {
         echo "    - Status dashboard shows iteration count, gate results, convergence"
     fi
 
+    if _version_lt "$old_version" "3.10.1"; then
+        echo ""
+        echo -e "  ${GREEN}v3.10.1 - TDD by Default${NC}"
+        echo "    - Agents write tests FIRST before implementation (Red→Green→Refactor)"
+        echo "    - Auto-detect test runner as default ralph gate (npm/vitest/jest/pytest/go/cargo/make)"
+        echo "    - Tri-methodology: SDD (what) + TDD (verify) + Ralph (iterate) all on by default"
+        echo "    - Updated task template and generated tasks with TDD requirements"
+        echo "    - DONE.md now includes Test Results section"
+    fi
+
     echo ""
     log_separator
     echo ""

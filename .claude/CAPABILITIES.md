@@ -1,9 +1,18 @@
-# Orchestrator Capabilities v3.9.1
+# Orchestrator Capabilities v3.10.1
 
 > This file is auto-updated by `orch update`. Do NOT edit manually.
 > Read this file at the start of every session to know what tools are available.
 
 ## Available Features
+
+### Tri-Methodology (Default)
+
+All three methodologies work together by default:
+- **SDD** (Spec-Driven Development): WHAT to build — spec → research → plan → gate
+- **TDD** (Test-Driven Development): HOW to verify — agents write tests first, implement second
+- **Ralph Loops**: HOW to iterate — self-correcting loops with test gates until convergence
+
+Agents automatically: write failing tests → implement to pass → ralph loop re-runs tests as gates → self-correct on failure.
 
 ### SDD - Spec-Driven Development
 
@@ -173,6 +182,15 @@ Alternative execution backend using Claude Code Agent Teams:
 - **Hybrid monitoring**: Interactive team lead session + background orchestrator dashboard
 - **`team start|status|stop`**: Dedicated team management commands
 - **`EXECUTION_MODE` env var**: Configure default backend (worktree or teams)
+
+### TDD by Default (v3.10.1)
+
+Test-Driven Development integrated into the agent workflow:
+- Agents write failing tests before implementation (Red → Green → Refactor)
+- Auto-detect test runner as ralph gate when no explicit gates configured
+- Supported runners: npm test, vitest, jest, pytest, go test, cargo test, make test
+- DONE.md includes Test Results section as proof of correctness
+- Task templates include TDD requirements section
 
 ### Error Monitoring (v3.6)
 

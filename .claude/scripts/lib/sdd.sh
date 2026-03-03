@@ -404,16 +404,16 @@ ${acceptance_criteria:-"- [ ] See spec.md for acceptance criteria"}
 ## Scope
 
 ### DO
-- [ ] Implement all requirements from spec
+- [ ] Write failing tests FIRST for each requirement (TDD)
+- [ ] Implement to make tests pass
 - [ ] Follow the technical approach in plan.md
-- [ ] Write tests before implementation
 
 ### DON'T DO
 $(sed -n '/## Out of Scope/,/^## /p' "$spec_file" 2>/dev/null | sed '$d' | tail -n +2 || echo "- See spec.md Out of Scope section")
 
 ## Completion Criteria
+- [ ] Tests written and passing
 - [ ] All requirements implemented
-- [ ] Tests passing
 - [ ] DONE.md created with spec-ref
 TASKEOF
         ((generated++))
@@ -446,9 +446,9 @@ ${acceptance_criteria:-"- [ ] See spec.md for acceptance criteria"}
 ## Scope
 
 ### DO
-- [ ] Implement the ${module} module
+- [ ] Write failing tests FIRST for ${module} requirements (TDD)
+- [ ] Implement to make tests pass
 - [ ] Follow the technical approach in plan.md
-- [ ] Write tests before implementation
 - [ ] Reference research.md for technology decisions
 
 ### DON'T DO
@@ -459,8 +459,8 @@ $(sed -n '/## Out of Scope/,/^## /p' "$spec_file" 2>/dev/null | sed '$d' | tail 
 See plan.md Architecture section for file structure.
 
 ## Completion Criteria
+- [ ] Tests written and passing
 - [ ] ${module} module implemented
-- [ ] Tests passing
 - [ ] DONE.md created with spec-ref
 TASKEOF
             ((generated++))

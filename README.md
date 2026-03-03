@@ -1,6 +1,6 @@
 # Claude Orchestrator v3.10
 
-Claude agent orchestration system with **Ralph Loops**, **Spec-Driven Development**, **autonomous pipeline**, **Agent Teams**, **active error monitoring**, and **specialized agents**.
+Claude agent orchestration system with **SDD + TDD + Ralph Loops** — the tri-methodology for AI-driven development. Spec-Driven Development (what to build), Test-Driven Development (prove it works), and Ralph Loops (self-correct until done).
 
 ## How It Works in Practice
 
@@ -83,6 +83,15 @@ Claude: → Specifies, researches, plans, generates tasks
 Claude decides when to use SDD (multi-module features) vs direct execution (small tasks). With `--auto-merge`, the entire pipeline runs hands-off.
 
 ## What's New
+
+### v3.10.1 - TDD by Default (Tri-Methodology)
+
+All three methodologies now work together by default: **SDD** (what to build) + **TDD** (prove it works) + **Ralph Loops** (iterate until done).
+
+- **Agents write tests FIRST** — Mandatory steps now require failing tests before any implementation code (Red → Green → Refactor)
+- **Auto-detect test runner as ralph gate** — When no explicit gates configured, the test runner is auto-detected (npm test, vitest, jest, pytest, go test, cargo test, make test) and used as the backpressure gate
+- **DONE.md includes Test Results** — Agents must prove their work passes tests in the completion report
+- **Updated task template** — TDD requirements section in both templates and SDD-generated tasks
 
 ### v3.10 - Ralph Loop Integration
 

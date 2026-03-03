@@ -15,9 +15,17 @@
 - [ ] Requirement 1
 - [ ] Requirement 2
 
+## Test Requirements (TDD)
+Write tests FIRST for each requirement before implementation:
+- [ ] Test for Requirement 1
+- [ ] Test for Requirement 2
+
 ## Scope
 
 ### DO
+- [ ] Write failing tests first (TDD red phase)
+- [ ] Implement to make tests pass (TDD green phase)
+- [ ] Refactor if needed (TDD refactor phase)
 - [ ] Item 1
 - [ ] Item 2
 
@@ -32,6 +40,6 @@ DON'T TOUCH:
 - src/protected/
 
 ## Completion Criteria
+- [ ] Tests written and passing
 - [ ] Code implemented
-- [ ] Tests passing
 - [ ] DONE.md created
