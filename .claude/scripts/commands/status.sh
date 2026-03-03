@@ -133,6 +133,21 @@ cmd_status_standard() {
             echo -e "│ Commit: ${GRAY}$commit${NC}"
         fi
 
+        # Ralph loop info (v3.10)
+        if is_ralph_agent "$name" 2>/dev/null; then
+            local ralph_iter=$(get_ralph_iteration "$name" 2>/dev/null || echo "")
+            local ralph_max=$(get_ralph_max_iterations "$name" 2>/dev/null || echo "")
+            local ralph_gates=$(get_ralph_gate_summary "$name" 2>/dev/null || echo "")
+            local ralph_conv=$(get_ralph_convergence "$name" 2>/dev/null || echo "")
+
+            local ralph_info="iter ${ralph_iter:-?}"
+            [[ -n "$ralph_max" ]] && ralph_info+="/${ralph_max}"
+            [[ -n "$ralph_gates" ]] && ralph_info+=", gates: ${ralph_gates}"
+            [[ -n "$ralph_conv" ]] && ralph_info+=", ${ralph_conv}"
+
+            echo -e "│ Ralph: ${MAGENTA}$ralph_info${NC}"
+        fi
+
         # Error count (v3.5)
         local error_count=$(get_error_count "$name" 2>/dev/null || echo "0")
         if [[ ${error_count:-0} -gt 0 ]]; then
@@ -296,6 +311,27 @@ cmd_status_enhanced() {
             fi
         fi
 
+        # Ralph loop info (v3.10)
+        if is_ralph_agent "$name" 2>/dev/null; then
+            local ralph_iter=$(get_ralph_iteration "$name" 2>/dev/null || echo "")
+            local ralph_max=$(get_ralph_max_iterations "$name" 2>/dev/null || echo "")
+            local ralph_gates=$(get_ralph_gate_summary "$name" 2>/dev/null || echo "")
+            local ralph_conv=$(get_ralph_convergence "$name" 2>/dev/null || echo "")
+
+            local ralph_info="iter ${ralph_iter:-?}"
+            [[ -n "$ralph_max" ]] && ralph_info+="/${ralph_max}"
+
+            echo -e "${YELLOW}║${NC} ${BOLD}Ralph:${NC} ${MAGENTA}$ralph_info${NC}"
+            if [[ -n "$ralph_gates" ]]; then
+                echo -e "${YELLOW}║${NC}   Gates: ${CYAN}$ralph_gates${NC}"
+            fi
+            if [[ -n "$ralph_conv" ]]; then
+                local conv_color="${GREEN}"
+                [[ "$ralph_conv" == stalled* ]] && conv_color="${RED}"
+                echo -e "${YELLOW}║${NC}   Convergence: ${conv_color}$ralph_conv${NC}"
+            fi
+        fi
+
         # Error status (v3.5)
         local error_count=$(get_error_count "$name" 2>/dev/null || echo "0")
         if [[ ${error_count:-0} -gt 0 ]]; then
@@ -441,6 +477,19 @@ cmd_status_json() {
         echo "      \"progress\": $progress,"
         echo "      \"process_running\": $process_running,"
         echo "      \"agents\": \"$agents\""
+
+        # Ralph loop data
+        if is_ralph_agent "$name" 2>/dev/null; then
+            local ralph_iter=$(get_ralph_iteration "$name" 2>/dev/null || echo "0")
+            local ralph_max=$(get_ralph_max_iterations "$name" 2>/dev/null || echo "0")
+            local ralph_gates=$(get_ralph_gate_summary "$name" 2>/dev/null || echo "")
+            echo "      ,\"ralph\": {"
+            echo "        \"iteration\": $ralph_iter,"
+            echo "        \"max_iterations\": $ralph_max,"
+            echo "        \"gates\": \"$ralph_gates\""
+            echo "      }"
+        fi
+
         echo -n "    }"
     done
 

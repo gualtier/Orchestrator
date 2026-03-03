@@ -14,10 +14,10 @@
   - [x] Add --ralph and --max-iterations flag parsing to cmd_start()
   - [x] Add ralph detection in start_single_agent() to call ralph_loop()
   - [x] Add completion signal instruction to prompt when ralph mode active
-- [ ] Modify commands/status.sh — add iteration/gate display
-  - [ ] Read .iteration and .gates files in cmd_status_enhanced()
-  - [ ] Read .iteration and .gates files in cmd_status_standard()
-  - [ ] Show iteration count, gate results, convergence indicator
+- [x] Modify commands/status.sh — add iteration/gate display
+  - [x] Read .iteration and .gates files in cmd_status_enhanced()
+  - [x] Read .iteration and .gates files in cmd_status_standard()
+  - [x] Show iteration count, gate results, convergence indicator
 - [ ] Modify commands/sdd.sh — add --ralph passthrough
   - [ ] Add --ralph flag parsing in cmd_sdd_run()
   - [ ] Pass --ralph through to cmd_start()
