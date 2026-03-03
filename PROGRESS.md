@@ -18,9 +18,9 @@
   - [x] Read .iteration and .gates files in cmd_status_enhanced()
   - [x] Read .iteration and .gates files in cmd_status_standard()
   - [x] Show iteration count, gate results, convergence indicator
-- [ ] Modify commands/sdd.sh — add --ralph passthrough
-  - [ ] Add --ralph flag parsing in cmd_sdd_run()
-  - [ ] Pass --ralph through to cmd_start()
+- [x] Modify commands/sdd.sh — add --ralph passthrough
+  - [x] Add --ralph flag parsing in cmd_sdd_run()
+  - [x] Pass --ralph through to cmd_start()
 - [ ] Modify orchestrate.sh — add source and cancel-ralph command
   - [ ] Add source lib/ralph.sh
   - [ ] Add cancel-ralph command routing

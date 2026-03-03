@@ -619,6 +619,8 @@ cmd_sdd_run() {
     local spec_number=""
     local mode="${EXECUTION_MODE:-worktree}"
     local auto_merge=false
+    local ralph_mode=false
+    local ralph_max_iterations=""
     local spec_dirs=()
 
     # Enable autopilot mode — hooks will pass through without blocking
@@ -642,6 +644,14 @@ cmd_sdd_run() {
             --auto-merge)
                 auto_merge=true
                 shift
+                ;;
+            --ralph)
+                ralph_mode=true
+                shift
+                ;;
+            --max-iterations)
+                ralph_max_iterations="$2"
+                shift 2
                 ;;
             *)
                 spec_number="$1"
@@ -770,6 +780,9 @@ cmd_sdd_run() {
         echo "  Pipeline: gate -> tasks -> setup -> start -> monitor -> merge -> archive"
     else
         echo "  Pipeline: gate -> tasks -> setup -> start -> monitor"
+    fi
+    if $ralph_mode; then
+        echo "  Ralph mode: enabled (iterative self-correcting loops)"
     fi
     echo "  Autopilot: SDD_AUTOPILOT=1 (hooks bypassed)"
     echo ""
@@ -962,7 +975,16 @@ cmd_sdd_run() {
         echo "  Press Ctrl+C to detach (agents keep running)."
         echo ""
 
-        cmd_start
+        # Build start command args, passing --ralph if enabled (REQ-13, REQ-24)
+        local start_args=()
+        if $ralph_mode; then
+            start_args+=(--ralph)
+            if [[ -n "$ralph_max_iterations" ]]; then
+                start_args+=(--max-iterations "$ralph_max_iterations")
+            fi
+        fi
+
+        cmd_start "${start_args[@]}"
     fi
 
     # =========================================
@@ -1115,6 +1137,7 @@ cmd_sdd_help() {
     echo -e "  ${CYAN}sdd plan <number>${NC}           Create implementation plan (requires research)"
     echo -e "  ${CYAN}sdd gate <number>${NC}           Check constitutional gates"
     echo -e "  ${CYAN}sdd run [number]${NC}            Autopilot: gate -> tasks -> setup -> start -> monitor"
+    echo -e "  ${CYAN}sdd run [number] --ralph${NC}     Autopilot with iterative self-correcting loops"
     echo -e "  ${CYAN}sdd run [number] --auto-merge${NC} Full autopilot: ... -> merge -> archive"
     echo -e "  ${CYAN}sdd tasks <number>${NC}          Generate orchestrator tasks from plan"
     echo -e "  ${CYAN}sdd status${NC}                  Show all active specs"
