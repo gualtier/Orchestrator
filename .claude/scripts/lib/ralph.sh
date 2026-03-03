@@ -36,14 +36,34 @@ parse_ralph_config() {
     fi
 
     # Parse frontmatter lines (> key: value)
+    # Task files have: # Title, blank line, then > key: value lines
+    # We scan ALL lines that start with > anywhere in the file header
+    local found_frontmatter=false
     while IFS= read -r line; do
-        # Stop at first non-frontmatter line
-        [[ "$line" =~ ^'>' ]] || break
+        # Skip blank lines and title lines before/between frontmatter
+        if [[ -z "$line" ]] || [[ "$line" =~ ^'#' ]]; then
+            # If we already found frontmatter and hit a non-frontmatter line, stop
+            if [[ "$found_frontmatter" == "true" ]] && [[ -n "$line" ]] && [[ ! "$line" =~ ^'>' ]]; then
+                break
+            fi
+            continue
+        fi
+
+        # Only process > key: value lines
+        if [[ ! "$line" =~ ^'>' ]]; then
+            break
+        fi
+
+        found_frontmatter=true
 
         # Extract key-value pairs
         local kv="${line#> }"
         local key="${kv%%:*}"
         local value="${kv#*: }"
+        # Handle keys with empty values (e.g., "> gates:")
+        if [[ "$key" == "$kv" ]] || [[ "$value" == "$kv" ]]; then
+            value=""
+        fi
         value=$(echo "$value" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
 
         case "$key" in
@@ -71,8 +91,10 @@ parse_ralph_config() {
                 ;;
             gates)
                 # Parse comma-separated or JSON-like list: ["cmd1", "cmd2"] or cmd1, cmd2
-                value=$(echo "$value" | sed 's/^\[//;s/\]$//;s/"//g')
-                RALPH_GATES=$(echo "$value" | tr ',' '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | grep -v '^$')
+                if [[ -n "$value" ]]; then
+                    value=$(echo "$value" | sed 's/^\[//;s/\]$//;s/"//g')
+                    RALPH_GATES=$(echo "$value" | tr ',' '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | grep -v '^$')
+                fi
                 ;;
         esac
     done < "$task_file"

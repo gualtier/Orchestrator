@@ -26,9 +26,11 @@
   - [x] Add cancel-ralph command routing
 - [x] Add ralph-aware task template
   - [x] Update task template with ralph frontmatter section
-- [ ] Test backward compatibility and ralph functionality
-  - [ ] Verify script sources without errors
-  - [ ] Verify start without --ralph works identically
-  - [ ] Verify --ralph flag parsing
-  - [ ] Verify cancel-ralph command routing
+- [x] Test backward compatibility and ralph functionality
+  - [x] Verify script sources without errors
+  - [x] Verify start without --ralph works identically
+  - [x] Verify --ralph flag parsing
+  - [x] Verify cancel-ralph command routing
+  - [x] Verify parse_ralph_config with 5 test cases
+  - [x] Verify state query functions
 - [ ] Commit and create DONE.md
