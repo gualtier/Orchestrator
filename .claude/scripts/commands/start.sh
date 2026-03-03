@@ -352,7 +352,12 @@ cmd_stop() {
         return 1
     fi
 
-    stop_agent_process "$name" "$force"
+    # If agent is in a ralph loop, cancel the loop first
+    if is_ralph_agent "$name" 2>/dev/null; then
+        _cancel_single_ralph "$name"
+    else
+        stop_agent_process "$name" "$force"
+    fi
 
     # Record event
     echo "[$(timestamp)] STOPPED: $name" >> "$EVENTS_FILE"

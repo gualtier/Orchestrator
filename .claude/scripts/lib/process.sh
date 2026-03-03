@@ -102,7 +102,7 @@ start_agent_process() {
 
         log_info "Starting agent: $name${retry:+ (attempt $((retry + 1))/$max_retries)}"
 
-        (set +e; unset CLAUDECODE; cd "$worktree_path" || { echo "ERROR: Failed to cd to $worktree_path" > "$logfile"; exit 1; }; nohup claude --dangerously-skip-permissions --verbose --output-format stream-json -p "$prompt" > "$logfile" 2>&1) &
+        (set +e; unset CLAUDECODE; cd "$worktree_path" || { echo "ERROR: Failed to cd to $worktree_path" >> "$logfile"; exit 1; }; nohup claude --dangerously-skip-permissions --verbose --output-format stream-json -p "$prompt" >> "$logfile" 2>&1) &
 
         local pid=$!
 
@@ -256,6 +256,16 @@ get_agent_status() {
     elif file_exists "$worktree_path/BLOCKED.md"; then
         echo "blocked"
     elif ! is_process_running "$name"; then
+        # Check if a ralph loop is active (between iterations, claude process is not running)
+        local ralph_pid_file="$ORCHESTRATION_DIR/pids/$name.ralph_pid"
+        if [[ -f "$ralph_pid_file" ]]; then
+            local ralph_pid
+            ralph_pid=$(cat "$ralph_pid_file" 2>/dev/null || echo "")
+            if [[ -n "$ralph_pid" ]] && kill -0 "$ralph_pid" 2>/dev/null; then
+                echo "running"
+                return
+            fi
+        fi
         # Process stopped — check if agent made commits or has uncommitted changes
         local commits=0
         local uncommitted=0

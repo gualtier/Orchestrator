@@ -179,9 +179,9 @@ run_gates() {
         log_info "  Gate [$total]: $gate_cmd"
 
         # Run gate command in worktree directory, capture output
-        local gate_output
-        gate_output=$(cd "$worktree_path" && eval "$gate_cmd" 2>&1) || true
-        local gate_exit=$?
+        local gate_output gate_exit
+        gate_output=$(cd "$worktree_path" && eval "$gate_cmd" 2>&1)
+        gate_exit=$?
 
         if [[ $gate_exit -eq 0 ]]; then
             ((passed++)) || true
@@ -232,13 +232,24 @@ check_convergence() {
         return 1
     fi
 
-    # Get diff stat for this iteration
+    # Check for new commits since last convergence check
+    # We track the last-seen commit hash to detect if new commits were made
+    local last_hash_file="${stall_file}.last_hash"
+    local current_hash
+    current_hash=$(cd "$worktree_path" && git rev-parse HEAD 2>/dev/null || echo "")
+    local last_hash=""
+    if [[ -f "$last_hash_file" ]]; then
+        last_hash=$(cat "$last_hash_file" 2>/dev/null || echo "")
+    fi
+    echo "$current_hash" > "$last_hash_file"
+
+    # Also check uncommitted changes as secondary signal
     local diff_stat
     diff_stat=$(cd "$worktree_path" && git diff --stat HEAD 2>/dev/null || echo "")
     local staged_stat
     staged_stat=$(cd "$worktree_path" && git diff --cached --stat 2>/dev/null || echo "")
 
-    if [[ -z "$diff_stat" ]] && [[ -z "$staged_stat" ]]; then
+    if [[ "$current_hash" == "$last_hash" ]] && [[ -z "$diff_stat" ]] && [[ -z "$staged_stat" ]]; then
         # No changes — increment stall counter
         local stall_count=0
         if [[ -f "$stall_file" ]]; then
@@ -376,7 +387,7 @@ You MUST also create DONE.md as the final step.
         fi
 
         # Start the agent process (reuse existing function unchanged)
-        start_agent_process "$name" "$worktree_path" "$iter_prompt" 1
+        start_agent_process "$name" "$worktree_path" "$iter_prompt"
 
         # Wait for the process to exit (simple PID polling)
         local pidfile=$(get_pid_file "$name")
@@ -420,7 +431,9 @@ You MUST also create DONE.md as the final step.
                 log_success "Ralph loop completed for $name after $iteration iteration(s)"
 
                 # Clean up ralph-specific state files
-                rm -f "$ralph_loop_pid_file" "$stall_file"
+                rm -f "$ralph_loop_pid_file" "$stall_file" "$iteration_file"
+                rm -f "$ORCHESTRATION_DIR/pids/$name.ralph_config"
+                rm -f "$ORCHESTRATION_DIR/pids/$name.stall_count.last_hash"
                 return 0
             else
                 # Gates failed — continue loop with feedback
@@ -464,7 +477,9 @@ STALLEOF
                     log_info "Created BLOCKED.md for $name (stall)"
 
                     # Clean up
-                    rm -f "$ralph_loop_pid_file" "$stall_file"
+                    rm -f "$ralph_loop_pid_file" "$stall_file" "$iteration_file"
+                    rm -f "$ORCHESTRATION_DIR/pids/$name.ralph_config"
+                    rm -f "$ORCHESTRATION_DIR/pids/$name.stall_count.last_hash"
                     return 1
                 fi
             fi
@@ -502,7 +517,9 @@ MAXEOF
     log_info "Created BLOCKED.md for $name (max iterations)"
 
     # Clean up
-    rm -f "$ralph_loop_pid_file" "$stall_file"
+    rm -f "$ralph_loop_pid_file" "$stall_file" "$iteration_file"
+    rm -f "$ORCHESTRATION_DIR/pids/$name.ralph_config"
+    rm -f "$ORCHESTRATION_DIR/pids/$name.stall_count.last_hash"
     return 1
 }
 
@@ -564,6 +581,9 @@ _cancel_single_ralph() {
     # Clean up state files
     rm -f "$ralph_pid_file"
     rm -f "$ORCHESTRATION_DIR/pids/$name.stall_count"
+    rm -f "$ORCHESTRATION_DIR/pids/$name.iteration"
+    rm -f "$ORCHESTRATION_DIR/pids/$name.ralph_config"
+    rm -f "$ORCHESTRATION_DIR/pids/$name.stall_count.last_hash"
 
     echo "[$(timestamp)] RALPH_CANCEL: $name" >> "$EVENTS_FILE"
     log_success "Ralph loop cancelled for $name"
