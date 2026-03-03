@@ -1,6 +1,6 @@
-# Claude Orchestrator v3.9
+# Claude Orchestrator v3.10
 
-Claude agent orchestration system with **Spec-Driven Development**, **autonomous pipeline**, **Agent Teams**, **active error monitoring**, and **specialized agents**.
+Claude agent orchestration system with **Ralph Loops**, **Spec-Driven Development**, **autonomous pipeline**, **Agent Teams**, **active error monitoring**, and **specialized agents**.
 
 ## How It Works in Practice
 
@@ -23,18 +23,18 @@ Claude: Starting SDD flow for this feature.
         → /sdd-gate checks constitutional compliance (all pass)
         → /sdd-tasks generates task files for each module
         → /orch-setup creates 3 isolated worktrees
-        → /orch-start launches 9 specialized agents in parallel
+        → /orch-start launches 9 specialized agents in ralph loops
 
-        ... agents work independently ...
+        ... agents iterate with self-correction ...
 
         → /orch-errors detects issues in real-time:
             ⚠ webhooks: TypeError in handler.ts:42
               → Check null handling in webhook payload parser
 
         → /orch-status shows progress:
-            payments: ██████████ 100% ✅
-            webhooks: ████████░░  80% 🔄 (1 warning)
-            billing:  ██████░░░░  60% 🔄
+            payments: ██████████ 100% ✅ iter 2/20 gates: 3/3
+            webhooks: ████████░░  80% 🔄 iter 3/20 gates: 2/3 (lint fail → self-correcting)
+            billing:  ██████░░░░  60% 🔄 iter 1/20 converging
 
         All worktrees complete. Run /orch-merge when ready.
 
@@ -83,6 +83,19 @@ Claude: → Specifies, researches, plans, generates tasks
 Claude decides when to use SDD (multi-module features) vs direct execution (small tasks). With `--auto-merge`, the entire pipeline runs hands-off.
 
 ## What's New
+
+### v3.10 - Ralph Loop Integration
+
+Inspired by the [Ralph Loop technique](https://ghuntley.com/ralph/) — agents now run in **iterative self-correcting loops** by default during SDD execution.
+
+- **Ralph loops on by default** — `sdd run` now wraps agents in while-loops that re-invoke with the same prompt. Each iteration, the agent sees its own previous commits and file changes, creating a self-referential feedback loop that converges toward correctness
+- **Backpressure gates** — Define quality checks per-task (`gates: npm test, npm run lint`). Gates run when the agent claims completion. If gates fail, failure output is fed back and the agent self-corrects in the next iteration
+- **Convergence detection** — Agents that make no meaningful file changes for N consecutive iterations (default: 3) are auto-stopped to prevent spinning wheels
+- **Per-task configuration** — Task frontmatter supports `ralph: true/false`, `max-iterations: 20`, `gates: [...]`, `stall-threshold: 3`, `completion-signal: RALPH_COMPLETE`
+- **Hybrid mode** — Mix ralph-looping and single-shot agents in the same session. Global `--ralph` / `--no-ralph` flags with per-task overrides
+- **`cancel-ralph`** — Graceful loop termination (single agent or all)
+- **Status dashboard** — Shows iteration count (`iter 3/20`), gate results (`gates: 2/3`), and convergence indicator for ralph agents
+- **`--no-ralph` opt-out** — `sdd run 001 --no-ralph` for single-shot mode when loops aren't needed
 
 ### v3.9 - Autonomous SDD Pipeline
 
@@ -265,7 +278,7 @@ orch update-memory --full
 ```text
 Constitution → Specify → Research (MANDATORY) → Plan → Gate → Tasks
                                                                  ↓
-                                              Setup → Start → Wait → Merge → Archive
+                                    Setup → Start (ralph loops) → Wait → Merge → Archive
 ```
 
 ### SDD Artifacts
@@ -332,7 +345,8 @@ orch sdd research <number>   # Create research doc (MANDATORY)
 orch sdd plan <number>       # Create plan (requires research)
 orch sdd gate <number>       # Check constitutional gates
 orch sdd tasks <number>      # Generate orchestrator tasks
-orch sdd run <number>        # Autopilot (gate -> tasks -> setup -> start -> monitor)
+orch sdd run <number>        # Autopilot with ralph loops (default)
+orch sdd run <number> --no-ralph    # Single-shot (no loops)
 orch sdd run <number> --mode teams  # Use Agent Teams backend
 orch sdd status              # Show active specs
 orch sdd archive <number>    # Archive completed spec
@@ -353,10 +367,14 @@ orch agents install-preset <p> # Install preset
 # Worktree mode (default)
 orch setup <name> --preset <p>     # Create worktree
 orch setup <name> --agents a1,a2   # With specific agents
-orch start                         # Start all
+orch start                         # Start all (single-shot)
+orch start --ralph                 # Start all with ralph loops
+orch start --ralph --max-iterations 30  # Custom iteration limit
 orch start <agent>                 # Start specific
 orch stop <agent>                  # Stop
 orch restart <agent>               # Restart
+orch cancel-ralph                  # Cancel all ralph loops
+orch cancel-ralph <agent>          # Cancel specific loop
 
 # Agent Teams mode (v3.8)
 orch team start <spec-number>      # Start Agent Team from SDD spec
@@ -471,7 +489,7 @@ project/
 │   │   └── archive/                   # Completed specs
 │   ├── scripts/
 │   │   ├── orchestrate.sh             # Entry point
-│   │   ├── lib/                       # Libraries (11 modules, incl. teams.sh)
+│   │   ├── lib/                       # Libraries (12 modules, incl. ralph.sh, teams.sh)
 │   │   ├── commands/                  # Commands (13 modules, incl. team.sh)
 │   │   ├── tests/                     # Test framework
 │   │   └── completions/               # Shell completions
@@ -500,6 +518,8 @@ source /path/to/.claude/scripts/completions/orchestrate.bash
 
 ## Inspiration
 
+- [Ralph Loop Technique](https://ghuntley.com/ralph/) - Iterative self-correcting agent loops
+- [Ralph Loop Plugin](https://github.com/anthropics/claude-plugins-official/tree/main/plugins/ralph-loop) - Official Claude Code plugin
 - [GitHub Spec-Kit](https://github.com/github/spec-kit) - Spec-Driven Development methodology
 
 ## License
