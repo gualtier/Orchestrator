@@ -11,6 +11,8 @@ MAX_BACKUPS=5
 
 # All paths that should be updated
 ORCHESTRATOR_UPDATE_PATHS=(
+    "CLAUDE.md"
+    "README.md"
     ".claude/scripts"
     ".claude/skills"
     ".claude/hooks"
