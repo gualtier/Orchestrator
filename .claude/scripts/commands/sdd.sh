@@ -44,7 +44,10 @@ cmd_sdd_init() {
     log_success "Created directory structure"
 
     # Create default templates
-    _sdd_create_default_templates
+    if ! _sdd_create_default_templates; then
+        log_error "Failed to create default templates"
+        return 1
+    fi
 
     # Create default constitution if it doesn't exist
     if [[ ! -f "$CONSTITUTION_FILE" ]]; then
@@ -105,6 +108,11 @@ cmd_sdd_specify() {
 
     local number=$(next_spec_number)
     local slug=$(slugify "$description")
+    if [[ -z "$slug" ]]; then
+        log_error "Description produces empty slug after filtering special characters"
+        log_info "Use alphanumeric characters in the description"
+        return 1
+    fi
     local spec_name="${number}-${slug}"
     local spec_dir="$SPECS_ACTIVE/$spec_name"
 
@@ -205,9 +213,13 @@ cmd_sdd_research() {
         fi
     fi
 
-    # Extract feature name from spec
+    # Extract feature name from spec (fallback to slug from dir name)
     local feature_name
-    feature_name=$(head -1 "$spec_dir/spec.md" | sed 's/^# Spec: //')
+    feature_name=$(head -1 "$spec_dir/spec.md" 2>/dev/null | sed 's/^# Spec: //')
+    if [[ -z "$feature_name" ]] || [[ "$feature_name" == "$(head -1 "$spec_dir/spec.md" 2>/dev/null)" ]]; then
+        # sed didn't match "# Spec: " prefix — use spec dir name as fallback
+        feature_name="${spec_name#*-}"
+    fi
 
     if [[ -f "$SPECS_TEMPLATES/research.md" ]]; then
         render_template "$SPECS_TEMPLATES/research.md" "$spec_dir/research.md" \
@@ -310,9 +322,12 @@ cmd_sdd_plan() {
         fi
     fi
 
-    # Extract feature name from spec
+    # Extract feature name from spec (fallback to slug from dir name)
     local feature_name
-    feature_name=$(head -1 "$spec_dir/spec.md" | sed 's/^# Spec: //')
+    feature_name=$(head -1 "$spec_dir/spec.md" 2>/dev/null | sed 's/^# Spec: //')
+    if [[ -z "$feature_name" ]] || [[ "$feature_name" == "$(head -1 "$spec_dir/spec.md" 2>/dev/null)" ]]; then
+        feature_name="${spec_name#*-}"
+    fi
 
     if [[ -f "$SPECS_TEMPLATES/plan.md" ]]; then
         render_template "$SPECS_TEMPLATES/plan.md" "$spec_dir/plan.md" \
@@ -554,15 +569,39 @@ cmd_sdd_archive() {
         return 0
     fi
 
+    # Warn if agents are still running for this spec
+    local spec_num=${spec_name%%-*}
+    local running_agents=0
+    for task_file in "$ORCHESTRATION_DIR/tasks"/*.md; do
+        [[ -f "$task_file" ]] || continue
+        if grep -q "spec-ref:.*/${spec_num}-" "$task_file" 2>/dev/null; then
+            local tname=$(basename "$task_file" .md)
+            if is_process_running "$tname" 2>/dev/null; then
+                ((running_agents++))
+                log_warn "Agent '$tname' is still running"
+            fi
+        fi
+    done
+    if [[ $running_agents -gt 0 ]]; then
+        log_warn "$running_agents agent(s) still running for this spec"
+        if ! confirm "Archive anyway? Running agents will be stopped."; then
+            return 0
+        fi
+    fi
+
     if ! confirm "Archive spec '$spec_name'?"; then
         return 0
     fi
 
+    # Move first, then cleanup — prevents data loss if mv fails
+    ensure_dir "$SPECS_ARCHIVE"
+    if ! mv "$spec_dir" "$SPECS_ARCHIVE/"; then
+        log_error "Failed to move spec to archive: $spec_name"
+        return 1
+    fi
+
     # Clean up stale tasks, worktrees, PIDs, and logs for this spec
     _cleanup_spec_artifacts "$spec_name"
-
-    ensure_dir "$SPECS_ARCHIVE"
-    mv "$spec_dir" "$SPECS_ARCHIVE/"
 
     log_success "Archived: $spec_name -> specs/archive/"
 
@@ -620,9 +659,9 @@ cmd_sdd_run() {
     # Check teams availability if teams mode requested
     if [[ "$mode" == "teams" ]]; then
         if ! detect_teams_available; then
-            log_warn "Agent Teams not available (CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS != 1)"
-            log_info "Falling back to worktree mode..."
-            mode="worktree"
+            log_error "Agent Teams not available (CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS != 1)"
+            log_info "Set the env var or use worktree mode: sdd run $spec_number"
+            return 1
         fi
     fi
 
@@ -636,6 +675,26 @@ cmd_sdd_run() {
             log_info "Run 'orchestrate.sh sdd status' to see active specs"
             return 1
         fi
+        # Check if spec is already completed or executing
+        local single_status=$(get_spec_status "$spec_dir")
+        if [[ "$single_status" == "completed" ]]; then
+            local sname=$(basename "$spec_dir")
+            ensure_dir "$SPECS_ARCHIVE"
+            if mv "$spec_dir" "$SPECS_ARCHIVE/" 2>/dev/null; then
+                _cleanup_spec_artifacts "$sname"
+            else
+                log_warn "Could not archive $sname (move failed)"
+            fi
+            log_success "Spec $spec_number already completed — auto-archived: $sname"
+            if [[ -f "$EVENTS_FILE" ]]; then
+                echo "[$(date -u +"%Y-%m-%dT%H:%M:%SZ")] SDD_AUTO_ARCHIVE: ${sname}" >> "$EVENTS_FILE"
+            fi
+            return 0
+        elif [[ "$single_status" == executing* ]]; then
+            log_warn "Spec $spec_number is already executing ($single_status)"
+            log_info "Use 'orchestrate.sh status' to monitor, or 'orchestrate.sh sdd archive $spec_number' to reset"
+            return 1
+        fi
         spec_dirs+=("$spec_dir")
     else
         # All specs mode: collect active specs that have plan.md
@@ -644,12 +703,42 @@ cmd_sdd_run() {
             return 1
         fi
 
+        local archived_count=0
+        local skipped_executing=0
         for dir in "$SPECS_ACTIVE"/*/; do
             [[ -d "$dir" ]] || continue
             if [[ -f "$dir/plan.md" ]]; then
+                local status=$(get_spec_status "${dir%/}")
+                if [[ "$status" == "completed" ]]; then
+                    # Auto-archive completed specs: move first, cleanup after
+                    local sname=$(basename "${dir%/}")
+                    ensure_dir "$SPECS_ARCHIVE"
+                    if mv "${dir%/}" "$SPECS_ARCHIVE/" 2>/dev/null; then
+                        _cleanup_spec_artifacts "$sname"
+                        log_success "Auto-archived completed spec: $sname"
+                        if [[ -f "$EVENTS_FILE" ]]; then
+                            echo "[$(date -u +"%Y-%m-%dT%H:%M:%SZ")] SDD_AUTO_ARCHIVE: ${sname}" >> "$EVENTS_FILE"
+                        fi
+                    else
+                        log_warn "Could not archive $sname (move failed), skipping"
+                    fi
+                    ((archived_count++))
+                    continue
+                elif [[ "$status" == executing* ]]; then
+                    log_warn "Skipping $(basename "${dir%/}") — already executing ($status)"
+                    ((skipped_executing++))
+                    continue
+                fi
                 spec_dirs+=("${dir%/}")
             fi
         done
+
+        if [[ $archived_count -gt 0 ]]; then
+            log_info "Auto-archived $archived_count completed spec(s)"
+        fi
+        if [[ $skipped_executing -gt 0 ]]; then
+            log_info "Skipped $skipped_executing spec(s) already executing"
+        fi
 
         if [[ ${#spec_dirs[@]} -eq 0 ]]; then
             log_error "No specs with plan.md found"
@@ -720,7 +809,7 @@ cmd_sdd_run() {
         # Clean stale task files for this spec
         for existing_task in "$ORCHESTRATION_DIR/tasks"/*.md; do
             [[ -f "$existing_task" ]] || continue
-            if grep -q "spec-ref:.*${spec_name}" "$existing_task" 2>/dev/null; then
+            if grep -q "spec-ref:.*/${spec_name}/" "$existing_task" 2>/dev/null; then
                 rm -f "$existing_task"
             fi
         done
@@ -932,11 +1021,14 @@ cmd_sdd_run() {
     # Auto-merge flow (REQ-5, REQ-4, REQ-6)
     if [[ $done_count -eq $total ]] && [[ $total -gt 0 ]]; then
         if $auto_merge; then
-            # --auto-merge: merge + learn extract + archive without intervention
+            # --auto-merge: merge + learn extract + cleanup + archive
             echo ""
             log_step "Auto-merge: merging all worktrees..."
-            if FORCE=true cmd_merge --cleanup; then
+            if FORCE=true cmd_merge; then
                 log_success "Merge completed successfully"
+
+                # Cleanup worktrees after successful merge
+                FORCE=true cmd_cleanup 2>/dev/null || log_warn "Cleanup failed (non-fatal)"
 
                 # Learn extract after successful merge (REQ-4)
                 log_step "Extracting learnings..."
@@ -947,15 +1039,16 @@ cmd_sdd_run() {
                 for spec_dir in "${spec_dirs[@]}"; do
                     local sname=$(basename "$spec_dir")
                     if [[ -d "$spec_dir" ]]; then
-                        _cleanup_spec_artifacts "$sname"
                         ensure_dir "$SPECS_ARCHIVE"
-                        mv "$spec_dir" "$SPECS_ARCHIVE/" 2>/dev/null || true
-                        log_success "Spec archived: $sname"
+                        if mv "$spec_dir" "$SPECS_ARCHIVE/" 2>/dev/null; then
+                            _cleanup_spec_artifacts "$sname"
+                            log_success "Spec archived: $sname"
+                        fi
                     fi
                 done
             else
                 log_error "Auto-merge failed — resolve conflicts manually"
-                log_info "Run: orchestrate.sh merge"
+                log_info "Worktrees preserved for inspection. Run: orchestrate.sh merge"
             fi
         else
             # Default: pause before merge (AC-6)

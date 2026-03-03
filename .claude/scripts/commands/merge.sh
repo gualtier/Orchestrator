@@ -264,7 +264,7 @@ _cleanup_spec_artifacts() {
         [[ -f "$task_file" ]] || continue
 
         # Match tasks belonging to this spec (via spec-ref line or task name prefix)
-        if grep -q "spec-ref:.*${spec_num}" "$task_file" 2>/dev/null || \
+        if grep -q "spec-ref:.*/${spec_num}-" "$task_file" 2>/dev/null || \
            [[ "$(basename "$task_file" .md)" == "${spec_name}" ]]; then
 
             local task_name=$(basename "$task_file" .md)
@@ -313,7 +313,7 @@ _auto_archive_completed_specs() {
         # Count tasks belonging to this spec
         for task_file in "$ORCHESTRATION_DIR/tasks"/*.md; do
             [[ -f "$task_file" ]] || continue
-            if grep -q "spec-ref:.*${spec_num}" "$task_file" 2>/dev/null; then
+            if grep -q "spec-ref:.*/${spec_num}-" "$task_file" 2>/dev/null; then
                 ((task_count++))
                 local task_name=$(basename "$task_file" .md)
                 local branch="feature/$task_name"
@@ -325,37 +325,46 @@ _auto_archive_completed_specs() {
             fi
         done
 
-        # If all tasks merged, auto-archive
+        # If all tasks merged, auto-archive (move first, cleanup after)
         if [[ $task_count -gt 0 ]] && [[ $merged_count -eq $task_count ]]; then
-            _cleanup_spec_artifacts "$spec_name"
             ensure_dir "$SPECS_ARCHIVE"
-            mv "$spec_dir" "$SPECS_ARCHIVE/"
-            log_success "Spec auto-archived: $spec_name ($task_count/$task_count tasks merged)"
-
-            if [[ -f "$EVENTS_FILE" ]]; then
-                echo "[$(timestamp)] SDD_AUTO_ARCHIVE: ${spec_name}" >> "$EVENTS_FILE"
+            if mv "$spec_dir" "$SPECS_ARCHIVE/" 2>/dev/null; then
+                _cleanup_spec_artifacts "$spec_name"
+                log_success "Spec auto-archived: $spec_name ($task_count/$task_count tasks merged)"
+                if [[ -f "$EVENTS_FILE" ]]; then
+                    echo "[$(timestamp)] SDD_AUTO_ARCHIVE: ${spec_name}" >> "$EVENTS_FILE"
+                fi
+            else
+                log_warn "Could not auto-archive $spec_name (move failed)"
             fi
+            continue
         fi
 
         # If task files were already cleaned up but no active worktrees remain,
         # the spec is stale — archive it too
         if [[ $task_count -eq 0 ]]; then
             local has_worktree=false
+
+            # Check if any worktree directory physically exists for this spec
+            # Use git worktree list and match by worktree path (more reliable than name matching)
             while IFS= read -r wt_line; do
-                if [[ "$wt_line" == *"$spec_name"* ]] || [[ "$wt_line" == *"${spec_num}-"* ]]; then
+                local wt_path=$(echo "$wt_line" | awk '{print $1}')
+                local wt_base=$(basename "$wt_path" 2>/dev/null)
+                # Match worktrees whose name contains the spec number prefix
+                if [[ "$wt_base" == *"${spec_num}-"* ]] || [[ "$wt_base" == *"-${spec_num}"* ]]; then
                     has_worktree=true
                     break
                 fi
-            done < <(git worktree list 2>/dev/null)
+            done < <(git worktree list --porcelain 2>/dev/null | grep "^worktree " | sed 's/^worktree //')
 
             if [[ "$has_worktree" == false ]]; then
-                _cleanup_spec_artifacts "$spec_name"
                 ensure_dir "$SPECS_ARCHIVE"
-                mv "$spec_dir" "$SPECS_ARCHIVE/"
-                log_success "Spec auto-archived (stale): $spec_name (no tasks or worktrees remaining)"
-
-                if [[ -f "$EVENTS_FILE" ]]; then
-                    echo "[$(timestamp)] SDD_AUTO_ARCHIVE: ${spec_name} (stale)" >> "$EVENTS_FILE"
+                if mv "$spec_dir" "$SPECS_ARCHIVE/" 2>/dev/null; then
+                    _cleanup_spec_artifacts "$spec_name"
+                    log_success "Spec auto-archived (stale): $spec_name (no tasks or worktrees remaining)"
+                    if [[ -f "$EVENTS_FILE" ]]; then
+                        echo "[$(timestamp)] SDD_AUTO_ARCHIVE: ${spec_name} (stale)" >> "$EVENTS_FILE"
+                    fi
                 fi
             fi
         fi
@@ -472,6 +481,15 @@ cmd_update_memory() {
     # 3. Generate changelog (if requested)
     if [[ "$generate_changelog" == "true" ]]; then
         _generate_changelog "$commits_count"
+    fi
+
+    # 4. Prune events file if it's too large (keep last 500 lines)
+    if [[ -f "$EVENTS_FILE" ]]; then
+        local event_lines=$(wc -l < "$EVENTS_FILE" | tr -d ' ')
+        if [[ $event_lines -gt 500 ]]; then
+            tail -n 500 "$EVENTS_FILE" > "${EVENTS_FILE}.tmp" && mv "${EVENTS_FILE}.tmp" "$EVENTS_FILE"
+            log_info "Events file pruned ($event_lines -> 500 lines)"
+        fi
     fi
 
     log_success "Memory updated"

@@ -10,6 +10,16 @@
 
 # Get the next spec number (001, 002, ...)
 next_spec_number() {
+    local lock_file="$SPECS_DIR/.spec_number.lock"
+    ensure_dir "$SPECS_DIR"
+
+    # Acquire exclusive lock (fd 9) with timeout
+    exec 9>"$lock_file"
+    if ! flock -x -w 5 9 2>/dev/null; then
+        # Fallback for systems without flock (e.g., some macOS)
+        :
+    fi
+
     local max=0
 
     # Scan active and archive directories
@@ -26,6 +36,10 @@ next_spec_number() {
     done
 
     printf "%03d" $((max + 1))
+
+    # Release lock
+    flock -u 9 2>/dev/null || true
+    exec 9>&-
 }
 
 # Slugify a description into a valid directory name
@@ -42,10 +56,24 @@ slugify() {
 spec_dir_for() {
     local number=$1
 
+    # Validate number is numeric (strip leading zeros for check)
+    if ! [[ "$number" =~ ^[0-9]+$ ]]; then
+        log_error "Invalid spec number: $number (must be numeric)"
+        return 1
+    fi
+
     # Search active
+    local found=()
     for dir in "$SPECS_ACTIVE"/${number}-*/; do
-        [[ -d "$dir" ]] && echo "${dir%/}" && return 0
+        [[ -d "$dir" ]] && found+=("${dir%/}")
     done
+    if [[ ${#found[@]} -gt 1 ]]; then
+        log_warn "Multiple specs match number $number — using first: $(basename "${found[0]}")"
+    fi
+    if [[ ${#found[@]} -gt 0 ]]; then
+        echo "${found[0]}"
+        return 0
+    fi
 
     # Search archive
     for dir in "$SPECS_ARCHIVE"/${number}-*/; do
@@ -86,7 +114,7 @@ get_spec_status() {
 
         for task_file in "$ORCHESTRATION_DIR/tasks"/*.md; do
             [[ -f "$task_file" ]] || continue
-            if grep -q "spec-ref:.*${spec_num}" "$task_file" 2>/dev/null; then
+            if grep -q "spec-ref:.*/${spec_num}-" "$task_file" 2>/dev/null; then
                 ((task_count++))
                 local task_name=$(basename "$task_file" .md)
                 local worktree_path=$(get_worktree_path "$task_name")
@@ -141,15 +169,20 @@ render_template() {
         return 1
     fi
 
-    cp "$template_file" "$output_file"
+    if ! cp "$template_file" "$output_file"; then
+        log_error "Failed to copy template to: $output_file"
+        return 1
+    fi
 
     # Process key=value pairs
     while [[ $# -gt 0 ]]; do
         local key="${1%%=*}"
         local value="${1#*=}"
+        # Escape sed special characters in value (|, &, \, /)
+        local safe_value=$(printf '%s\n' "$value" | sed 's/[|&/\]/\\&/g')
         # Use | as sed delimiter to avoid issues with /
-        sed -i '' "s|{{${key}}}|${value}|g" "$output_file" 2>/dev/null || \
-            sed -i "s|{{${key}}}|${value}|g" "$output_file"
+        sed -i '' "s|{{${key}}}|${safe_value}|g" "$output_file" 2>/dev/null || \
+            sed -i "s|{{${key}}}|${safe_value}|g" "$output_file"
         shift
     done
 }
@@ -298,7 +331,17 @@ parse_worktree_mapping() {
             local wt_name=$(echo "$line" | awk -F'|' '{gsub(/^[ \t]+|[ \t]+$/, "", $3); print $3}')
             local preset=$(echo "$line" | awk -F'|' '{gsub(/^[ \t]+|[ \t]+$/, "", $4); print $4}')
 
-            [[ -n "$module" ]] && echo "${module}|${wt_name}|${preset}"
+            # Skip rows with empty module or worktree name
+            [[ -z "$module" ]] && continue
+            [[ -z "$wt_name" ]] && continue
+            # Skip template placeholder rows
+            [[ "$module" == "["*"]" ]] && continue
+            # Validate worktree name (alphanumeric, dash, underscore only)
+            if ! [[ "$wt_name" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+                log_warn "Invalid worktree name '$wt_name' in plan table — skipping"
+                continue
+            fi
+            echo "${module}|${wt_name}|${preset}"
         fi
     done < "$plan_file"
 }
@@ -376,7 +419,7 @@ TASKEOF
         ((generated++))
     else
         # Generate one task per worktree mapping entry
-        echo "$mappings" | while IFS='|' read -r module wt_name preset; do
+        while IFS='|' read -r module wt_name preset; do
             [[ -z "$wt_name" ]] && continue
 
             local task_file="$ORCHESTRATION_DIR/tasks/${wt_name}.md"
@@ -422,7 +465,7 @@ See plan.md Architecture section for file structure.
 TASKEOF
             ((generated++))
             log_success "Generated task: ${wt_name}.md (preset: ${preset})"
-        done
+        done <<< "$mappings"
     fi
 
     # Save task summary in spec dir
@@ -434,9 +477,9 @@ TASKEOF
     if [[ -n "$mappings" ]]; then
         echo "| Worktree | Module | Preset |" >> "$spec_dir/tasks.md"
         echo "|----------|--------|--------|" >> "$spec_dir/tasks.md"
-        echo "$mappings" | while IFS='|' read -r module wt_name preset; do
+        while IFS='|' read -r module wt_name preset; do
             echo "| ${wt_name} | ${module} | ${preset} |" >> "$spec_dir/tasks.md"
-        done
+        done <<< "$mappings"
     fi
 
     echo "" >> "$spec_dir/tasks.md"
@@ -444,9 +487,9 @@ TASKEOF
     echo "" >> "$spec_dir/tasks.md"
     echo '```bash' >> "$spec_dir/tasks.md"
     if [[ -n "$mappings" ]]; then
-        echo "$mappings" | while IFS='|' read -r module wt_name preset; do
+        while IFS='|' read -r module wt_name preset; do
             echo "orchestrate.sh setup ${wt_name} --preset ${preset}" >> "$spec_dir/tasks.md"
-        done
+        done <<< "$mappings"
     else
         echo "orchestrate.sh setup ${spec_name} --preset <choose-preset>" >> "$spec_dir/tasks.md"
     fi
