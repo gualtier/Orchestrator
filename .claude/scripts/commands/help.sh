@@ -61,8 +61,9 @@ AGENT TEAMS (v3.8):
   team stop                 Stop running team
 
 VERIFICATION AND QUALITY:
-  verify <worktree>         Verify worktree
-  verify-all                Verify all worktrees
+  verify <worktree>         Verify worktree (runs tests as gate)
+  verify-all                Verify all worktrees (runs tests as gate)
+                            Options: --skip-tests
   review <worktree>         Create review worktree
   pre-merge                 Check before merge
   report                    Generate consolidated report

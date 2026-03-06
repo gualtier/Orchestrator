@@ -4,10 +4,19 @@
 # =============================================
 
 cmd_verify() {
-    local name=$1
+    local name=""
+    local skip_tests=false
+
+    # Parse arguments
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --skip-tests) skip_tests=true; shift ;;
+            *) name="$1"; shift ;;
+        esac
+    done
 
     if [[ -z "$name" ]]; then
-        log_error "Usage: $0 verify <worktree>"
+        log_error "Usage: $0 verify <worktree> [--skip-tests]"
         return 1
     fi
 
@@ -24,7 +33,7 @@ cmd_verify() {
     fi
 
     # 2. Check DONE.md
-    echo -e "${YELLOW}[1/5] Checking DONE.md...${NC}"
+    echo -e "${YELLOW}[1/6] Checking DONE.md...${NC}"
     if file_exists "$worktree_path/DONE.md"; then
         log_success "DONE.md exists"
 
@@ -41,7 +50,7 @@ cmd_verify() {
     fi
 
     # 3. Check pending files
-    echo -e "${YELLOW}[2/5] Checking pending files...${NC}"
+    echo -e "${YELLOW}[2/6] Checking pending files...${NC}"
     local uncommitted=$(cd "$worktree_path" && git status --porcelain 2>/dev/null | wc -l | tr -d ' ')
     if [[ $uncommitted -gt 0 ]]; then
         log_warn "$uncommitted uncommitted file(s)"
@@ -52,7 +61,7 @@ cmd_verify() {
     fi
 
     # 4. Check if there is BLOCKED.md
-    echo -e "${YELLOW}[3/5] Checking blockers...${NC}"
+    echo -e "${YELLOW}[3/6] Checking blockers...${NC}"
     if file_exists "$worktree_path/BLOCKED.md"; then
         log_error "Task is BLOCKED"
         cat "$worktree_path/BLOCKED.md"
@@ -61,27 +70,27 @@ cmd_verify() {
         log_success "No blockers"
     fi
 
-    # 5. Check tests
-    echo -e "${YELLOW}[4/5] Checking tests...${NC}"
-    local has_tests=false
+    # 5. Run tests (gate — fails verification if tests fail)
+    echo -e "${YELLOW}[4/6] Running tests...${NC}"
+    if $skip_tests; then
+        log_info "Tests skipped (--skip-tests)"
+    else
+        local test_cmd
+        test_cmd=$(detect_test_runner "$worktree_path")
 
-    if file_exists "$worktree_path/package.json"; then
-        local test_script=$(grep -o '"test"' "$worktree_path/package.json" 2>/dev/null || echo "")
-        if [[ -n "$test_script" ]]; then
-            has_tests=true
-            log_info "Found: npm test"
+        if [[ -n "$test_cmd" ]]; then
+            log_info "Detected: $test_cmd"
+            local test_output
+            if test_output=$(cd "$worktree_path" && eval "$test_cmd" 2>&1); then
+                log_success "Tests passed"
+            else
+                log_error "Tests FAILED"
+                echo "$test_output" | tail -20
+                ((errors++))
+            fi
+        else
+            log_info "No test runner detected"
         fi
-    fi
-
-    if file_exists "$worktree_path/Makefile"; then
-        if grep -q "^test:" "$worktree_path/Makefile" 2>/dev/null; then
-            has_tests=true
-            log_info "Found: make test"
-        fi
-    fi
-
-    if ! $has_tests; then
-        log_info "No test script detected"
     fi
 
     # 6. Check commits
@@ -120,14 +129,23 @@ cmd_verify() {
 }
 
 cmd_verify_all() {
+    local skip_tests=false
     local failed=0
     local passed=0
+
+    # Parse flags
+    for arg in "$@"; do
+        [[ "$arg" == "--skip-tests" ]] && skip_tests=true
+    done
+
+    local verify_args=()
+    $skip_tests && verify_args+=("--skip-tests")
 
     for task_file in "$ORCHESTRATION_DIR/tasks"/*.md; do
         [[ -f "$task_file" ]] || continue
         local name=$(basename "$task_file" .md)
 
-        if cmd_verify "$name"; then
+        if cmd_verify "$name" "${verify_args[@]}"; then
             ((passed++))
         else
             ((failed++))

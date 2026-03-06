@@ -355,6 +355,15 @@ _show_whats_new() {
         echo "    - DONE.md now includes Test Results section"
     fi
 
+    if _version_lt "$old_version" "3.10.2"; then
+        echo ""
+        echo -e "  ${GREEN}v3.10.2 - Verify Runs Tests${NC}"
+        echo "    - verify/verify-all now RUNS tests as a gate (was detect-only)"
+        echo "    - Uses detect_test_runner: npm/vitest/jest/pytest/go/cargo/make"
+        echo "    - Failed tests block verification and pre-merge"
+        echo "    - --skip-tests flag for infrastructure-dependent test suites"
+    fi
+
     echo ""
     log_separator
     echo ""

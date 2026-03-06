@@ -1,4 +1,4 @@
-# Claude Orchestrator v3.10.1
+# Claude Orchestrator v3.10.2
 
 Claude agent orchestration system with **SDD + TDD + Ralph Loops** — the tri-methodology for AI-driven development. Spec-Driven Development (what to build), Test-Driven Development (prove it works), and Ralph Loops (self-correct until done).
 
@@ -83,6 +83,14 @@ Claude: → Specifies, researches, plans, generates tasks
 Claude decides when to use SDD (multi-module features) vs direct execution (small tasks). With `--auto-merge`, the entire pipeline runs hands-off.
 
 ## What's New
+
+### v3.10.2 - Verify Runs Tests
+
+The `verify` and `verify-all` commands now **execute tests** as a mandatory gate before merge — previously they only detected test runners without running them.
+
+- **Tests run as a gate** — `verify` uses `detect_test_runner` (npm/vitest/jest/pytest/go/cargo/make) and fails verification if tests fail
+- **Pre-merge enforcement** — `pre-merge` runs full verification including tests, blocking merge on failure
+- **`--skip-tests` flag** — Bypass test execution when infrastructure dependencies aren't available
 
 ### v3.10.1 - TDD by Default (Tri-Methodology)
 

@@ -1,6 +1,6 @@
 #!/bin/bash
 # ===========================================
-# CLAUDE AGENT ORCHESTRATOR v3.10.1
+# CLAUDE AGENT ORCHESTRATOR v3.10.2
 #   SDD + TDD + Ralph Loops
 # ===========================================
 
@@ -97,7 +97,7 @@ main() {
 
         # Verification
         verify) cmd_verify "$@" ;;
-        verify-all) cmd_verify_all ;;
+        verify-all) cmd_verify_all "$@" ;;
         review) cmd_review "$@" ;;
         pre-merge) cmd_pre_merge ;;
         report) cmd_report ;;
