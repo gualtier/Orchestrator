@@ -20,7 +20,16 @@ if [[ -f "$PROJECT_DIR/.claude/CAPABILITIES.md" ]]; then
   echo ""
 fi
 
-# --- 2. Live execution state (new: dynamic snapshot) ---
+# --- 2. Orchestrator state (pre-compaction snapshot from continuous writes) ---
+ORCH_STATE="$ORCH_DIR/ORCHESTRATOR_STATE.md"
+if [[ -f "$ORCH_STATE" ]]; then
+  echo "## Pre-Compaction Orchestrator State"
+  echo ""
+  cat "$ORCH_STATE"
+  echo ""
+fi
+
+# --- 3. Live execution state (fresh snapshot at compaction time) ---
 echo "## Live Execution State"
 echo ""
 

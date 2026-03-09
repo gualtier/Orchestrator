@@ -48,6 +48,9 @@ cmd_status() {
             cmd_status_standard
             ;;
     esac
+
+    # Persist state to disk on every status check (survives context compaction)
+    write_orchestrator_state "status-poll" "Monitoring agents ($mode mode)" 2>/dev/null || true
 }
 
 # =============================================

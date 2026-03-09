@@ -58,6 +58,9 @@ cmd_start() {
         log_warn "$failed agent(s) failed to start"
     fi
 
+    # Save orchestrator state after launch
+    write_orchestrator_state "agents-launched" "Started $started agent(s), $failed failed. Monitor with: orchestrate.sh status"
+
     # If no agents started or monitoring disabled, stop here
     if [[ $started -eq 0 ]] || [[ "$monitor" == "false" ]]; then
         return 0

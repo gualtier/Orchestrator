@@ -1,4 +1,4 @@
-# Orchestrator Capabilities v3.10.2
+# Orchestrator Capabilities v3.10.4
 
 > This file is auto-updated by `orch update`. Do NOT edit manually.
 > Read this file at the start of every session to know what tools are available.
@@ -209,6 +209,15 @@ Test-Driven Development integrated into the agent workflow:
 - Supported runners: npm test, vitest, jest, pytest, go test, cargo test, make test
 - DONE.md includes Test Results section as proof of correctness
 - Task templates include TDD requirements section
+
+### State Externalization (v3.10.4)
+
+Continuous orchestrator state persistence to survive context compaction:
+
+- `write_orchestrator_state()` saves action, agent table, specs, and next steps to disk
+- Called at key lifecycle moments: agent launch, status poll, merge start/end
+- `ORCHESTRATOR_STATE.md` re-injected via `reinject-context.sh` after compaction
+- Gap between last write and compaction is at most ~30s (polling interval)
 
 ### Error Monitoring (v3.6)
 

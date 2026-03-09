@@ -32,6 +32,7 @@ source "$SCRIPT_DIR/lib/error_detection.sh"
 source "$SCRIPT_DIR/lib/sdd.sh"
 source "$SCRIPT_DIR/lib/teams.sh"
 source "$SCRIPT_DIR/lib/ralph.sh"
+source "$SCRIPT_DIR/lib/state.sh"
 
 # Commands
 source "$SCRIPT_DIR/commands/init.sh"

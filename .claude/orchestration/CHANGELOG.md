@@ -1,6 +1,15 @@
 # Changelog
 
 
+## [2026-03-09]
+
+- feat(validate): autonomous production validation in SDD lifecycle (v3.10.3) (6fac7b0)
+- feat(verify): run tests as gate before merge (v3.10.2) (c47095d)
+- fix(update): add CLAUDE.md and README.md to update paths (53231d0)
+- fix(audit): 8 bugs — JSON, cleanup, quoting, validation, frontmatter (4c266d4)
+- docs: release v3.10.1 — full audit and consistency pass (5a3ef99)
+
+
 ## [2026-03-03]
 
 - fix(update): bump version to 3.9.4 and add what's-new section (8654991)

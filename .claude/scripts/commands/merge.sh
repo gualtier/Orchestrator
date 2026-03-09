@@ -37,6 +37,8 @@ cmd_merge() {
         return $?
     fi
 
+    write_orchestrator_state "merge-start" "Merging all completed agents to $target" 2>/dev/null || true
+
     log_step "Starting merge to: $target"
 
     # Check completion of all tasks
@@ -146,6 +148,8 @@ cmd_merge() {
 
     # Record event
     echo "[$(timestamp)] MERGED: $merged branches to $target" >> "$EVENTS_FILE"
+
+    write_orchestrator_state "merge-complete" "Merged $merged branches to $target ($failed conflicts)" 2>/dev/null || true
 
     # Auto-cleanup if requested
     if $auto_cleanup && [[ $failed -eq 0 ]]; then
