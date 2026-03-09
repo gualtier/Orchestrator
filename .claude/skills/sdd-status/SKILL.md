@@ -13,7 +13,7 @@ Show the current status of all active specifications.
 ## Spec Lifecycle
 
 ```
-specified → researched → planned → tasks-ready → executing → completed
+specified → researched → planned → tasks-ready → executing → completed → validated
 ```
 
 Use `/sdd-specify` to create a new spec, or check a specific spec's files directly.

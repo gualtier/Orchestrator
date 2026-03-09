@@ -68,6 +68,8 @@ Without `--auto-merge`, the command pauses before merge so you can review:
 .claude/scripts/orchestrate.sh verify-all
 .claude/scripts/orchestrate.sh merge
 .claude/scripts/orchestrate.sh update-memory --full
+.claude/scripts/orchestrate.sh sdd validate 001   # Verify in production
+.claude/scripts/orchestrate.sh sdd archive 001
 ```
 
-With `--auto-merge`, all post-completion steps happen automatically.
+With `--auto-merge`, the full pipeline runs autonomously: merge → validate (autonomous agent) → archive. If validation fails, a warning is logged but archiving proceeds.

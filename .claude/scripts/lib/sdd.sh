@@ -107,6 +107,12 @@ get_spec_status() {
         has_tasks=true
     fi
 
+    # Check for validated state (post-merge production validation)
+    if [[ -f "$spec_dir/validation.md" ]]; then
+        echo "validated"
+        return 0
+    fi
+
     if $has_tasks; then
         # Check if any worktrees are actively running or merged
         local task_count=0

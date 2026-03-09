@@ -1,6 +1,15 @@
 # Changelog
 
 
+## [2026-03-03]
+
+- fix(update): bump version to 3.9.4 and add what's-new section (8654991)
+- fix(sdd): harden full spec lifecycle — 17 bugs fixed from audit (3f9e4e9)
+- fix(update): deliver hooks, template, and gitignore to existing users (66eda1b)
+- fix(update): re-read version after apply to handle i18n transition (f47c34e)
+- fix(update): version detection and confirm prompt after i18n (d5b23e7)
+
+
 ## [v3.9.2] - 2026-02-26
 
 ### Agent Behavioral Rules

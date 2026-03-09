@@ -35,6 +35,8 @@ Inspired by [GitHub Spec-Kit](https://github.com/github/spec-kit). Specification
 /orch-status       Monitor progress
 /orch-merge        Merge completed work
      ↓
+/sdd-validate      Production validation (verify it works for real)
+     ↓
 /sdd-archive       Archive completed spec
 ```
 

@@ -19,6 +19,14 @@
 ## Acceptance Criteria
 - [ ] AC-1: Given [context], when [action], then [result]
 
+## Production Validation
+
+How the validation agent should verify this works after merge:
+
+- [ ] [What to check: files exist, imports work, tests pass, APIs respond, logs appear]
+- [ ] [What commands to run: curl, grep, test runners, DB queries]
+- [ ] [What output to expect: status codes, data formats, no errors]
+
 ## Out of Scope
 - [What NOT to do]
 

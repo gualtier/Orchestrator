@@ -18,6 +18,7 @@ cmd_sdd() {
         status)       cmd_sdd_status ;;
         gate)         cmd_sdd_gate "$@" ;;
         run)          cmd_sdd_run "$@" ;;
+        validate)     cmd_sdd_validate "$@" ;;
         archive)      cmd_sdd_archive "$@" ;;
         help|--help)  cmd_sdd_help ;;
         *)
@@ -498,7 +499,8 @@ cmd_sdd_status() {
             planned)        next_step="-> run: sdd tasks ${name%%-*}" ;;
             tasks-ready)    next_step="-> run: setup & start" ;;
             executing*)     next_step="-> wait for agents" ;;
-            completed)      next_step="-> run: sdd archive ${name%%-*}" ;;
+            completed)      next_step="-> run: sdd validate ${name%%-*}" ;;
+            validated)      next_step="-> run: sdd archive ${name%%-*}" ;;
         esac
 
         printf "  %-30s %-15s %s\n" "$name" "[$status]" "$next_step"
@@ -543,6 +545,212 @@ cmd_sdd_gate() {
 }
 
 # =============================================
+# SDD VALIDATE (POST-MERGE PRODUCTION VALIDATION)
+# =============================================
+
+cmd_sdd_validate() {
+    local spec_number=$1
+    local skip_mode=false
+
+    # Parse arguments
+    shift || true
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --skip) skip_mode=true; shift ;;
+            *) shift ;;
+        esac
+    done
+
+    if [[ -z "$spec_number" ]]; then
+        log_error "Usage: orchestrate.sh sdd validate <spec-number> [--skip]"
+        return 1
+    fi
+
+    local spec_dir
+    spec_dir=$(spec_dir_for "$spec_number")
+    if [[ $? -ne 0 ]] || [[ -z "$spec_dir" ]]; then
+        log_error "Spec not found: $spec_number"
+        return 1
+    fi
+
+    local spec_name=$(basename "$spec_dir")
+    local spec_file="$spec_dir/spec.md"
+    local validation_file="$spec_dir/validation.md"
+
+    # Check if already validated
+    if [[ -f "$validation_file" ]]; then
+        local prev_result=$(grep -c "VALIDATED" "$validation_file" 2>/dev/null || echo 0)
+        if [[ $prev_result -gt 0 ]]; then
+            log_info "Spec already validated: $spec_name"
+            echo ""
+            cat "$validation_file"
+            return 0
+        else
+            log_warn "Previous validation exists but did not pass — re-running"
+        fi
+    fi
+
+    log_header "PRODUCTION VALIDATION: ${spec_name}"
+
+    if $skip_mode; then
+        # Create a skip validation file
+        cat > "$validation_file" << VEOF
+# Production Validation: ${spec_name}
+
+> Validated: $(date '+%Y-%m-%d %H:%M:%S') | Method: SKIPPED
+
+## Reason
+Production validation skipped (--skip flag).
+This spec does not require production validation (e.g., internal tooling, refactoring, infra-only).
+
+## Signed Off By
+Skipped by architect/developer.
+VEOF
+        log_success "Validation skipped — recorded in validation.md"
+
+        # Log event
+        if [[ -f "$EVENTS_FILE" ]]; then
+            echo "[$(date -u +"%Y-%m-%dT%H:%M:%SZ")] SDD_VALIDATE_SKIP: ${spec_name}" >> "$EVENTS_FILE"
+        fi
+        return 0
+    fi
+
+    # Extract spec content for the validation agent
+    local acceptance_criteria=""
+    if [[ -f "$spec_file" ]]; then
+        acceptance_criteria=$(sed -n '/## Acceptance Criteria/,/^## /p' "$spec_file" | sed '$d' | tail -n +2)
+    fi
+
+    local prod_validation=""
+    if [[ -f "$spec_file" ]]; then
+        prod_validation=$(sed -n '/## Production Validation/,/^## /p' "$spec_file" | sed '$d' | tail -n +2)
+    fi
+
+    # Build the full spec context for the agent
+    local spec_content=""
+    if [[ -f "$spec_file" ]]; then
+        spec_content=$(cat "$spec_file")
+    fi
+
+    local plan_content=""
+    if [[ -f "$spec_dir/plan.md" ]]; then
+        plan_content=$(cat "$spec_dir/plan.md")
+    fi
+
+    # Build validation prompt
+    local validation_prompt
+    validation_prompt=$(cat << VPROMPT
+You are a Production Validation Agent. Your job is to AUTONOMOUSLY verify that a recently merged feature works correctly in the real environment.
+
+## Spec
+${spec_content}
+
+## Plan
+${plan_content}
+
+## Your Task
+
+1. Read the Acceptance Criteria and Production Validation sections from the spec above.
+2. For EACH criterion, run actual commands to verify it works:
+   - Run tests (npm test, pytest, etc.) to confirm nothing is broken
+   - Check that new files/modules exist and are properly wired
+   - If there are API endpoints, test them (curl, httpie, etc.)
+   - If there are database changes, verify schema/data
+   - Check for error logs, warnings, or regressions
+   - Import/require new modules to verify they load correctly
+3. Record evidence for each check (command output, file contents, etc.)
+4. Write results to: ${validation_file}
+
+## Output Format
+
+Write ${validation_file} with this exact structure:
+
+\`\`\`markdown
+# Production Validation: ${spec_name}
+
+> Validated: [timestamp] | Method: AUTONOMOUS | Result: PASS or FAIL
+
+## Checks Performed
+
+### [Check Name]
+- **Status**: PASS / FAIL
+- **Command**: \`[what you ran]\`
+- **Evidence**: [output/result]
+
+### [Check Name]
+...
+
+## Summary
+- Total checks: N
+- Passed: N
+- Failed: N
+
+## Result
+VALIDATED — All checks pass
+(or)
+FAILED — N check(s) failed (see details above)
+\`\`\`
+
+## Rules
+- Be thorough but fast. Run real commands, not hypothetical ones.
+- If a check requires a running server and none is available, test what you CAN test (imports, file existence, unit tests, config correctness).
+- If ALL checks pass, write "VALIDATED" in the Result section.
+- If ANY check fails, write "FAILED" in the Result section with details.
+- Do NOT ask for human input. Decide autonomously.
+VPROMPT
+)
+
+    # Launch validation agent
+    log_info "Launching validation agent for $spec_name..."
+    echo "  The agent will autonomously verify acceptance criteria."
+    echo ""
+
+    local logfile="${ORCHESTRATION_DIR}/logs/validate-${spec_name}.log"
+    ensure_dir "$ORCHESTRATION_DIR/logs"
+
+    # Run the validation agent
+    (set +e; unset CLAUDECODE; claude --dangerously-skip-permissions --verbose --output-format stream-json -p "$validation_prompt" > "$logfile" 2>&1)
+    local exit_code=$?
+
+    # Check result
+    if [[ -f "$validation_file" ]]; then
+        if grep -q "VALIDATED" "$validation_file" 2>/dev/null; then
+            log_success "Production validation PASSED"
+            echo ""
+            cat "$validation_file"
+        elif grep -q "FAILED" "$validation_file" 2>/dev/null; then
+            log_error "Production validation FAILED"
+            echo ""
+            cat "$validation_file"
+            echo ""
+            log_info "Fix the issues and re-run: orchestrate.sh sdd validate $spec_number"
+
+            # Log event
+            if [[ -f "$EVENTS_FILE" ]]; then
+                echo "[$(date -u +"%Y-%m-%dT%H:%M:%SZ")] SDD_VALIDATE_FAIL: ${spec_name}" >> "$EVENTS_FILE"
+            fi
+            return 1
+        else
+            log_warn "Validation completed but result unclear — check $validation_file"
+        fi
+    else
+        log_error "Validation agent did not create $validation_file"
+        log_info "Check log: $logfile"
+
+        # Log event
+        if [[ -f "$EVENTS_FILE" ]]; then
+            echo "[$(date -u +"%Y-%m-%dT%H:%M:%SZ")] SDD_VALIDATE_ERROR: ${spec_name}" >> "$EVENTS_FILE"
+        fi
+        return 1
+    fi
+
+    # Log event
+    if [[ -f "$EVENTS_FILE" ]]; then
+        echo "[$(date -u +"%Y-%m-%dT%H:%M:%SZ")] SDD_VALIDATE_PASS: ${spec_name}" >> "$EVENTS_FILE"
+    fi
+}
+
+# =============================================
 # SDD ARCHIVE
 # =============================================
 
@@ -567,6 +775,16 @@ cmd_sdd_archive() {
     if [[ "$spec_dir" == "$SPECS_ARCHIVE"/* ]]; then
         log_info "Spec already archived: $spec_name"
         return 0
+    fi
+
+    # Warn if not validated (Article VII)
+    if [[ ! -f "$spec_dir/validation.md" ]]; then
+        log_warn "Spec has NOT been production-validated"
+        log_info "Run: orchestrate.sh sdd validate $spec_number"
+        log_info "Or skip: orchestrate.sh sdd validate $spec_number --skip"
+        if ! confirm "Archive without validation?"; then
+            return 0
+        fi
     fi
 
     # Warn if agents are still running for this spec
@@ -781,7 +999,7 @@ cmd_sdd_run() {
     local spec_count=${#spec_dirs[@]}
     log_header "SDD AUTOPILOT: $spec_count spec(s)"
     if $auto_merge; then
-        echo "  Pipeline: gate -> tasks -> setup -> start -> monitor -> merge -> archive"
+        echo "  Pipeline: gate -> tasks -> setup -> start -> monitor -> merge -> validate -> archive"
     else
         echo "  Pipeline: gate -> tasks -> setup -> start -> monitor"
     fi
@@ -1060,8 +1278,25 @@ cmd_sdd_run() {
                 log_step "Extracting learnings..."
                 cmd_learn extract 2>/dev/null || log_warn "learn extract failed (non-fatal)"
 
-                # Archive is already handled by _auto_archive_completed_specs inside cmd_merge
-                # but run explicit archive for each spec as a safety net (REQ-6)
+                # Production validation (Article VII)
+                log_step "Running production validation..."
+                local validation_failed=false
+                for spec_dir in "${spec_dirs[@]}"; do
+                    local sname=$(basename "$spec_dir")
+                    local snum=${sname%%-*}
+                    if cmd_sdd_validate "$snum"; then
+                        log_success "Validation passed: $sname"
+                    else
+                        log_warn "Validation failed: $sname (non-blocking in auto-merge)"
+                        validation_failed=true
+                    fi
+                done
+
+                if $validation_failed; then
+                    log_warn "Some validations failed — review validation.md files before archiving"
+                fi
+
+                # Archive specs (REQ-6)
                 for spec_dir in "${spec_dirs[@]}"; do
                     local sname=$(basename "$spec_dir")
                     if [[ -d "$spec_dir" ]]; then
@@ -1082,8 +1317,10 @@ cmd_sdd_run() {
             log_separator
             echo ""
             echo "  Next steps:"
-            echo "    orchestrate.sh verify-all    # Review agent output"
-            echo "    orchestrate.sh merge         # Merge all worktrees"
+            echo "    orchestrate.sh verify-all              # Review agent output"
+            echo "    orchestrate.sh merge                   # Merge all worktrees"
+            echo "    orchestrate.sh sdd validate ${spec_number:-NNN}  # Verify in production"
+            echo "    orchestrate.sh sdd archive ${spec_number:-NNN}   # Archive spec"
             echo ""
             echo "  Or re-run with --auto-merge for unattended merge:"
             echo "    orchestrate.sh sdd run ${spec_number:-} --auto-merge"
@@ -1094,8 +1331,9 @@ cmd_sdd_run() {
         log_separator
         echo ""
         echo "  Next steps:"
-        echo "    orchestrate.sh verify-all    # Review agent output"
-        echo "    orchestrate.sh merge         # Merge all worktrees"
+        echo "    orchestrate.sh verify-all              # Review agent output"
+        echo "    orchestrate.sh merge                   # Merge all worktrees"
+        echo "    orchestrate.sh sdd validate ${spec_number:-NNN}  # Verify in production"
         echo "    orchestrate.sh update-memory --full"
         echo ""
     fi
@@ -1129,8 +1367,8 @@ cmd_sdd_help() {
     echo -e "${GRAY}Inspired by GitHub Spec-Kit${NC}"
     echo ""
     echo -e "${BOLD}WORKFLOW:${NC}"
-    echo "  constitution -> specify -> research -> plan -> gate -> run (autopilot)"
-    echo "  OR: ... -> gate -> tasks -> setup -> start (manual step-by-step)"
+    echo "  constitution -> specify -> research -> plan -> gate -> run -> validate -> archive"
+    echo "  OR: ... -> gate -> tasks -> setup -> start -> merge -> validate -> archive"
     echo ""
     echo -e "${BOLD}COMMANDS:${NC}"
     echo ""
@@ -1145,7 +1383,9 @@ cmd_sdd_help() {
     echo -e "  ${CYAN}sdd run [number] --auto-merge${NC} Full autopilot: ... -> merge -> archive"
     echo -e "  ${CYAN}sdd tasks <number>${NC}          Generate orchestrator tasks from plan"
     echo -e "  ${CYAN}sdd status${NC}                  Show all active specs"
-    echo -e "  ${CYAN}sdd archive <number>${NC}        Archive completed spec"
+    echo -e "  ${CYAN}sdd validate <number>${NC}       Production validation (post-merge)"
+    echo -e "  ${CYAN}sdd validate <number> --skip${NC} Skip validation (non-production specs)"
+    echo -e "  ${CYAN}sdd archive <number>${NC}        Archive completed spec (warns if not validated)"
     echo ""
     echo -e "${BOLD}EXAMPLE:${NC}"
     echo ""
@@ -1167,6 +1407,7 @@ cmd_sdd_help() {
     echo "  orchestrate.sh setup auth --preset auth"
     echo "  orchestrate.sh start"
     echo "  orchestrate.sh merge"
+    echo "  orchestrate.sh sdd validate 001     # Verify in production"
     echo "  orchestrate.sh sdd archive 001"
     echo ""
 }
@@ -1198,6 +1439,14 @@ _sdd_create_default_templates() {
 
 ## Acceptance Criteria
 - [ ] AC-1: Given [context], when [action], then [result]
+
+## Production Validation
+
+How the validation agent should verify this works after merge:
+
+- [ ] [What to check: files exist, imports work, tests pass, APIs respond, logs appear]
+- [ ] [What commands to run: curl, grep, test runners, DB queries]
+- [ ] [What output to expect: status codes, data formats, no errors]
 
 ## Out of Scope
 - [What NOT to do]
@@ -1359,6 +1608,9 @@ Tests with real environments (databases, services). Mocks only when unavoidable.
 
 ## Article VI - Spec Traceability
 All code must be traceable to a requirement in the spec. No "just in case" code.
+
+## Article VII - Production Validation
+No spec is complete until validated in the real environment. Tests passing is necessary but not sufficient — verify that data flows, logs appear, and features work end-to-end post-merge.
 
 ## Amendments
 [Document changes with rationale and date]

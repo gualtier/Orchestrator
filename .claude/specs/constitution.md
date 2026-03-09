@@ -21,5 +21,8 @@ Tests with real environments (databases, services). Mocks only when unavoidable.
 ## Article VI - Spec Traceability
 All code must be traceable to a requirement in the spec. No "just in case" code.
 
+## Article VII - Production Validation
+No spec is complete until validated in the real environment. Tests passing is necessary but not sufficient — verify that data flows, logs appear, and features work end-to-end post-merge.
+
 ## Amendments
 [Document changes with rationale and date]

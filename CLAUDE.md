@@ -150,8 +150,8 @@ For medium/large features, use the **tri-methodology** — all enabled by defaul
 - **Ralph Loops**: HOW to iterate — self-correcting loops with test gates until convergence
 
 ```
-constitution → specify → research (MANDATORY) → plan → gate → run (autopilot + ralph loops)
-OR: ... → gate → tasks → setup → start (manual step-by-step)
+constitution → specify → research (MANDATORY) → plan → gate → run → validate → archive
+OR: ... → gate → tasks → setup → start → merge → validate → archive
 OR: ... → gate → run --mode teams (Agent Teams backend, v3.8)
 OR: ... → gate → run --auto-merge (fully autonomous, v3.9)
 OR: ... → gate → run --no-ralph (single-shot, no loops)
@@ -174,8 +174,9 @@ OR: ... → gate → run --no-ralph (single-shot, no loops)
                                    #    OR: /sdd-run 001 --no-ralph (single-shot, no loops)
 # --- After agents complete (without --auto-merge): ---
 /orch-merge                        # 7. Merge
-/sdd-archive 001                   # 8. Archive
-# --- With --auto-merge: steps 7-8 happen automatically ---
+/sdd-validate 001                  # 8. Verify in production
+/sdd-archive 001                   # 9. Archive
+# --- With --auto-merge: merge+validate+archive all automatic ---
 ```
 
 **With CLI** (bash):
@@ -196,6 +197,7 @@ OR: ... → gate → run --no-ralph (single-shot, no loops)
 .claude/scripts/orchestrate.sh start --no-monitor        # Launch async
 # Monitor every 30s: status + errors (NEVER block)
 .claude/scripts/orchestrate.sh merge
+.claude/scripts/orchestrate.sh sdd validate 001       # Verify in production
 .claude/scripts/orchestrate.sh sdd archive 001
 .claude/scripts/orchestrate.sh update-memory --full
 ```
@@ -210,7 +212,8 @@ OR: ... → gate → run --no-ralph (single-shot, no loops)
     ├── spec.md               # WHAT: requirements, user stories, acceptance criteria
     ├── research.md           # WHY: library analysis, benchmarks, security, patterns
     ├── plan.md               # HOW: architecture, tech decisions, worktree mapping
-    └── tasks.md              # Generated bridge to orchestration/tasks/
+    ├── tasks.md              # Generated bridge to orchestration/tasks/
+    └── validation.md         # PROOF: post-merge production validation checklist
 ```
 
 ### When to Use SDD vs Direct
@@ -348,14 +351,20 @@ Confirm? (y/n/adjust)
               │                               │
               │                               ▼
               │               ┌─────────────────────────────────┐
-              │               │  7. ARCHIVE SPEC                │
+              │               │  7. VALIDATE IN PRODUCTION      │
+              │               │     sdd validate <number>       │
+              │               └─────────────────────────────────┘
+              │                               │
+              │                               ▼
+              │               ┌─────────────────────────────────┐
+              │               │  8. ARCHIVE SPEC                │
               │               │     sdd archive <number>        │
               │               └─────────────────────────────────┘
               │                               │
               └───────────────┬───────────────┘
                               ▼
 ┌─────────────────────────────────────────────────────────────┐
-│  8. UPDATE MEMORY (ALWAYS!)                                 │
+│  9. UPDATE MEMORY (ALWAYS!)                                 │
 │     orchestrate.sh update-memory                            │
 └─────────────────────────────────────────────────────────────┘
 ```
