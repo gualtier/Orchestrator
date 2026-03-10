@@ -107,8 +107,26 @@ cmd_merge() {
 
         log_info "Merging $branch..."
 
+        # Pre-merge: strip worktree artifacts from the branch to prevent conflicts
+        # (DONE.md, PROGRESS.md, BLOCKED.md are per-agent, not project code)
+        local worktree_path=$(get_worktree_path "$name")
+        if dir_exists "$worktree_path"; then
+            local has_artifacts=false
+            for artifact in DONE.md PROGRESS.md BLOCKED.md; do
+                if (cd "$worktree_path" && git ls-files --error-unmatch "$artifact" &>/dev/null); then
+                    has_artifacts=true
+                    break
+                fi
+            done
+            if [[ "$has_artifacts" == "true" ]]; then
+                (cd "$worktree_path" && \
+                    git rm -f DONE.md PROGRESS.md BLOCKED.md 2>/dev/null; \
+                    git commit -m "chore($name): remove worktree artifacts before merge" 2>/dev/null) || true
+            fi
+        fi
+
         if git merge "$branch" -m "feat: merge $name"; then
-            # Remove worktree artifacts that shouldn't live in the target branch
+            # Post-merge: clean any remaining artifacts (e.g. from untracked files)
             local artifacts_removed=false
             for artifact in DONE.md PROGRESS.md BLOCKED.md; do
                 if [[ -f "$artifact" ]]; then
