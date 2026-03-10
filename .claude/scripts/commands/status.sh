@@ -88,11 +88,17 @@ cmd_status_standard() {
         # Process status
         local proc_status="⚪ Stopped"
         local elapsed=""
+        local task_done_exists=false
+        file_exists "$worktree_path/DONE.md" && task_done_exists=true
 
         if is_process_running "$name"; then
             local pid=$(get_process_pid "$name")
             local runtime=$(get_process_runtime "$name")
-            proc_status="${GREEN}🟢 Running (PID: $pid)${NC}"
+            if [[ "$task_done_exists" == "true" ]]; then
+                proc_status="${YELLOW}🟡 Finishing (PID: $pid)${NC}"
+            else
+                proc_status="${GREEN}🟢 Running (PID: $pid)${NC}"
+            fi
             elapsed=" [$runtime]"
         fi
         echo -e "│ Process: $proc_status$elapsed"
@@ -231,6 +237,8 @@ cmd_status_enhanced() {
         # Process status with activity indicator
         local proc_status="⚪ Stopped"
         local activity_icon=""
+        local task_done_exists=false
+        file_exists "$worktree_path/DONE.md" && task_done_exists=true
 
         if is_process_running "$name"; then
             local pid=$(get_process_pid "$name")
@@ -244,7 +252,11 @@ cmd_status_enhanced() {
                 *)        activity_icon="${GRAY}●${NC}" ;;
             esac
 
-            proc_status="${GREEN}🟢 Running${NC} (PID: $pid) $activity_icon [$elapsed]"
+            if [[ "$task_done_exists" == "true" ]]; then
+                proc_status="${YELLOW}🟡 Finishing${NC} (PID: $pid) $activity_icon [$elapsed]"
+            else
+                proc_status="${GREEN}🟢 Running${NC} (PID: $pid) $activity_icon [$elapsed]"
+            fi
         fi
         echo -e "${YELLOW}║${NC} ${BOLD}Process:${NC} $proc_status"
 

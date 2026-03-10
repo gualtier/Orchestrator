@@ -466,11 +466,48 @@ You MUST also create DONE.md as the final step.
         # Start the agent process (reuse existing function unchanged)
         start_agent_process "$name" "$worktree_path" "$iter_prompt"
 
-        # Wait for the process to exit (simple PID polling)
-        local pidfile=$(get_pid_file "$name")
+        # Wait for the process to exit, BUT check DONE.md mid-iteration
+        # so we can run gates early and stop the process if it passes
+        local early_completion=false
         while is_process_running "$name"; do
             sleep $RALPH_PID_POLL_INTERVAL
+
+            # Check for early completion signals while process is still running
+            if check_done_md "$worktree_path" || check_completion_signal "$name" "$completion_signal"; then
+                log_info "Completion detected mid-iteration for $name, running gates..."
+
+                if run_gates "$name" "$worktree_path" "$gates"; then
+                    # Gates passed — kill the process and finish
+                    log_success "Gates passed mid-iteration for $name, stopping process..."
+                    stop_agent_process "$name" true 2>/dev/null || true
+                    early_completion=true
+
+                    echo "[$(timestamp)] RALPH_COMPLETE: $name [iter=$iteration, gates=PASS, early=true]" >> "$EVENTS_FILE"
+                    log_success "Ralph loop completed for $name after $iteration iteration(s)"
+
+                    # Clean up ralph-specific state files
+                    rm -f "$ralph_loop_pid_file" "$stall_file" "$iteration_file"
+                    rm -f "$ORCHESTRATION_DIR/pids/$name.ralph_config"
+                    rm -f "$ORCHESTRATION_DIR/pids/$name.stall_count.last_hash"
+                    rm -f "$ORCHESTRATION_DIR/pids/$name.gates"
+                    return 0
+                else
+                    # Gates failed mid-iteration — let the process continue,
+                    # but don't re-check until process exits naturally
+                    log_warn "Gates failed mid-iteration for $name, waiting for process to finish..."
+                    gate_feedback="$RALPH_GATE_RESULTS"
+                    while is_process_running "$name"; do
+                        sleep $RALPH_PID_POLL_INTERVAL
+                    done
+                    break
+                fi
+            fi
         done
+
+        # Skip post-process checks if we already handled completion
+        if [[ "$early_completion" == "true" ]]; then
+            continue
+        fi
 
         # Log iteration end
         echo "[$(timestamp)] RALPH_ITER_END: $name [iter=$iteration]" >> "$EVENTS_FILE"
@@ -486,7 +523,7 @@ You MUST also create DONE.md as the final step.
             return 1
         fi
 
-        # Check for completion signals
+        # Check for completion signals (post-process exit)
         local signal_found=false
         local done_md_found=false
 
@@ -511,29 +548,35 @@ You MUST also create DONE.md as the final step.
         fi
 
         if [[ "$should_run_gates" == "true" ]]; then
-            log_info "Running backpressure gates for $name..."
-
-            if run_gates "$name" "$worktree_path" "$gates"; then
-                # All gates passed — agent is done
-                echo "[$(timestamp)] RALPH_COMPLETE: $name [iter=$iteration, gates=PASS]" >> "$EVENTS_FILE"
-                log_success "Ralph loop completed for $name after $iteration iteration(s)"
-
-                # Clean up ralph-specific state files
-                rm -f "$ralph_loop_pid_file" "$stall_file" "$iteration_file"
-                rm -f "$ORCHESTRATION_DIR/pids/$name.ralph_config"
-                rm -f "$ORCHESTRATION_DIR/pids/$name.stall_count.last_hash"
-                rm -f "$ORCHESTRATION_DIR/pids/$name.gates"
-                return 0
+            # Gates may have already run (and failed) mid-iteration
+            if [[ -n "$gate_feedback" ]]; then
+                log_warn "Gates already failed mid-iteration for $name"
             else
-                # Gates failed — continue loop with feedback
-                gate_feedback="$RALPH_GATE_RESULTS"
-                echo "[$(timestamp)] RALPH_GATE_FAIL: $name [iter=$iteration]" >> "$EVENTS_FILE"
-                log_warn "Gates failed for $name, continuing to iteration $((iteration + 1))..."
+                log_info "Running backpressure gates for $name..."
 
-                # Remove DONE.md so the agent knows it needs to try again
-                if [[ -f "$worktree_path/DONE.md" ]]; then
-                    rm -f "$worktree_path/DONE.md"
+                if run_gates "$name" "$worktree_path" "$gates"; then
+                    # All gates passed — agent is done
+                    echo "[$(timestamp)] RALPH_COMPLETE: $name [iter=$iteration, gates=PASS]" >> "$EVENTS_FILE"
+                    log_success "Ralph loop completed for $name after $iteration iteration(s)"
+
+                    # Clean up ralph-specific state files
+                    rm -f "$ralph_loop_pid_file" "$stall_file" "$iteration_file"
+                    rm -f "$ORCHESTRATION_DIR/pids/$name.ralph_config"
+                    rm -f "$ORCHESTRATION_DIR/pids/$name.stall_count.last_hash"
+                    rm -f "$ORCHESTRATION_DIR/pids/$name.gates"
+                    return 0
+                else
+                    # Gates failed — continue loop with feedback
+                    gate_feedback="$RALPH_GATE_RESULTS"
                 fi
+            fi
+
+            echo "[$(timestamp)] RALPH_GATE_FAIL: $name [iter=$iteration]" >> "$EVENTS_FILE"
+            log_warn "Gates failed for $name, continuing to iteration $((iteration + 1))..."
+
+            # Remove DONE.md so the agent knows it needs to try again
+            if [[ -f "$worktree_path/DONE.md" ]]; then
+                rm -f "$worktree_path/DONE.md"
             fi
         else
             # No completion signal and no DONE.md — check convergence (REQ-5)
