@@ -75,17 +75,24 @@ cmd_verify() {
     if $skip_tests; then
         log_info "Tests skipped (--skip-tests)"
     else
-        local test_cmd
-        test_cmd=$(detect_test_runner "$worktree_path")
+        local test_gates
+        test_gates=$(detect_test_runner "$worktree_path")
 
-        if [[ -n "$test_cmd" ]]; then
-            log_info "Detected: $test_cmd"
-            local test_output
-            if test_output=$(cd "$worktree_path" && eval "$test_cmd" 2>&1); then
-                log_success "Tests passed"
-            else
-                log_error "Tests FAILED"
-                echo "$test_output" | tail -20
+        if [[ -n "$test_gates" ]]; then
+            local gate_failed=false
+            while IFS= read -r gate_cmd; do
+                [[ -z "$gate_cmd" ]] && continue
+                log_info "Running: $gate_cmd"
+                local test_output
+                if test_output=$(cd "$worktree_path" && eval "$gate_cmd" 2>&1); then
+                    log_success "Passed: $gate_cmd"
+                else
+                    log_error "FAILED: $gate_cmd"
+                    echo "$test_output" | tail -20
+                    gate_failed=true
+                fi
+            done <<< "$test_gates"
+            if [[ "$gate_failed" == "true" ]]; then
                 ((errors++))
             fi
         else

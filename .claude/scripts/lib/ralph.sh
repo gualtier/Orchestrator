@@ -148,26 +148,36 @@ check_done_md() {
 }
 
 # =============================================
-# TDD — AUTO-DETECT TEST RUNNER
+# TDD — AUTO-DETECT QUALITY GATES
 # =============================================
 
-# Detect the test runner in a worktree directory
-# Returns the test command via stdout, empty if none found
+# Detect quality gates (build checks + test runners) in a worktree
+# Returns newline-separated gate commands, empty if none found
+# Build gates (tsc, cargo check) run BEFORE test gates
 detect_test_runner() {
     local worktree_path=$1
+    local gates=""
+
+    # ── BUILD GATES (compile/typecheck — always first) ──
+
+    # TypeScript — tsc --noEmit (mandatory for any TS project)
+    if [[ -f "$worktree_path/tsconfig.json" ]]; then
+        gates+="npx tsc --noEmit"$'\n'
+    fi
+
+    # ── TEST GATES ──
 
     # Node.js — package.json with "test" script
     if [[ -f "$worktree_path/package.json" ]]; then
         if grep -q '"test"' "$worktree_path/package.json" 2>/dev/null; then
             # Check for common runners
             if [[ -f "$worktree_path/node_modules/.bin/vitest" ]]; then
-                echo "npx vitest run"
+                gates+="npx vitest run"$'\n'
             elif [[ -f "$worktree_path/node_modules/.bin/jest" ]]; then
-                echo "npx jest"
+                gates+="npx jest"$'\n'
             else
-                echo "npm test"
+                gates+="npm test"$'\n'
             fi
-            return
         fi
     fi
 
@@ -176,43 +186,36 @@ detect_test_runner() {
        [[ -f "$worktree_path/setup.cfg" ]]; then
         if grep -q "pytest" "$worktree_path/pyproject.toml" 2>/dev/null || \
            [[ -f "$worktree_path/pytest.ini" ]]; then
-            echo "python -m pytest"
-            return
+            gates+="python -m pytest"$'\n'
         fi
-    fi
-    if [[ -d "$worktree_path/tests" ]] && ls "$worktree_path/tests"/test_*.py 1>/dev/null 2>&1; then
-        echo "python -m pytest"
-        return
+    elif [[ -d "$worktree_path/tests" ]] && ls "$worktree_path/tests"/test_*.py 1>/dev/null 2>&1; then
+        gates+="python -m pytest"$'\n'
     fi
 
     # Go
     if [[ -f "$worktree_path/go.mod" ]]; then
-        echo "go test ./..."
-        return
+        gates+="go test ./..."$'\n'
     fi
 
     # Rust
     if [[ -f "$worktree_path/Cargo.toml" ]]; then
-        echo "cargo test"
-        return
+        gates+="cargo test"$'\n'
     fi
 
     # Makefile with test target
     if [[ -f "$worktree_path/Makefile" ]]; then
         if grep -q "^test:" "$worktree_path/Makefile" 2>/dev/null; then
-            echo "make test"
-            return
+            gates+="make test"$'\n'
         fi
     fi
 
     # Bash tests in .claude/scripts/tests/
     if [[ -f "$worktree_path/.claude/scripts/tests/test_runner.sh" ]]; then
-        echo "bash .claude/scripts/tests/test_runner.sh"
-        return
+        gates+="bash .claude/scripts/tests/test_runner.sh"$'\n'
     fi
 
-    # Nothing found
-    echo ""
+    # Trim trailing newline and output
+    echo -n "$gates" | sed '/^$/d'
 }
 
 # =============================================
@@ -228,14 +231,19 @@ run_gates() {
     local gates=$3  # newline-separated gate commands
     local gates_file="$ORCHESTRATION_DIR/pids/$name.gates"
 
-    # TDD integration: auto-detect test runner as default gate when none configured
+    # TDD integration: auto-detect quality gates when none configured
     if [[ -z "$gates" ]]; then
         local detected_runner
         detected_runner=$(detect_test_runner "$worktree_path")
         if [[ -n "$detected_runner" ]]; then
             gates="$detected_runner"
-            log_info "  TDD auto-gate: $detected_runner"
-            echo "AUTO_DETECTED:$detected_runner" > "$gates_file"
+            local gate_count
+            gate_count=$(echo "$detected_runner" | wc -l | tr -d ' ')
+            log_info "  Auto-detected $gate_count gate(s):"
+            echo "$detected_runner" | while IFS= read -r g; do
+                [[ -n "$g" ]] && log_info "    → $g"
+            done
+            echo "AUTO_DETECTED:$(echo "$detected_runner" | tr '\n' ',' | sed 's/,$//')" > "$gates_file"
         else
             # No gates and no test runner detected
             echo "NO_GATES" > "$gates_file"
