@@ -10,10 +10,14 @@ Show the current status of all active specifications.
 
 !`.claude/scripts/orchestrate.sh sdd status 2>&1 || echo "No active specs. Run /sdd-init first."`
 
-## Spec Lifecycle
+## Spec Lifecycle (PDCA Phases)
 
 ```
-specified → researched → planned → tasks-ready → executing → completed → validated
+PLAN:  specified → researched → planned
+DO:    tasks-ready → executing
+CHECK: completed
+ACT:   validated (kaizen review + archive)
 ```
 
 Use `/sdd-specify` to create a new spec, or check a specific spec's files directly.
+Use `sdd kaizen <number>` to run a kaizen review (PDCA Act phase).

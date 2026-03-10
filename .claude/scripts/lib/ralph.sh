@@ -115,6 +115,132 @@ EOF
 }
 
 # =============================================
+# METRICS COLLECTION (PDCA/Kaizen)
+# =============================================
+
+METRICS_DIR=""
+
+# Initialize metrics file for a spec's Ralph execution
+init_metrics_file() {
+    local name=$1
+    local max_iterations=$2
+    local task_file="$ORCHESTRATION_DIR/tasks/$name.md"
+
+    METRICS_DIR="$ORCHESTRATION_DIR/metrics"
+    ensure_dir "$METRICS_DIR"
+
+    # Extract spec number from task file
+    local spec_ref=""
+    if [[ -f "$task_file" ]]; then
+        spec_ref=$(grep "spec-ref:" "$task_file" 2>/dev/null | head -1 | sed 's/.*spec-ref: *//' | sed 's|.*/||' | sed 's|/spec.md||')
+    fi
+    local spec_num="${spec_ref:-unknown}"
+
+    local metrics_file="$METRICS_DIR/${spec_num}.json"
+    local now=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+    # Create or update metrics file
+    if [[ ! -f "$metrics_file" ]]; then
+        printf '{\n  "spec": "%s",\n  "started": "%s",\n  "completed": null,\n  "agents": {}\n}\n' \
+            "$spec_num" "$now" > "$metrics_file"
+    fi
+
+    # Store the metrics file path for later use
+    echo "$metrics_file" > "$ORCHESTRATION_DIR/pids/$name.metrics_file"
+}
+
+# Write iteration metrics after gates run
+write_iteration_metrics() {
+    local name=$1
+    local iteration=$2
+    local passed=$3
+    local total=$4
+    local result=$5  # PASS or FAIL
+
+    local metrics_file_ref="$ORCHESTRATION_DIR/pids/$name.metrics_file"
+    [[ -f "$metrics_file_ref" ]] || return 0
+    local metrics_file=$(cat "$metrics_file_ref")
+    [[ -f "$metrics_file" ]] || return 0
+
+    local gate_entry="    {\"iter\": $iteration, \"passed\": $passed, \"total\": $total, \"result\": \"$result\"}"
+
+    # Append gate entry to agent's state file (simple append, assembled at finalize)
+    local gates_metrics="$ORCHESTRATION_DIR/pids/$name.gates_metrics"
+    echo "$gate_entry" >> "$gates_metrics"
+}
+
+# Finalize metrics when Ralph loop ends
+finalize_metrics() {
+    local name=$1
+    local outcome=$2  # completed, stalled, max_iterations
+    local final_iteration=$3
+    local max_iterations=$4
+
+    local metrics_file_ref="$ORCHESTRATION_DIR/pids/$name.metrics_file"
+    [[ -f "$metrics_file_ref" ]] || return 0
+    local metrics_file=$(cat "$metrics_file_ref")
+    [[ -f "$metrics_file" ]] || return 0
+
+    local now=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+    local worktree_path=$(get_worktree_path "$name")
+    local files_changed=0
+    if [[ -d "$worktree_path" ]]; then
+        files_changed=$(cd "$worktree_path" && git diff --name-only main..HEAD 2>/dev/null | wc -l | tr -d ' ')
+    fi
+
+    local started_ts=$(grep "started" "$ORCHESTRATION_DIR/pids/$name.started" 2>/dev/null || echo "0")
+    local elapsed=0
+    if [[ -f "$ORCHESTRATION_DIR/pids/$name.started" ]]; then
+        local start_epoch=$(cat "$ORCHESTRATION_DIR/pids/$name.started" 2>/dev/null || echo "0")
+        local now_epoch=$(date '+%s')
+        elapsed=$((now_epoch - start_epoch))
+    fi
+
+    # Build gates_history from collected entries
+    local gates_history="[]"
+    local gates_metrics="$ORCHESTRATION_DIR/pids/$name.gates_metrics"
+    if [[ -f "$gates_metrics" ]]; then
+        gates_history="["$'\n'
+        local first=true
+        while IFS= read -r line; do
+            if $first; then
+                gates_history+="$line"
+                first=false
+            else
+                gates_history+=",$line"
+            fi
+        done < "$gates_metrics"
+        gates_history+=$'\n'"  ]"
+    fi
+
+    # Read existing metrics and rebuild with this agent's data
+    # Use a temp file to rebuild the JSON
+    local tmp_file="${metrics_file}.tmp"
+
+    # Simple approach: read existing file, inject agent data before closing brace
+    local agent_json
+    agent_json=$(printf '    "%s": {\n      "iterations": %d,\n      "max_iterations": %d,\n      "gates_history": %s,\n      "elapsed_seconds": %d,\n      "files_changed": %d,\n      "outcome": "%s"\n    }' \
+        "$name" "$final_iteration" "$max_iterations" "$gates_history" "$elapsed" "$files_changed" "$outcome")
+
+    # Check if agents section already has content
+    if grep -q "\"agents\": {}" "$metrics_file" 2>/dev/null; then
+        sed "s|\"agents\": {}|\"agents\": {\n${agent_json}\n  }|" "$metrics_file" > "$tmp_file"
+    else
+        # Append to existing agents (insert before the closing }})
+        sed "s|  }$|  },\n${agent_json}\n  }|" "$metrics_file" > "$tmp_file" 2>/dev/null || \
+            cp "$metrics_file" "$tmp_file"
+    fi
+
+    # Update completed timestamp
+    sed "s|\"completed\": null|\"completed\": \"$now\"|" "$tmp_file" > "$metrics_file" 2>/dev/null || \
+        mv "$tmp_file" "$metrics_file"
+    rm -f "$tmp_file"
+
+    # Cleanup temp files
+    rm -f "$gates_metrics" "$metrics_file_ref"
+}
+
+# =============================================
 # COMPLETION SIGNAL DETECTION
 # =============================================
 
@@ -291,8 +417,10 @@ $truncated_output
     echo "passed=$passed" >> "$gates_file"
     echo "total=$total" >> "$gates_file"
 
-    # Save gate feedback for next iteration
+    # Save gate feedback and metrics for next iteration
     RALPH_GATE_RESULTS="$failed_output"
+    RALPH_GATES_PASSED=$passed
+    RALPH_GATES_TOTAL=$total
 
     if [[ $passed -eq $total ]]; then
         log_success "  All gates passed ($passed/$total)"
@@ -432,6 +560,9 @@ ralph_loop() {
     log_step "Ralph loop starting for $name (max: $max_iterations iterations)"
     echo "[$(timestamp)] RALPH_START: $name [max_iter=$max_iterations, stall=$stall_threshold]" >> "$EVENTS_FILE"
 
+    # Initialize metrics collection (PDCA/Kaizen)
+    init_metrics_file "$name" "$max_iterations"
+
     local gate_feedback=""
 
     while [[ $iteration -le $max_iterations ]]; do
@@ -486,12 +617,15 @@ You MUST also create DONE.md as the final step.
 
                 if run_gates "$name" "$worktree_path" "$gates"; then
                     # Gates passed — kill the process and finish
+                    write_iteration_metrics "$name" "$iteration" "$RALPH_GATES_PASSED" "$RALPH_GATES_TOTAL" "PASS"
                     log_success "Gates passed mid-iteration for $name, stopping process..."
                     stop_agent_process "$name" true 2>/dev/null || true
                     early_completion=true
 
                     echo "[$(timestamp)] RALPH_COMPLETE: $name [iter=$iteration, gates=PASS, early=true]" >> "$EVENTS_FILE"
                     log_success "Ralph loop completed for $name after $iteration iteration(s)"
+
+                    finalize_metrics "$name" "completed" "$iteration" "$max_iterations"
 
                     # Clean up ralph-specific state files
                     rm -f "$ralph_loop_pid_file" "$stall_file" "$iteration_file"
@@ -502,6 +636,7 @@ You MUST also create DONE.md as the final step.
                 else
                     # Gates failed mid-iteration — let the process continue,
                     # but don't re-check until process exits naturally
+                    write_iteration_metrics "$name" "$iteration" "$RALPH_GATES_PASSED" "$RALPH_GATES_TOTAL" "FAIL"
                     log_warn "Gates failed mid-iteration for $name, waiting for process to finish..."
                     gate_feedback="$RALPH_GATE_RESULTS"
                     while is_process_running "$name"; do
@@ -524,6 +659,7 @@ You MUST also create DONE.md as the final step.
         if [[ ! -d "$worktree_path" ]]; then
             log_error "Worktree deleted during ralph iteration $iteration: $worktree_path"
             echo "[$(timestamp)] RALPH_ERROR: $name [worktree deleted]" >> "$EVENTS_FILE"
+            finalize_metrics "$name" "error" "$iteration" "$max_iterations"
             rm -f "$ralph_loop_pid_file" "$stall_file" "$iteration_file"
             rm -f "$ORCHESTRATION_DIR/pids/$name.ralph_config"
             rm -f "$ORCHESTRATION_DIR/pids/$name.stall_count.last_hash"
@@ -564,8 +700,11 @@ You MUST also create DONE.md as the final step.
 
                 if run_gates "$name" "$worktree_path" "$gates"; then
                     # All gates passed — agent is done
+                    write_iteration_metrics "$name" "$iteration" "$RALPH_GATES_PASSED" "$RALPH_GATES_TOTAL" "PASS"
                     echo "[$(timestamp)] RALPH_COMPLETE: $name [iter=$iteration, gates=PASS]" >> "$EVENTS_FILE"
                     log_success "Ralph loop completed for $name after $iteration iteration(s)"
+
+                    finalize_metrics "$name" "completed" "$iteration" "$max_iterations"
 
                     # Clean up ralph-specific state files
                     rm -f "$ralph_loop_pid_file" "$stall_file" "$iteration_file"
@@ -575,6 +714,7 @@ You MUST also create DONE.md as the final step.
                     return 0
                 else
                     # Gates failed — continue loop with feedback
+                    write_iteration_metrics "$name" "$iteration" "$RALPH_GATES_PASSED" "$RALPH_GATES_TOTAL" "FAIL"
                     gate_feedback="$RALPH_GATE_RESULTS"
                 fi
             fi
@@ -616,6 +756,8 @@ $(date '+%Y-%m-%d %H:%M:%S')
 STALLEOF
                     log_info "Created BLOCKED.md for $name (stall)"
 
+                    finalize_metrics "$name" "stalled" "$iteration" "$max_iterations"
+
                     # Clean up
                     rm -f "$ralph_loop_pid_file" "$stall_file" "$iteration_file"
                     rm -f "$ORCHESTRATION_DIR/pids/$name.ralph_config"
@@ -627,6 +769,35 @@ STALLEOF
 
             # Reset gate feedback since no gates ran
             gate_feedback=""
+        fi
+
+        # HITL pause: interactive review between iterations
+        if [[ "${RALPH_HITL:-false}" == "true" ]] && [[ $iteration -lt $max_iterations ]]; then
+            echo ""
+            log_header "HITL PAUSE — Iteration $iteration complete for $name"
+            echo "  Gates: ${RALPH_GATES_PASSED:-?}/${RALPH_GATES_TOTAL:-?} passed"
+            echo "  Changes this iteration:"
+            (cd "$worktree_path" && git diff --stat HEAD~1 2>/dev/null || echo "  (no commits this iteration)")
+            echo ""
+            echo "  [c]ontinue  [a]djust (add instructions)  [s]top"
+            read -r -p "  Choice: " hitl_choice </dev/tty
+            case "$hitl_choice" in
+                a|adjust)
+                    read -r -p "  Additional instructions: " hitl_extra </dev/tty
+                    gate_feedback+=$'\n'"## User Adjustment (HITL)"$'\n'"$hitl_extra"
+                    ;;
+                s|stop)
+                    log_info "User stopped ralph loop for $name"
+                    echo "[$(timestamp)] RALPH_HITL_STOP: $name [iter=$iteration]" >> "$EVENTS_FILE"
+                    finalize_metrics "$name" "hitl_stop" "$iteration" "$max_iterations"
+                    rm -f "$ralph_loop_pid_file" "$stall_file" "$iteration_file"
+                    rm -f "$ORCHESTRATION_DIR/pids/$name.ralph_config"
+                    rm -f "$ORCHESTRATION_DIR/pids/$name.stall_count.last_hash"
+                    rm -f "$ORCHESTRATION_DIR/pids/$name.gates"
+                    return 0
+                    ;;
+                *) ;; # continue
+            esac
         fi
 
         ((iteration++)) || true
@@ -656,6 +827,8 @@ $(tail -20 "$logfile" 2>/dev/null || echo "No log available")
 $(date '+%Y-%m-%d %H:%M:%S')
 MAXEOF
     log_info "Created BLOCKED.md for $name (max iterations)"
+
+    finalize_metrics "$name" "max_iterations" "$max_iterations" "$max_iterations"
 
     # Clean up
     rm -f "$ralph_loop_pid_file" "$stall_file" "$iteration_file"

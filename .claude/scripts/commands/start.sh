@@ -10,6 +10,7 @@ cmd_start() {
     local timeout_minutes=0  # 0 = no timeout
     local ralph_global=false
     local ralph_max_iterations=""
+    local ralph_hitl=false
 
     # Parse flags and agent names
     while [[ $# -gt 0 ]]; do
@@ -19,6 +20,7 @@ cmd_start() {
             --timeout) timeout_minutes="$2"; shift 2 ;;
             --ralph) ralph_global=true; shift ;;
             --max-iterations) ralph_max_iterations="$2"; shift 2 ;;
+            --hitl) ralph_hitl=true; shift ;;
             *) names+=("$1"); shift ;;
         esac
     done
@@ -26,6 +28,7 @@ cmd_start() {
     # Export ralph settings for start_single_agent to use
     export RALPH_GLOBAL="$ralph_global"
     export RALPH_GLOBAL_MAX_ITERATIONS="$ralph_max_iterations"
+    export RALPH_HITL="$ralph_hitl"
 
     # If no name specified, start all (skipping orphan tasks)
     if [[ ${#names[@]} -eq 0 ]]; then
@@ -344,14 +347,22 @@ START NOW!"
         save_ralph_config "$name"
         log_info "Ralph mode enabled for $name (max: $RALPH_MAX_ITERATIONS iterations)"
 
-        # Launch ralph loop in background subshell
-        (ralph_loop "$name" "$worktree_path" "$full_prompt" \
-            "$RALPH_MAX_ITERATIONS" "$RALPH_STALL_THRESHOLD" \
-            "$RALPH_GATES" "$RALPH_COMPLETION_SIGNAL") &
+        if [[ "${RALPH_HITL:-false}" == "true" ]]; then
+            # HITL mode — run ralph loop in foreground for interactive pauses
+            log_info "HITL mode: running $name in foreground (interactive)"
+            ralph_loop "$name" "$worktree_path" "$full_prompt" \
+                "$RALPH_MAX_ITERATIONS" "$RALPH_STALL_THRESHOLD" \
+                "$RALPH_GATES" "$RALPH_COMPLETION_SIGNAL"
+        else
+            # Standard mode — launch ralph loop in background subshell
+            (ralph_loop "$name" "$worktree_path" "$full_prompt" \
+                "$RALPH_MAX_ITERATIONS" "$RALPH_STALL_THRESHOLD" \
+                "$RALPH_GATES" "$RALPH_COMPLETION_SIGNAL") &
 
-        # The ralph_loop manages its own PIDs internally via start_agent_process
-        # We just need to let it run in the background
-        disown 2>/dev/null || true
+            # The ralph_loop manages its own PIDs internally via start_agent_process
+            # We just need to let it run in the background
+            disown 2>/dev/null || true
+        fi
     else
         # Standard single-shot mode (unchanged behavior)
         start_agent_process "$name" "$worktree_path" "$full_prompt"

@@ -1,7 +1,7 @@
 ---
 name: sdd-run
-description: Autopilot mode. Runs gate, tasks, setup, start, and monitor for all planned specs (or a single one). Supports --mode teams for Agent Teams backend. Supports --auto-merge for fully autonomous execution. Pauses before merge for review.
-argument-hint: spec number [--auto-merge] [--mode teams]
+description: Autopilot mode. Runs gate, tasks, setup, start, and monitor for all planned specs (or a single one). Supports --mode teams for Agent Teams backend. Supports --auto-merge for fully autonomous execution. Supports --hitl for human-in-the-loop. Pauses before merge for review.
+argument-hint: spec number [--auto-merge] [--mode teams] [--hitl] [--no-kaizen]
 allowed-tools: Bash, Read
 ---
 
@@ -18,6 +18,12 @@ Run the SDD autopilot pipeline.
 
 # Agent Teams mode (v3.8)
 .claude/scripts/orchestrate.sh sdd run 001 --mode teams
+
+# HITL mode (v3.11) - pause between ralph iterations for review
+.claude/scripts/orchestrate.sh sdd run 001 --hitl
+
+# Skip kaizen review (v3.11)
+.claude/scripts/orchestrate.sh sdd run 001 --no-kaizen
 ```
 
 ## Async Monitoring Pattern
@@ -41,12 +47,14 @@ Chains everything automatically after the plan is approved:
 3. **Worktree setup** — Creates all worktrees from the Worktree Mapping table (skipped in teams mode)
 4. **Agent start + monitor** — Starts all agents and monitors until completion
 5. **Results summary** — Shows completion status and suggests merge
+6. **Kaizen review** — Analyzes execution metrics, updates memory with lessons (skip with `--no-kaizen`)
 
 With `--auto-merge` (v3.9), additional steps run automatically:
 
-6. **Auto merge** — Merges all worktrees to main
-7. **Auto post-merge** — Runs `update-memory --full` and `learn extract`
-8. **Auto archive** — Archives the spec and cleans up worktrees
+7. **Auto merge** — Merges all worktrees to main
+8. **Auto post-merge** — Runs `update-memory --full` and `learn extract`
+9. **Auto validate** — Production validation (auto-creates hotfix spec on failure)
+10. **Auto archive** — Archives the spec and cleans up worktrees
 
 ## Execution Backends
 

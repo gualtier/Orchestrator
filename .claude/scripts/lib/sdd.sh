@@ -148,6 +148,28 @@ get_spec_status() {
     fi
 }
 
+# Map spec status to PDCA phase
+get_pdca_phase() {
+    local status=$1
+    case "$status" in
+        empty|specified|researched|planned)
+            echo "PLAN"
+            ;;
+        tasks-ready|executing*)
+            echo "DO"
+            ;;
+        completed)
+            echo "CHECK"
+            ;;
+        validated)
+            echo "ACT"
+            ;;
+        *)
+            echo "-"
+            ;;
+    esac
+}
+
 # List all active specs
 list_active_specs() {
     [[ -d "$SPECS_ACTIVE" ]] || return 0

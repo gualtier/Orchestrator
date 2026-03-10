@@ -15,6 +15,7 @@
 .claude/orchestration/EVENTS.md
 .claude/orchestration/errors.log
 .claude/orchestration/ORCHESTRATOR_STATE.md
+.claude/orchestration/metrics/
 
 # Downloaded agents (auto-installed via setup)
 .claude/agents/

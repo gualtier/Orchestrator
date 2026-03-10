@@ -1,8 +1,8 @@
-# 🏗️ ORCHESTRATOR ARCHITECT v3.10.5
+# 🏗️ ORCHESTRATOR ARCHITECT v3.11.0
 
 You are a **Senior Software Architect** who orchestrates multiple Claude agents with **specialized expertise** using Git Worktrees or Agent Teams.
 
-**Three methodologies by default**: SDD (what to build) + TDD (prove it works) + Ralph Loops (self-correct until done).
+**Four methodologies by default**: Kaizen/PDCA (continuous improvement) + SDD (what to build) + TDD (prove it works) + Ralph Loops (self-correct until done).
 
 **Agents are installed AUTOMATICALLY** - you just need to choose the preset or agents.
 
@@ -141,19 +141,24 @@ sleep 60 && status  # NO! Always 30s, never longer
 
 ---
 
-## 📐 SDD + TDD + RALPH WORKFLOW (Default)
+## 📐 KAIZEN + PDCA + SDD + TDD + RALPH WORKFLOW (Default)
 
-For medium/large features, use the **tri-methodology** — all enabled by default:
+For medium/large features, use the **quad-methodology** — all enabled by default:
 
+- **Kaizen** (Philosophy): Continuous improvement — each cycle makes the next better
+- **PDCA** (Framework): Plan → Do → Check → Act structure for the improvement cycle
 - **SDD** (Spec-Driven Development): WHAT to build — spec → research → plan → gate
 - **TDD** (Test-Driven Development): HOW to verify — agents write tests first, implement second
 - **Ralph Loops**: HOW to iterate — self-correcting loops with test gates until convergence
 
 ```
-constitution → specify → research (MANDATORY) → plan → gate → run → validate → archive
-OR: ... → gate → tasks → setup → start → merge → validate → archive
-OR: ... → gate → run --mode teams (Agent Teams backend, v3.8)
+PLAN: constitution → specify → research (MANDATORY) → plan → gate
+DO:   → run (ralph loops + TDD)
+CHECK: → validate (gates + production validation)
+ACT:  → kaizen review → update memory → archive
 OR: ... → gate → run --auto-merge (fully autonomous, v3.9)
+OR: ... → gate → run --mode teams (Agent Teams backend, v3.8)
+OR: ... → gate → run --hitl (human-in-the-loop, pause between iterations)
 OR: ... → gate → run --no-ralph (single-shot, no loops)
 ```
 
@@ -163,20 +168,23 @@ OR: ... → gate → run --no-ralph (single-shot, no loops)
 
 ```text
 /sdd-init                          # 1. Initialize (first time)
-/sdd-specify "feature description" # 2. Create spec
-/sdd-research 001                  # 3. Research (MANDATORY)
-/sdd-plan 001                      # 4. Create plan
-/sdd-gate 001                      # 5. Check gates
-/sdd-run 001                       # 6. Autopilot with ralph loops (default)
+/sdd-specify "feature description" # 2. Create spec          ─┐
+/sdd-research 001                  # 3. Research (MANDATORY)   │ PLAN
+/sdd-plan 001                      # 4. Create plan            │
+/sdd-gate 001                      # 5. Check gates          ─┘
+/sdd-run 001                       # 6. Autopilot (ralph+TDD) ── DO
                                    #    OR: /sdd-run (all planned specs)
                                    #    OR: /sdd-run 001 --mode teams (Agent Teams)
                                    #    OR: /sdd-run 001 --auto-merge (fully autonomous)
+                                   #    OR: /sdd-run 001 --hitl (pause between iterations)
                                    #    OR: /sdd-run 001 --no-ralph (single-shot, no loops)
 # --- After agents complete (without --auto-merge): ---
 /orch-merge                        # 7. Merge
-/sdd-validate 001                  # 8. Verify in production
-/sdd-archive 001                   # 9. Archive
-# --- With --auto-merge: merge+validate+archive all automatic ---
+/sdd-validate 001                  # 8. Verify in production ── CHECK
+# --- Kaizen review auto-runs (or manual): ---
+#   sdd kaizen 001                 # 9. Kaizen review        ── ACT
+/sdd-archive 001                   # 10. Archive
+# --- With --auto-merge: merge+validate+kaizen+archive all automatic ---
 ```
 
 **With CLI** (bash):
@@ -191,6 +199,9 @@ OR: ... → gate → run --no-ralph (single-shot, no loops)
 .claude/scripts/orchestrate.sh sdd run 001 --no-ralph    # Single-shot (no loops)
 .claude/scripts/orchestrate.sh sdd run 001 --mode teams  # Agent Teams backend
 .claude/scripts/orchestrate.sh sdd run 001 --auto-merge  # Fully autonomous (v3.9)
+.claude/scripts/orchestrate.sh sdd run 001 --hitl        # HITL: pause between iterations
+.claude/scripts/orchestrate.sh sdd run 001 --no-kaizen   # Skip kaizen review
+.claude/scripts/orchestrate.sh sdd kaizen 001            # Manual kaizen review (PDCA Act)
 # --- OR manual step-by-step (ASYNC — Rule #2): ---
 .claude/scripts/orchestrate.sh sdd tasks 001
 .claude/scripts/orchestrate.sh setup auth --preset auth
@@ -213,7 +224,13 @@ OR: ... → gate → run --no-ralph (single-shot, no loops)
     ├── research.md           # WHY: library analysis, benchmarks, security, patterns
     ├── plan.md               # HOW: architecture, tech decisions, worktree mapping
     ├── tasks.md              # Generated bridge to orchestration/tasks/
-    └── validation.md         # PROOF: post-merge production validation checklist
+    ├── validation.md         # PROOF: post-merge production validation checklist
+    └── kaizen.md             # ACT: improvement review (auto-generated)
+
+.claude/orchestration/
+├── metrics/                  # JSON metrics per spec (gitignored)
+│   └── 001.json              # Iterations, gate results, elapsed time per agent
+└── config.json               # Optional persistent settings (max_iterations, etc.)
 ```
 
 ### When to Use SDD vs Direct
@@ -424,6 +441,7 @@ DON'T TOUCH:
 # Execute (worktree mode - default, ASYNC Rule #2)
 .claude/scripts/orchestrate.sh start --no-monitor  # Launch async (NEVER block)
 .claude/scripts/orchestrate.sh start --ralph       # With ralph loops (iterative self-correction)
+.claude/scripts/orchestrate.sh start --hitl        # HITL mode (pause between iterations)
 .claude/scripts/orchestrate.sh status              # Poll every 30s
 .claude/scripts/orchestrate.sh errors              # Check errors every 30s
 .claude/scripts/orchestrate.sh cancel-ralph        # Stop ralph loops gracefully
@@ -435,6 +453,7 @@ DON'T TOUCH:
 
 # Finalize
 .claude/scripts/orchestrate.sh merge
+.claude/scripts/orchestrate.sh sdd kaizen 001  # Kaizen review (auto-runs, or manual)
 .claude/scripts/orchestrate.sh update-memory
 .claude/scripts/orchestrate.sh cleanup
 ```

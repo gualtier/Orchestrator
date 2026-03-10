@@ -1,18 +1,19 @@
-# Orchestrator Capabilities v3.10.5
+# Orchestrator Capabilities v3.11.0
 
 > This file is auto-updated by `orch update`. Do NOT edit manually.
 > Read this file at the start of every session to know what tools are available.
 
 ## Available Features
 
-### Tri-Methodology (Default)
+### Quad-Methodology (Default)
 
-All three methodologies work together by default:
+All four methodologies work together by default:
+- **Kaizen/PDCA** (v3.11): Continuous improvement cycle — Plan → Do → Check → Act
 - **SDD** (Spec-Driven Development): WHAT to build — spec → research → plan → gate
 - **TDD** (Test-Driven Development): HOW to verify — agents write tests first, implement second
 - **Ralph Loops**: HOW to iterate — self-correcting loops with test gates until convergence
 
-Agents automatically: write failing tests → implement to pass → ralph loop re-runs tests as gates → self-correct on failure.
+Agents automatically: write failing tests → implement to pass → ralph loop re-runs tests as gates → self-correct on failure → kaizen review extracts lessons.
 
 ### SDD - Spec-Driven Development
 
@@ -37,8 +38,10 @@ Supports two execution backends:
 | `/sdd-plan 001` | Create technical implementation plan |
 | `/sdd-gate 001` | Validate plan against constitutional gates |
 | `/sdd-run [001]` | Autopilot: gate -> tasks -> setup -> start -> monitor. Add `--auto-merge` for full hands-off |
+| `/sdd-run 001 --hitl` | HITL mode: pause between ralph iterations for review |
+| `/sdd-run 001 --no-kaizen` | Skip kaizen review after completion |
 | `/sdd-tasks 001` | Generate orchestrator task files from plan (manual mode) |
-| `/sdd-status` | Show status of all active specs |
+| `/sdd-status` | Show status of all active specs (with PDCA phase column) |
 | `/sdd-archive 001` | Archive a completed spec |
 
 ### Orchestration - Multi-Agent Execution
@@ -108,6 +111,9 @@ orch sdd run [number]  # Autopilot: gate -> tasks -> setup -> start -> monitor
 orch sdd run 001 --auto-merge   # Full hands-off: gate -> ... -> merge -> archive
 orch sdd run 001 --mode teams   # Use Agent Teams backend instead of worktrees
 orch sdd run 001 --no-ralph     # Single-shot mode (no iterative loops)
+orch sdd run 001 --hitl         # HITL: pause between iterations for review
+orch sdd run 001 --no-kaizen    # Skip kaizen review after completion
+orch sdd kaizen 001             # Manual kaizen review (PDCA Act phase)
 
 # Agent Teams (v3.8)
 orch team start <spec-number>  # Start Agent Team from SDD spec
@@ -152,19 +158,23 @@ orch update-check      # Check for updates
 orch help              # Show all commands
 ```
 
-### SDD Autopilot (v3.7, enhanced v3.10)
+### SDD Autopilot (v3.7, enhanced v3.11)
 
 End-to-end pipeline execution after plan approval:
 
 - `sdd run 001` — single spec autopilot (pauses before merge)
 - `sdd run` — all planned specs at once
-- `sdd run 001 --auto-merge` — fully autonomous: gate → tasks → setup → start → merge → archive
+- `sdd run 001 --auto-merge` — fully autonomous: gate → tasks → setup → start → merge → kaizen → archive
 - `sdd run 001 --mode teams` — use Agent Teams backend
 - `sdd run 001 --no-ralph` — single-shot mode (no iterative loops)
+- `sdd run 001 --hitl` — HITL mode: pause between ralph iterations for interactive review
+- `sdd run 001 --no-kaizen` — skip kaizen review after completion
 - Fail-fast on gate failure, task errors, or setup errors
-- Auto `update-memory --full` and `learn extract` after agents complete
+- Auto `update-memory --full`, kaizen review, and `learn extract` after agents complete
 - TDD + Ralph on by default: agents write tests first, ralph loops use tests as gates
 - `SDD_AUTOPILOT=1` env var bypasses stop hooks during autonomous execution (v3.9)
+- PDCA phase tracking in `sdd status` (PLAN/DO/CHECK/ACT column)
+- Metrics collection during Ralph loops (JSON in `.claude/orchestration/metrics/`)
 
 ### Autonomous Pipeline (v3.9)
 
@@ -201,6 +211,20 @@ Iterative self-correcting agent loops (inspired by ghuntley.com/ralph):
 - **Per-task config** — Task frontmatter: `ralph: true/false`, `max-iterations: 20`, `gates: cmd`, `stall-threshold: 3`
 - **Commands**: `start --ralph`, `start --no-ralph`, `cancel-ralph [agent]`
 - **Status dashboard** — Shows iteration count, gate results, convergence indicator
+
+### Kaizen + PDCA (v3.11)
+
+Continuous improvement framework unifying SDD, TDD, and Ralph Loops:
+
+- **PDCA phase tracking** — `sdd status` shows PLAN/DO/CHECK/ACT column per spec
+- **Kaizen review** — `sdd kaizen <N>` analyzes execution: iterations, gate failures, time, outcomes
+- **Auto-run** — Kaizen review runs automatically after agents complete (skip with `--no-kaizen`)
+- **Metrics collection** — JSON metrics per spec during Ralph loops (iterations, gates, elapsed time)
+- **Auto-hotfix** — Validation failures auto-create hotfix specs (PDCA Act phase)
+- **HITL mode** — `--hitl` flag pauses between ralph iterations for interactive review
+- **Config.json** — Optional `.claude/orchestration/config.json` for persistent settings
+- **Memory update** — Kaizen review auto-updates PROJECT_MEMORY.md with lessons learned
+- **Artifacts**: `kaizen.md` (report), `metrics/<spec>.json` (data)
 
 ### TDD by Default (v3.10.1)
 

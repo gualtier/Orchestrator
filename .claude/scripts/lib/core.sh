@@ -51,6 +51,23 @@ init_config() {
     # When set to 1, hooks pass through without blocking
     SDD_AUTOPILOT=${SDD_AUTOPILOT:-"0"}
 
+    # Kaizen/PDCA defaults (v3.11)
+    KAIZEN_AUTO_RUN=${KAIZEN_AUTO_RUN:-"true"}
+
+    # Load optional config.json for persistent settings
+    local config_file="$ORCHESTRATION_DIR/config.json"
+    if [[ -f "$config_file" ]]; then
+        local val
+        val=$(grep '"max_iterations"' "$config_file" 2>/dev/null | grep -o '[0-9]*' | head -1)
+        [[ -n "$val" ]] && RALPH_DEFAULT_MAX_ITERATIONS="$val"
+
+        val=$(grep '"stall_threshold"' "$config_file" 2>/dev/null | grep -o '[0-9]*' | head -1)
+        [[ -n "$val" ]] && RALPH_DEFAULT_STALL_THRESHOLD="$val"
+
+        val=$(grep '"kaizen_auto_run"' "$config_file" 2>/dev/null | grep -o 'true\|false' | head -1)
+        [[ -n "$val" ]] && KAIZEN_AUTO_RUN="$val"
+    fi
+
     # Export for subshells
     export PROJECT_ROOT PROJECT_NAME CLAUDE_DIR ORCHESTRATION_DIR
     export AGENTS_DIR MEMORY_FILE STATE_FILE EVENTS_FILE AGENTS_SCRIPT
@@ -58,7 +75,7 @@ init_config() {
     export SPECS_DIR SPECS_ACTIVE SPECS_ARCHIVE SPECS_TEMPLATES CONSTITUTION_FILE
     export ERROR_POLL_INTERVAL ERROR_LOG_FILE ERROR_CACHE_DIR
     export EXECUTION_MODE TEAMS_HOME TASKS_HOME
-    export SDD_AUTOPILOT
+    export SDD_AUTOPILOT KAIZEN_AUTO_RUN
 }
 
 # Initialize configuration automatically

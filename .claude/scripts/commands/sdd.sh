@@ -19,6 +19,7 @@ cmd_sdd() {
         gate)         cmd_sdd_gate "$@" ;;
         run)          cmd_sdd_run "$@" ;;
         validate)     cmd_sdd_validate "$@" ;;
+        kaizen)       cmd_sdd_kaizen "$@" ;;
         archive)      cmd_sdd_archive "$@" ;;
         help|--help)  cmd_sdd_help ;;
         *)
@@ -490,11 +491,12 @@ cmd_sdd_status() {
     fi
 
     # Header
-    printf "  %-30s %-15s %s\n" "SPEC" "STATUS" "NEXT STEP"
+    printf "  %-30s %-6s %-15s %s\n" "SPEC" "PDCA" "STATUS" "NEXT STEP"
     log_separator
 
     echo "$specs" | while IFS='|' read -r name status; do
         local next_step=""
+        local pdca_phase=$(get_pdca_phase "$status")
         case "$status" in
             empty)          next_step="-> run: sdd specify" ;;
             specified)      next_step="-> run: sdd research ${name%%-*}" ;;
@@ -506,7 +508,7 @@ cmd_sdd_status() {
             validated)      next_step="-> run: sdd archive ${name%%-*}" ;;
         esac
 
-        printf "  %-30s %-15s %s\n" "$name" "[$status]" "$next_step"
+        printf "  %-30s %-6s %-15s %s\n" "$name" "$pdca_phase" "[$status]" "$next_step"
     done
 
     echo ""
@@ -728,6 +730,9 @@ VPROMPT
             echo ""
             log_info "Fix the issues and re-run: orchestrate.sh sdd validate $spec_number"
 
+            # Auto-create hotfix spec (PDCA Act phase)
+            _create_hotfix_spec "$spec_name" "$validation_file"
+
             # Log event
             if [[ -f "$EVENTS_FILE" ]]; then
                 echo "[$(date -u +"%Y-%m-%dT%H:%M:%SZ")] SDD_VALIDATE_FAIL: ${spec_name}" >> "$EVENTS_FILE"
@@ -833,6 +838,209 @@ cmd_sdd_archive() {
 }
 
 # =============================================
+# SDD KAIZEN REVIEW (PDCA Act Phase)
+# =============================================
+
+cmd_sdd_kaizen() {
+    local spec_number=$1
+
+    if [[ -z "$spec_number" ]]; then
+        log_error "Usage: orchestrate.sh sdd kaizen <spec-number>"
+        return 1
+    fi
+
+    local spec_dir
+    spec_dir=$(spec_dir_for "$spec_number")
+    if [[ $? -ne 0 ]] || [[ -z "$spec_dir" ]]; then
+        log_error "Spec not found: $spec_number"
+        return 1
+    fi
+
+    local spec_name=$(basename "$spec_dir")
+    local spec_num=${spec_name%%-*}
+    local kaizen_file="$spec_dir/kaizen.md"
+
+    log_header "KAIZEN REVIEW: ${spec_name}"
+
+    # Collect data from EVENTS.md
+    local total_iterations=0
+    local total_gate_fails=0
+    local agent_count=0
+    local agent_data=""
+
+    for task_file in "$ORCHESTRATION_DIR/tasks"/*.md; do
+        [[ -f "$task_file" ]] || continue
+        if grep -q "spec-ref:.*/${spec_num}-" "$task_file" 2>/dev/null; then
+            local agent_name=$(basename "$task_file" .md)
+            ((agent_count++)) || true
+
+            # Count iterations from EVENTS
+            local iters=0
+            if [[ -f "$EVENTS_FILE" ]]; then
+                iters=$(grep -c "RALPH_ITER_START: $agent_name" "$EVENTS_FILE" 2>/dev/null || echo 0)
+            fi
+            total_iterations=$((total_iterations + iters))
+
+            # Count gate failures
+            local gfails=0
+            if [[ -f "$EVENTS_FILE" ]]; then
+                gfails=$(grep -c "RALPH_GATE_FAIL: $agent_name" "$EVENTS_FILE" 2>/dev/null || echo 0)
+            fi
+            total_gate_fails=$((total_gate_fails + gfails))
+
+            # Get outcome
+            local worktree_path=$(get_worktree_path "$agent_name")
+            local outcome="unknown"
+            if [[ -f "$worktree_path/DONE.md" ]]; then
+                outcome="completed"
+            elif [[ -f "$worktree_path/BLOCKED.md" ]]; then
+                outcome="blocked"
+            fi
+
+            # Get elapsed time from events
+            local elapsed="n/a"
+            if [[ -f "$EVENTS_FILE" ]]; then
+                local start_ts=$(grep "STARTING: $agent_name" "$EVENTS_FILE" 2>/dev/null | tail -1 | grep -o '^\[[^]]*\]' | tr -d '[]')
+                local end_ts=$(grep "RALPH_COMPLETE: $agent_name\|RALPH_STALL: $agent_name\|RALPH_MAX_ITER: $agent_name" "$EVENTS_FILE" 2>/dev/null | tail -1 | grep -o '^\[[^]]*\]' | tr -d '[]')
+                if [[ -n "$start_ts" ]] && [[ -n "$end_ts" ]]; then
+                    elapsed="${start_ts} → ${end_ts}"
+                fi
+            fi
+
+            agent_data+="| $agent_name | $iters | $gfails | $elapsed | $outcome |"$'\n'
+        fi
+    done
+
+    # Collect what went well from DONE.md files
+    local went_well=""
+    for task_file in "$ORCHESTRATION_DIR/tasks"/*.md; do
+        [[ -f "$task_file" ]] || continue
+        if grep -q "spec-ref:.*/${spec_num}-" "$task_file" 2>/dev/null; then
+            local agent_name=$(basename "$task_file" .md)
+            local worktree_path=$(get_worktree_path "$agent_name")
+            if [[ -f "$worktree_path/DONE.md" ]]; then
+                local summary=$(sed -n '/## Summary/,/^## /p' "$worktree_path/DONE.md" 2>/dev/null | sed '$d' | tail -n +2 | head -5)
+                [[ -n "$summary" ]] && went_well+="- **$agent_name**: $summary"$'\n'
+            fi
+        fi
+    done
+
+    # Collect what went wrong from BLOCKED.md files
+    local went_wrong=""
+    for task_file in "$ORCHESTRATION_DIR/tasks"/*.md; do
+        [[ -f "$task_file" ]] || continue
+        if grep -q "spec-ref:.*/${spec_num}-" "$task_file" 2>/dev/null; then
+            local agent_name=$(basename "$task_file" .md)
+            local worktree_path=$(get_worktree_path "$agent_name")
+            if [[ -f "$worktree_path/BLOCKED.md" ]]; then
+                local reason=$(head -5 "$worktree_path/BLOCKED.md" 2>/dev/null | tail -3)
+                went_wrong+="- **$agent_name**: $reason"$'\n'
+            fi
+        fi
+    done
+
+    # Generate suggestions
+    local suggestions=""
+    local avg_iters=0
+    if [[ $agent_count -gt 0 ]]; then
+        avg_iters=$((total_iterations / agent_count))
+    fi
+
+    if [[ $avg_iters -gt 5 ]]; then
+        suggestions+="- High avg iterations ($avg_iters) — consider more detailed specs and explicit gate commands"$'\n'
+    fi
+    if [[ $total_gate_fails -gt $total_iterations ]] 2>/dev/null; then
+        suggestions+="- Gate failure rate >50% — review test setup and gate commands in task files"$'\n'
+    fi
+    if [[ -n "$went_wrong" ]]; then
+        suggestions+="- Some agents blocked — consider breaking tasks into smaller units"$'\n'
+    fi
+    if [[ $avg_iters -le 2 ]] && [[ -z "$went_wrong" ]]; then
+        suggestions+="- Low iteration count with no blockers — spec quality is excellent, maintain this pattern"$'\n'
+    fi
+
+    # Read metrics file if exists
+    local metrics_summary=""
+    local metrics_file="$ORCHESTRATION_DIR/metrics/${spec_num}*.json"
+    local mfile=""
+    for f in $metrics_file; do
+        [[ -f "$f" ]] && mfile="$f" && break
+    done
+
+    # Write kaizen report
+    cat > "$kaizen_file" << KEOF
+# Kaizen Review: ${spec_name}
+
+> Generated: $(date '+%Y-%m-%d %H:%M:%S')
+> PDCA Phase: ACT (continuous improvement)
+
+## What Went Well
+
+${went_well:-"- No completion data available (agents may still be running)"}
+
+## What Went Wrong
+
+${went_wrong:-"- No blockers detected — all agents completed successfully"}
+
+## Iteration Analysis
+
+| Agent | Iterations | Gate Failures | Time | Outcome |
+|-------|-----------|---------------|------|---------|
+${agent_data:-"| (no agents found) | - | - | - | - |"}
+
+## Metrics Summary
+
+- **Total agents**: $agent_count
+- **Total iterations**: $total_iterations
+- **Average iterations/agent**: $avg_iters
+- **Total gate failures**: $total_gate_fails
+
+## Suggested Improvements
+
+${suggestions:-"- No specific improvements suggested — process is working well"}
+KEOF
+
+    log_success "Kaizen report written: $kaizen_file"
+
+    # Auto-update PROJECT_MEMORY.md with condensed lessons
+    if [[ -f "$MEMORY_FILE" ]]; then
+        local lesson_entry="
+#### Kaizen: ${spec_name} ($(date '+%Y-%m-%d'))
+- Iterations: $total_iterations across $agent_count agent(s) (avg: $avg_iters)
+- Gate failures: $total_gate_fails
+${suggestions}"
+
+        # Check for existing Kaizen section
+        if grep -q "### Kaizen Reviews" "$MEMORY_FILE" 2>/dev/null; then
+            # Append to existing section (before next ### heading)
+            local tmp_mem="${MEMORY_FILE}.kaizen_tmp"
+            awk -v lesson="$lesson_entry" '
+                /^### Kaizen Reviews/ { print; found=1; next }
+                found && /^###/ { print lesson; print ""; found=0 }
+                { print }
+                END { if(found) print lesson }
+            ' "$MEMORY_FILE" > "$tmp_mem" && mv "$tmp_mem" "$MEMORY_FILE"
+        else
+            # Create new section at end
+            printf "\n### Kaizen Reviews\n%s\n" "$lesson_entry" >> "$MEMORY_FILE"
+        fi
+        log_success "Updated PROJECT_MEMORY.md with kaizen lessons"
+    fi
+
+    # Display summary
+    echo ""
+    printf "  %-15s %s\n" "Agents:" "$agent_count"
+    printf "  %-15s %s\n" "Iterations:" "$total_iterations (avg: $avg_iters)"
+    printf "  %-15s %s\n" "Gate Failures:" "$total_gate_fails"
+    echo ""
+
+    # Log event
+    if [[ -f "$EVENTS_FILE" ]]; then
+        echo "[$(date -u +"%Y-%m-%dT%H:%M:%SZ")] SDD_KAIZEN: ${spec_name} [agents=$agent_count, iters=$total_iterations, fails=$total_gate_fails]" >> "$EVENTS_FILE"
+    fi
+}
+
+# =============================================
 # SDD RUN (AUTOPILOT)
 # =============================================
 
@@ -842,6 +1050,8 @@ cmd_sdd_run() {
     local auto_merge=false
     local ralph_mode=true
     local ralph_max_iterations=""
+    local hitl_mode=false
+    local kaizen_enabled=true
     local spec_dirs=()
 
     # Enable autopilot mode — hooks will pass through without blocking
@@ -877,6 +1087,18 @@ cmd_sdd_run() {
             --max-iterations)
                 ralph_max_iterations="$2"
                 shift 2
+                ;;
+            --hitl)
+                hitl_mode=true
+                shift
+                ;;
+            --afk)
+                hitl_mode=false
+                shift
+                ;;
+            --no-kaizen)
+                kaizen_enabled=false
+                shift
                 ;;
             *)
                 spec_number="$1"
@@ -1213,6 +1435,9 @@ cmd_sdd_run() {
                 start_args+=(--max-iterations "$ralph_max_iterations")
             fi
         fi
+        if $hitl_mode; then
+            start_args+=(--hitl)
+        fi
 
         cmd_start "${start_args[@]}"
     fi
@@ -1268,6 +1493,16 @@ cmd_sdd_run() {
     if [[ $done_count -gt 0 ]]; then
         log_step "Running update-memory --full..."
         cmd_update_memory --full 2>/dev/null || log_warn "update-memory failed (non-fatal)"
+    fi
+
+    # Kaizen review (PDCA Act phase — auto-run, skippable with --no-kaizen)
+    if $kaizen_enabled && [[ $done_count -gt 0 ]]; then
+        log_step "Running kaizen review..."
+        for spec_dir in "${spec_dirs[@]}"; do
+            local sname=$(basename "$spec_dir")
+            local snum=${sname%%-*}
+            cmd_sdd_kaizen "$snum" 2>/dev/null || log_warn "Kaizen review failed for $sname (non-fatal)"
+        done
     fi
 
     # Auto-merge flow (REQ-5, REQ-4, REQ-6)
@@ -1389,8 +1624,11 @@ cmd_sdd_help() {
     echo -e "  ${CYAN}sdd run [number]${NC}            Autopilot with ralph loops (default)"
     echo -e "  ${CYAN}sdd run [number] --no-ralph${NC}  Autopilot without ralph loops (single-shot)"
     echo -e "  ${CYAN}sdd run [number] --auto-merge${NC} Full autopilot: ... -> merge -> archive"
+    echo -e "  ${CYAN}sdd run [number] --hitl${NC}      HITL mode: pause between iterations for review"
+    echo -e "  ${CYAN}sdd run [number] --no-kaizen${NC} Skip kaizen review after completion"
     echo -e "  ${CYAN}sdd tasks <number>${NC}          Generate orchestrator tasks from plan"
-    echo -e "  ${CYAN}sdd status${NC}                  Show all active specs"
+    echo -e "  ${CYAN}sdd status${NC}                  Show all active specs (with PDCA phase)"
+    echo -e "  ${CYAN}sdd kaizen <number>${NC}         Run kaizen review (PDCA Act phase)"
     echo -e "  ${CYAN}sdd validate <number>${NC}       Production validation (post-merge)"
     echo -e "  ${CYAN}sdd validate <number> --skip${NC} Skip validation (non-production specs)"
     echo -e "  ${CYAN}sdd archive <number>${NC}        Archive completed spec (warns if not validated)"
@@ -1423,6 +1661,68 @@ cmd_sdd_help() {
 # =============================================
 # INTERNAL: Default templates
 # =============================================
+
+# Create a hotfix spec from validation failure (PDCA Act phase)
+_create_hotfix_spec() {
+    local failed_spec_name=$1
+    local validation_file=$2
+
+    local hotfix_num
+    hotfix_num=$(next_spec_number)
+    local hotfix_slug="hotfix-${failed_spec_name}"
+    # Truncate to 50 chars
+    hotfix_slug=$(echo "$hotfix_slug" | cut -c1-50)
+    local hotfix_dir="$SPECS_ACTIVE/${hotfix_num}-${hotfix_slug}"
+
+    ensure_dir "$hotfix_dir"
+
+    # Extract failed checks from validation file
+    local failed_checks=""
+    if [[ -f "$validation_file" ]]; then
+        failed_checks=$(grep -A 2 "FAIL" "$validation_file" 2>/dev/null | head -20)
+    fi
+
+    cat > "$hotfix_dir/spec.md" << HEOF
+# Spec: Hotfix for ${failed_spec_name}
+
+> Spec: ${hotfix_num} | Created: $(date '+%Y-%m-%d') | Status: DRAFT
+> Auto-generated from validation failure (PDCA Act phase)
+
+## Problem Statement
+
+Production validation for spec **${failed_spec_name}** failed. The following checks did not pass:
+
+\`\`\`
+${failed_checks:-"(see validation file for details)"}
+\`\`\`
+
+## Functional Requirements
+
+- [ ] REQ-1: Fix all failing validation checks from ${failed_spec_name}
+- [ ] REQ-2: Ensure existing tests still pass after fix
+- [ ] REQ-3: Re-run production validation successfully
+
+## Acceptance Criteria
+
+- [ ] AC-1: Given the fixes are applied, when production validation runs, then all checks pass
+- [ ] AC-2: Given existing tests, when test suite runs, then no regressions are introduced
+
+## Out of Scope
+
+- New features — this is a fix-only spec
+- Refactoring — minimal changes to resolve failures
+
+## Dependencies
+
+- Original spec: ${failed_spec_name}
+- Validation file: ${validation_file}
+HEOF
+
+    log_info "Auto-created hotfix spec: ${hotfix_num}-${hotfix_slug}"
+    if [[ -f "$EVENTS_FILE" ]]; then
+        echo "[$(date -u +"%Y-%m-%dT%H:%M:%SZ")] SDD_HOTFIX_CREATED: ${hotfix_num}-${hotfix_slug} (from ${failed_spec_name})" >> "$EVENTS_FILE"
+    fi
+}
 
 _sdd_create_default_templates() {
     # Spec template
