@@ -1,6 +1,6 @@
-# Claude Orchestrator v3.10.5
+# Claude Orchestrator v3.11.0
 
-Claude agent orchestration system with **SDD + TDD + Ralph Loops** — the tri-methodology for AI-driven development. Spec-Driven Development (what to build), Test-Driven Development (prove it works), and Ralph Loops (self-correct until done).
+Claude agent orchestration system with **Kaizen/PDCA + SDD + TDD + Ralph Loops** — the quad-methodology for AI-driven development. Kaizen continuous improvement (each cycle improves the next), Spec-Driven Development (what to build), Test-Driven Development (prove it works), and Ralph Loops (self-correct until done).
 
 ## How It Works in Practice
 
@@ -84,6 +84,19 @@ Claude decides when to use SDD (multi-module features) vs direct execution (smal
 
 ## What's New
 
+### v3.11.0 - Kaizen + PDCA Continuous Improvement
+
+All four methodologies now work together by default: **Kaizen/PDCA** (continuous improvement) + **SDD** (what to build) + **TDD** (prove it works) + **Ralph Loops** (iterate until done).
+
+- **PDCA phase tracking** — `sdd status` shows PLAN/DO/CHECK/ACT column per spec, mapping SDD stages to the Deming cycle
+- **Kaizen review** — `sdd kaizen <N>` analyzes execution: iterations, gate failures, time, outcomes. Auto-runs after agents complete (skip with `--no-kaizen`)
+- **Metrics collection** — JSON metrics per spec during Ralph loops (iterations, gate pass/fail, elapsed time) stored in `.claude/orchestration/metrics/`
+- **HITL mode** — `--hitl` flag pauses between ralph iterations for interactive review: continue, adjust instructions, or stop. Autonomy remains the default
+- **Auto-hotfix** — Validation failures auto-create hotfix specs (PDCA Act phase)
+- **Config.json** — Optional `.claude/orchestration/config.json` for persistent settings (max_iterations, stall_threshold, kaizen_auto_run)
+- **Memory update** — Kaizen review auto-updates PROJECT_MEMORY.md with lessons learned
+- **New artifacts** — `kaizen.md` (improvement report) and `metrics/<spec>.json` (execution data) per spec
+
 ### v3.10.5 - Orphan Task Cleanup
 
 Stale tasks from previous runs no longer block new executions. The orchestrator now automatically detects and cleans orphan tasks (tasks with no matching worktree) at every lifecycle boundary.
@@ -102,9 +115,9 @@ The `verify` and `verify-all` commands now **execute tests** as a mandatory gate
 - **Pre-merge enforcement** — `pre-merge` runs full verification including tests, blocking merge on failure
 - **`--skip-tests` flag** — Bypass test execution when infrastructure dependencies aren't available
 
-### v3.10.1 - TDD by Default (Tri-Methodology)
+### v3.10.1 - TDD by Default
 
-All three methodologies now work together by default: **SDD** (what to build) + **TDD** (prove it works) + **Ralph Loops** (iterate until done).
+Agents now write tests first by default — Red → Green → Refactor.
 
 - **Agents write tests FIRST** — Mandatory steps now require failing tests before any implementation code (Red → Green → Refactor)
 - **Auto-detect test runner as ralph gate** — When no explicit gates configured, the test runner is auto-detected (npm test, vitest, jest, pytest, go test, cargo test, make test) and used as the backpressure gate
@@ -217,7 +230,7 @@ cd ~/your-project
 
 ## Claude Code Skills
 
-The orchestrator integrates natively with Claude Code through **18 skills** (slash commands):
+The orchestrator integrates natively with Claude Code through **20 skills** (slash commands):
 
 ### SDD Skills
 
@@ -230,8 +243,10 @@ The orchestrator integrates natively with Claude Code through **18 skills** (sla
 | `/sdd-plan 001` | Create technical plan with worktree mapping | Yes |
 | `/sdd-gate 001` | Check constitutional gates | Yes |
 | `/sdd-run 001` | Autopilot: gate→tasks→setup→start→monitor | Yes |
+| `/sdd-run 001 --hitl` | HITL mode: pause between ralph iterations | Yes |
+| `/sdd-run 001 --no-kaizen` | Skip kaizen review after completion | Yes |
 | `/sdd-tasks 001` | Generate orchestrator tasks from plan | Yes |
-| `/sdd-status` | Show spec lifecycle status | Yes |
+| `/sdd-status` | Show spec lifecycle status (with PDCA phase) | Yes |
 | `/sdd-archive 001` | Archive completed spec | No |
 
 ### Orchestrator Skills
@@ -271,9 +286,10 @@ orch sdd research 001
 orch sdd plan 001
 orch sdd gate 001
 
-# 5a. Autopilot (recommended — SDD + TDD + Ralph all automatic)
-orch sdd run 001              # Manual merge after completion
-orch sdd run 001 --auto-merge # Fully autonomous (merge + archive automatic)
+# 5a. Autopilot (recommended — Kaizen/PDCA + SDD + TDD + Ralph all automatic)
+orch sdd run 001              # Manual merge after completion (kaizen review auto-runs)
+orch sdd run 001 --auto-merge # Fully autonomous (merge + kaizen + archive automatic)
+orch sdd run 001 --hitl       # HITL: pause between iterations for review
 
 # 5b. OR manual step-by-step
 orch sdd tasks 001
@@ -306,14 +322,16 @@ orch merge
 orch update-memory --full
 ```
 
-## SDD Pipeline
+## SDD Pipeline (Quad-Methodology)
 
 ```text
-SDD:   Constitution → Specify → Research (MANDATORY) → Plan → Gate → Tasks
+PLAN:  Constitution → Specify → Research (MANDATORY) → Plan → Gate → Tasks
                                                                        ↓
-TDD:                                         Setup → Start → Write Tests FIRST → Implement
+DO:    Setup → Start → Write Tests FIRST (TDD) → Implement → Ralph Loop (self-correct)
                                                                        ↓
-Ralph:                              Loop: Run Gates (tests) → Pass? → Done : Self-Correct → Retry
+CHECK: Validate (gates + production validation)
+                                                                       ↓
+ACT:   Kaizen Review → Update Memory → Archive → Next Cycle (improved)
 ```
 
 ### SDD Artifacts
@@ -327,7 +345,8 @@ Ralph:                              Loop: Run Gates (tests) → Pass? → Done :
 │       ├── spec.md           # WHAT: requirements, user stories, acceptance criteria
 │       ├── research.md       # WHY: library analysis, benchmarks, security, patterns
 │       ├── plan.md           # HOW: architecture, tech decisions, worktree mapping
-│       └── tasks.md          # Generated bridge to orchestration/tasks/
+│       ├── tasks.md          # Generated bridge to orchestration/tasks/
+│       └── kaizen.md         # ACT: improvement review (auto-generated)
 └── archive/                  # Completed specs (history)
 ```
 
@@ -384,7 +403,10 @@ orch sdd run <number>               # Autopilot with TDD + ralph loops (default)
 orch sdd run <number> --auto-merge  # Fully autonomous (merge + archive automatic)
 orch sdd run <number> --no-ralph    # Single-shot (no loops)
 orch sdd run <number> --mode teams  # Use Agent Teams backend
-orch sdd status              # Show active specs
+orch sdd run <number> --hitl        # HITL: pause between iterations for review
+orch sdd run <number> --no-kaizen   # Skip kaizen review after completion
+orch sdd kaizen <number>            # Manual kaizen review (PDCA Act phase)
+orch sdd status              # Show active specs (with PDCA phase column)
 orch sdd archive <number>    # Archive completed spec
 ```
 
@@ -406,6 +428,7 @@ orch setup <name> --agents a1,a2   # With specific agents
 orch start --no-monitor            # Start all async (recommended)
 orch start --ralph                 # Start all with ralph loops (default for SDD)
 orch start --ralph --max-iterations 30  # Custom iteration limit
+orch start --hitl                  # HITL mode (pause between ralph iterations)
 orch start <agent>                 # Start specific
 orch stop <agent>                  # Stop
 orch restart <agent>               # Restart
@@ -513,8 +536,8 @@ project/
 │   ├── PROJECT_MEMORY.md              # Project memory
 │   ├── AGENT_CLAUDE_BASE.md           # Agent base instructions
 │   ├── agents/                        # Installed agents (VoltAgent)
-│   ├── skills/                        # Claude Code Skills (18)
-│   │   ├── sdd*/SKILL.md             # SDD skills (10, incl. sdd-run)
+│   ├── skills/                        # Claude Code Skills (20)
+│   │   ├── sdd*/SKILL.md             # SDD skills (12, incl. sdd-run, sdd-status)
 │   │   ├── orch*/SKILL.md            # Orchestrator skills (8, incl. team-*)
 │   │   ├── sdd/SKILL.md              # SDD hub
 │   │   └── orch/SKILL.md             # Orchestrator hub
@@ -532,6 +555,8 @@ project/
 │   └── orchestration/
 │       ├── tasks/                     # Task files
 │       ├── examples/                  # Task examples
+│       ├── metrics/                   # Kaizen metrics (JSON per spec)
+│       ├── config.json                # Optional persistent settings
 │       └── logs/                      # Agent logs
 ```
 

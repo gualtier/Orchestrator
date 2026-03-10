@@ -423,6 +423,39 @@ _show_whats_new() {
         echo "    - --skip-tests flag for infrastructure-dependent test suites"
     fi
 
+    if _version_lt "$old_version" "3.10.5"; then
+        echo ""
+        echo -e "  ${GREEN}v3.10.5 - Orphan Task Cleanup${NC}"
+        echo "    - Auto-detect and archive stale tasks with no matching worktree"
+        echo "    - clean-orphans command for interactive cleanup"
+        echo "    - doctor --fix auto-cleans orphan tasks"
+        echo "    - start/status resilience: skip orphans instead of failing"
+    fi
+
+    if _version_lt "$old_version" "3.10.6"; then
+        echo ""
+        echo -e "  ${GREEN}v3.10.6 - Ralph DONE.md Detection${NC}"
+        echo "    - Detect DONE.md mid-iteration and stop process early"
+    fi
+
+    if _version_lt "$old_version" "3.11.0"; then
+        echo ""
+        echo -e "  ${GREEN}v3.11.0 - Kaizen + PDCA Continuous Improvement${NC}"
+        echo "    - Quad-methodology: Kaizen/PDCA + SDD + TDD + Ralph Loops"
+        echo "    - PDCA phase tracking in sdd status (PLAN/DO/CHECK/ACT column)"
+        echo "    - sdd kaizen <N>: improvement review (auto-runs after completion)"
+        echo "    - Metrics collection: JSON per spec (iterations, gates, elapsed time)"
+        echo "    - HITL mode: --hitl pauses between ralph iterations for review"
+        echo "    - Auto-hotfix: validation failures auto-create hotfix specs"
+        echo "    - Config.json: persistent settings (max_iterations, stall_threshold)"
+        echo "    - --no-kaizen flag to skip kaizen review"
+        echo ""
+        echo -e "  ${YELLOW}Quick start:${NC}"
+        echo "    orch sdd run 001              # Kaizen auto-runs after completion"
+        echo "    orch sdd run 001 --hitl       # Pause between iterations"
+        echo "    orch sdd kaizen 001           # Manual kaizen review"
+    fi
+
     echo ""
     log_separator
     echo ""
