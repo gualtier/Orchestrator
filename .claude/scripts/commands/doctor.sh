@@ -81,6 +81,31 @@ cmd_doctor() {
         log_success "No orphaned worktrees"
     fi
 
+    # 5b. Orphaned tasks (tasks without worktrees)
+    local orphan_tasks=0
+    for task_file in "$ORCHESTRATION_DIR/tasks"/*.md; do
+        [[ -f "$task_file" ]] || continue
+        local tname=$(basename "$task_file" .md)
+        local twpath=$(get_worktree_path "$tname")
+        if [[ ! -d "$twpath" ]]; then
+            log_warn "Orphaned task (no worktree): $tname"
+            ((orphan_tasks++))
+        fi
+    done
+
+    if [[ $orphan_tasks -gt 0 ]]; then
+        log_warn "$orphan_tasks orphaned task(s) found (no matching worktree)"
+        log_info "Run: $0 clean-orphans  OR  $0 doctor --fix"
+        ((warnings += orphan_tasks))
+    else
+        local task_count=$(ls -1 "$ORCHESTRATION_DIR/tasks"/*.md 2>/dev/null | wc -l | tr -d ' ')
+        if [[ $task_count -gt 0 ]]; then
+            log_success "All $task_count task(s) have matching worktrees"
+        else
+            log_info "No tasks found"
+        fi
+    fi
+
     # 6. Processes
     echo -e "${YELLOW}[6/8] Checking processes...${NC}"
     local running=0
@@ -175,11 +200,94 @@ cmd_doctor_fix() {
 
     # Clean orphaned worktrees
     git worktree prune 2>/dev/null
-    log_info "Orphaned worktrees removed"
+    log_info "Orphaned worktrees pruned"
+
+    # Clean orphaned tasks (tasks without worktrees)
+    _clean_orphan_tasks
 
     # Rotate large logs
     rotate_logs
 
     log_success "Fixes applied"
     log_info "Run '$0 doctor' to verify"
+}
+
+# =============================================
+# clean-orphans: Archive tasks without worktrees
+# =============================================
+
+_clean_orphan_tasks() {
+    local archived=0
+    local archive_dir="$ORCHESTRATION_DIR/archive/orphans_$(date '+%Y%m%d_%H%M%S')"
+
+    for task_file in "$ORCHESTRATION_DIR/tasks"/*.md; do
+        [[ -f "$task_file" ]] || continue
+        local name=$(basename "$task_file" .md)
+        local worktree_path=$(get_worktree_path "$name")
+
+        if [[ ! -d "$worktree_path" ]]; then
+            # First orphan — create archive dir
+            if [[ $archived -eq 0 ]]; then
+                ensure_dir "$archive_dir"
+            fi
+
+            # Stop agent if somehow running
+            stop_agent_process "$name" true 2>/dev/null || true
+
+            # Archive task file
+            mv "$task_file" "$archive_dir/"
+
+            # Clean related state files
+            rm -f "$ORCHESTRATION_DIR/pids/${name}.pid"
+            rm -f "$ORCHESTRATION_DIR/pids/${name}.started"
+            rm -f "$ORCHESTRATION_DIR/pids/${name}.iteration"
+            rm -f "$ORCHESTRATION_DIR/pids/${name}.gates"
+            rm -f "$ORCHESTRATION_DIR/pids/${name}.errors"
+            rm -f "$ORCHESTRATION_DIR/logs/${name}.log"
+
+            log_info "Archived orphan task: $name"
+            ((archived++))
+        fi
+    done
+
+    if [[ $archived -gt 0 ]]; then
+        log_success "Archived $archived orphan task(s) → $archive_dir"
+        echo "[$(timestamp)] CLEAN_ORPHANS: $archived tasks archived (no worktree)" >> "$EVENTS_FILE"
+    else
+        log_info "No orphan tasks found"
+    fi
+}
+
+cmd_clean_orphans() {
+    log_header "CLEAN ORPHAN TASKS"
+    log_info "Finding tasks with no matching worktree..."
+    echo ""
+
+    # Show what will be cleaned
+    local count=0
+    for task_file in "$ORCHESTRATION_DIR/tasks"/*.md; do
+        [[ -f "$task_file" ]] || continue
+        local name=$(basename "$task_file" .md)
+        local worktree_path=$(get_worktree_path "$name")
+
+        if [[ ! -d "$worktree_path" ]]; then
+            log_warn "Orphan: $name (expected worktree: $worktree_path)"
+            ((count++))
+        fi
+    done
+
+    if [[ $count -eq 0 ]]; then
+        log_success "No orphan tasks found — all clean!"
+        return 0
+    fi
+
+    echo ""
+    log_info "$count orphan task(s) will be archived"
+
+    if ! confirm "Archive these orphan tasks?"; then
+        log_info "Operation cancelled"
+        return 0
+    fi
+
+    _clean_orphan_tasks
 }

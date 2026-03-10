@@ -1,4 +1,4 @@
-# Claude Orchestrator v3.10.2
+# Claude Orchestrator v3.10.5
 
 Claude agent orchestration system with **SDD + TDD + Ralph Loops** — the tri-methodology for AI-driven development. Spec-Driven Development (what to build), Test-Driven Development (prove it works), and Ralph Loops (self-correct until done).
 
@@ -83,6 +83,16 @@ Claude: → Specifies, researches, plans, generates tasks
 Claude decides when to use SDD (multi-module features) vs direct execution (small tasks). With `--auto-merge`, the entire pipeline runs hands-off.
 
 ## What's New
+
+### v3.10.5 - Orphan Task Cleanup
+
+Stale tasks from previous runs no longer block new executions. The orchestrator now automatically detects and cleans orphan tasks (tasks with no matching worktree) at every lifecycle boundary.
+
+- **Auto-clean on lifecycle events** — `sdd run`, `sdd tasks`, and `merge` silently archive orphan tasks before proceeding
+- **`clean-orphans` command** — Interactive standalone cleanup with confirmation
+- **`doctor` integration** — Detects orphan tasks in health check; `doctor --fix` auto-cleans them
+- **`start` resilience** — Skips orphan tasks with warning instead of failing the entire batch
+- **`status` filtering** — Hides orphan tasks from all dashboard views, shows count with cleanup hint
 
 ### v3.10.2 - Verify Runs Tests
 

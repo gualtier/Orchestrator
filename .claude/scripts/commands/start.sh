@@ -27,12 +27,23 @@ cmd_start() {
     export RALPH_GLOBAL="$ralph_global"
     export RALPH_GLOBAL_MAX_ITERATIONS="$ralph_max_iterations"
 
-    # If no name specified, start all
+    # If no name specified, start all (skipping orphan tasks)
     if [[ ${#names[@]} -eq 0 ]]; then
+        local skipped_orphans=0
         for task_file in "$ORCHESTRATION_DIR/tasks"/*.md; do
             [[ -f "$task_file" ]] || continue
-            names+=("$(basename "$task_file" .md)")
+            local tname=$(basename "$task_file" .md)
+            local twpath=$(get_worktree_path "$tname")
+            if [[ -d "$twpath" ]]; then
+                names+=("$tname")
+            else
+                log_warn "Skipping orphan task (no worktree): $tname"
+                ((skipped_orphans++)) || true
+            fi
         done
+        if [[ $skipped_orphans -gt 0 ]]; then
+            log_info "Skipped $skipped_orphans orphan task(s). Run: $0 clean-orphans"
+        fi
     fi
 
     if [[ ${#names[@]} -eq 0 ]]; then
@@ -123,11 +134,13 @@ _monitor_until_done() {
             echo -e "  Timeout: ${remaining}m remaining"
         fi
 
-        # Count completion states
+        # Count completion states (skip orphan tasks)
         local total=0 done=0 blocked=0 stopped=0
         for task_file in "$ORCHESTRATION_DIR/tasks"/*.md; do
             [[ -f "$task_file" ]] || continue
             local name=$(basename "$task_file" .md)
+            local wpath=$(get_worktree_path "$name")
+            [[ -d "$wpath" ]] || continue  # skip orphans
             local status=$(get_agent_status "$name")
             ((total++)) || true
 

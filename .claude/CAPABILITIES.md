@@ -1,4 +1,4 @@
-# Orchestrator Capabilities v3.10.4
+# Orchestrator Capabilities v3.10.5
 
 > This file is auto-updated by `orch update`. Do NOT edit manually.
 > Read this file at the start of every session to know what tools are available.
@@ -135,6 +135,7 @@ orch review            # Code review
 orch report            # Generate completion report
 orch merge             # Merge worktrees to main
 orch cleanup           # Remove worktrees
+orch clean-orphans     # Archive stale tasks with no worktree
 
 # Memory & Learning
 orch update-memory     # Update PROJECT_MEMORY.md timestamp
@@ -209,6 +210,17 @@ Test-Driven Development integrated into the agent workflow:
 - Supported runners: npm test, vitest, jest, pytest, go test, cargo test, make test
 - DONE.md includes Test Results section as proof of correctness
 - Task templates include TDD requirements section
+
+### Orphan Task Cleanup (v3.10.5)
+
+Automatic detection and cleanup of stale tasks with no matching worktree:
+
+- **Auto-clean on lifecycle events**: `sdd run`, `sdd tasks`, and `merge` auto-archive orphan tasks before proceeding
+- **`clean-orphans` command**: Interactive cleanup — shows orphans, asks confirmation, archives
+- **`doctor` detection**: Diagnoses orphan tasks in health check; `doctor --fix` auto-cleans them
+- **`start` resilience**: Skips orphan tasks with warning instead of failing
+- **`status` filtering**: Hides orphan tasks from dashboard, shows count with cleanup hint
+- **Archive trail**: Orphan tasks moved to `orchestration/archive/orphans_<timestamp>/` with event log entry
 
 ### State Externalization (v3.10.4)
 

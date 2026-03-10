@@ -60,13 +60,19 @@ cmd_status() {
 cmd_status_standard() {
     log_header "ORCHESTRATOR v3.4 - STATUS - $(date '+%H:%M:%S')"
 
-    local total=0 done=0 blocked=0 running=0 waiting=0
+    local total=0 done=0 blocked=0 running=0 waiting=0 orphans=0
 
     for task_file in "$ORCHESTRATION_DIR/tasks"/*.md; do
         [[ -f "$task_file" ]] || continue
 
         local name=$(basename "$task_file" .md)
         local worktree_path=$(get_worktree_path "$name")
+
+        # Skip orphan tasks (no worktree)
+        if [[ ! -d "$worktree_path" ]]; then
+            ((orphans++))
+            continue
+        fi
 
         ((total++))
 
@@ -176,6 +182,9 @@ cmd_status_standard() {
     echo ""
     log_separator
     echo -e "📊 Total: $total | ✅ $done | 🔄 $running | ⏳ $waiting | 🚫 $blocked"
+    if [[ $orphans -gt 0 ]]; then
+        echo -e "   ${YELLOW}⚠️  $orphans orphan task(s) hidden (no worktree). Run: $0 clean-orphans${NC}"
+    fi
     log_separator
 
     if [[ $done -eq $total ]] && [[ $total -gt 0 ]]; then
@@ -194,13 +203,20 @@ cmd_status_standard() {
 cmd_status_enhanced() {
     log_header "ORCHESTRATOR v3.4 - ENHANCED STATUS - $(date '+%H:%M:%S')"
 
-    local total=0 done=0 blocked=0 running=0 waiting=0
+    local total=0 done=0 blocked=0 running=0 waiting=0 orphans=0
 
     for task_file in "$ORCHESTRATION_DIR/tasks"/*.md; do
         [[ -f "$task_file" ]] || continue
 
         local name=$(basename "$task_file" .md)
         local worktree_path=$(get_worktree_path "$name")
+
+        # Skip orphan tasks (no worktree)
+        if [[ ! -d "$worktree_path" ]]; then
+            ((orphans++))
+            continue
+        fi
+
         ((total++))
 
         echo ""
@@ -364,6 +380,9 @@ cmd_status_enhanced() {
     echo ""
     log_separator
     echo -e "📊 ${BOLD}Summary:${NC} $total total | ${GREEN}✅ $done${NC} | ${BLUE}🔄 $running${NC} | ${YELLOW}⏳ $waiting${NC} | ${RED}🚫 $blocked${NC}"
+    if [[ $orphans -gt 0 ]]; then
+        echo -e "   ${YELLOW}⚠️  $orphans orphan task(s) hidden (no worktree). Run: $0 clean-orphans${NC}"
+    fi
     log_separator
 
     if [[ $done -eq $total ]] && [[ $total -gt 0 ]]; then
@@ -386,6 +405,9 @@ cmd_status_compact() {
         [[ -f "$task_file" ]] || continue
 
         local name=$(basename "$task_file" .md)
+        local worktree_path=$(get_worktree_path "$name")
+        [[ -d "$worktree_path" ]] || continue  # skip orphans
+
         local status=$(get_agent_status "$name")
         local progress=$(get_agent_progress "$name")
         local proc_icon="⚪"

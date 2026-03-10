@@ -431,6 +431,9 @@ cmd_sdd_tasks() {
 
     local spec_name=$(basename "$spec_dir")
 
+    # Clean orphan tasks before generating new ones
+    _clean_orphan_tasks 2>/dev/null || true
+
     log_header "GENERATING TASKS: ${spec_name}"
 
     generate_tasks_from_plan "$spec_dir"
@@ -1019,6 +1022,11 @@ cmd_sdd_run() {
     if [[ -f "$EVENTS_FILE" ]]; then
         echo "[$(date -u +"%Y-%m-%dT%H:%M:%SZ")] SDD_RUN_START: ${spec_count} spec(s)" >> "$EVENTS_FILE"
     fi
+
+    # =========================================
+    # PRE-RUN: Clean orphan tasks from previous runs
+    # =========================================
+    _clean_orphan_tasks 2>/dev/null || true
 
     # =========================================
     # PHASE 1: Gate + Tasks (all specs)

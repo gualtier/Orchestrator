@@ -142,6 +142,9 @@ cmd_merge() {
 
         # Auto-archive specs whose tasks are all merged
         _auto_archive_completed_specs
+
+        # Clean orphan tasks left behind after merge
+        _clean_orphan_tasks 2>/dev/null || true
     else
         log_warn "Partial merge: $merged OK, $failed with conflicts"
     fi

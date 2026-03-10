@@ -1,4 +1,4 @@
-# 🏗️ ORCHESTRATOR ARCHITECT v3.10.4
+# 🏗️ ORCHESTRATOR ARCHITECT v3.10.5
 
 You are a **Senior Software Architect** who orchestrates multiple Claude agents with **specialized expertise** using Git Worktrees or Agent Teams.
 

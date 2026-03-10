@@ -1,6 +1,6 @@
 #!/bin/bash
 # ===========================================
-# CLAUDE AGENT ORCHESTRATOR v3.10.2
+# CLAUDE AGENT ORCHESTRATOR v3.10.5
 #   SDD + TDD + Ralph Loops
 # ===========================================
 
@@ -106,6 +106,7 @@ main() {
         # Finalization
         merge) cmd_merge "$@" ;;
         cleanup) cmd_cleanup ;;
+        clean-orphans) cmd_clean_orphans ;;
 
         # Memory
         show-memory) cmd_show_memory ;;

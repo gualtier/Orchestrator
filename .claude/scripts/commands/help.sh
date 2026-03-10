@@ -71,6 +71,7 @@ VERIFICATION AND QUALITY:
 FINALIZATION:
   merge [branch]            Merge (default: main)
   cleanup                   Clean up worktrees (archives artifacts)
+  clean-orphans             Archive stale tasks with no matching worktree
 
 MEMORY:
   show-memory               View project memory
