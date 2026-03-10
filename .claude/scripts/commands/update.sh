@@ -191,12 +191,71 @@ _apply_update() {
     local remote=$(_resolve_remote)
     local branch=$(_get_remote_default_branch)
 
+    # Guard: abort if git index is locked (another git process running)
+    local git_dir
+    git_dir=$(git rev-parse --git-dir 2>/dev/null)
+    if [[ -f "$git_dir/index.lock" ]]; then
+        log_error "Git index is locked ($git_dir/index.lock)"
+        log_info "Another git process may be running. Remove the lock file if stale."
+        return 1
+    fi
+
+    local total=${#ORCHESTRATOR_UPDATE_PATHS[@]}
+    local current=0
+    local updated=0
+    local skipped=0
+
     # Update all orchestrator paths (scripts, skills, specs, etc.)
     for path in "${ORCHESTRATOR_UPDATE_PATHS[@]}"; do
-        if git ls-tree -r --name-only "$remote/$branch" -- "$path" &>/dev/null; then
-            git checkout "$remote/$branch" -- "$path" 2>/dev/null || true
+        ((current++))
+
+        # Check if path actually exists in remote (git ls-tree exit 0 even with no matches)
+        local file_count
+        file_count=$(git ls-tree -r --name-only "$remote/$branch" -- "$path" 2>/dev/null | head -1 | wc -l | tr -d ' ')
+
+        if [[ "$file_count" -eq 0 ]]; then
+            log_info "  [$current/$total] Skip (not in remote): $path"
+            ((skipped++))
+            continue
         fi
+
+        log_info "  [$current/$total] Updating: $path"
+
+        # Use timeout to prevent hangs (30s per path should be more than enough)
+        if command -v timeout &>/dev/null; then
+            timeout 30 git checkout "$remote/$branch" -- "$path" 2>/dev/null || {
+                local rc=$?
+                if [[ $rc -eq 124 ]]; then
+                    log_warn "  Timed out checking out: $path (skipped)"
+                    ((skipped++))
+                    continue
+                fi
+                # Non-timeout failure — path may not exist, that's OK
+            }
+        else
+            # macOS: no timeout command, use background + wait with kill
+            git checkout "$remote/$branch" -- "$path" 2>/dev/null &
+            local co_pid=$!
+            local waited=0
+            while kill -0 "$co_pid" 2>/dev/null && [[ $waited -lt 30 ]]; do
+                sleep 1
+                ((waited++))
+            done
+            if kill -0 "$co_pid" 2>/dev/null; then
+                kill "$co_pid" 2>/dev/null
+                wait "$co_pid" 2>/dev/null
+                log_warn "  Timed out checking out: $path (skipped)"
+                ((skipped++))
+                continue
+            fi
+            wait "$co_pid" 2>/dev/null
+        fi
+
+        ((updated++))
     done
+
+    log_info "  Updated $updated path(s), skipped $skipped"
+    return 0
 }
 
 _show_whats_new() {
